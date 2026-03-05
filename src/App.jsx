@@ -6210,7 +6210,7 @@ export default function App() {
       {!user ? content : (
         <>
           <Topbar user={user} nav={nav} page={subPage} onNav={goPage} onOut={handleLogout} onUpdateUser={(u) => { setUser(u); setUsers(prev => prev.map(x => x.id === u.id ? u : x)); }} pending={pending} isDark={isDark} toggleTheme={() => setIsDark((d) => !d)} T={T} />
-          <div style={{ flex: 1, padding: 24, maxWidth: 1440, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+          <div style={{ flex: 1, padding: 24, maxWidth: "100%", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
             {content}
           </div>
           <div style={{ borderTop: `1px solid ${T.border}`, padding: "8px 24px", background: T.bg1, display: "flex", justifyContent: "space-between" }}>
