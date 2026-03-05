@@ -1063,7 +1063,7 @@ function Dashboard({ objs, rigs, reps, plans, onDrillObj, T }) {
       </div>
 
       {/* ── Top KPIs ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginBottom: 20 }}>
         <Card accent={T.red} style={{ padding: "16px 18px" }} T={T}>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.red, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 10 }}>⛏ Бурение</div>
           <ProgressBar fact={totals.df} plan={planTotals.df || objs.reduce((s,o)=>s+o.dp,0)} T={T} />
@@ -1096,7 +1096,7 @@ function Dashboard({ objs, rigs, reps, plans, onDrillObj, T }) {
 
       {/* ── Object cards with bar chart ── */}
       <SectionTitle label={`Участки (${objs.length})`} T={T} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
         {objs.map((obj, i) => {
           const rr  = filteredReps.filter((r) => r.oid === obj.id);
           const df  = rr.reduce((s,r)=>s+r.df,0), bf = rr.reduce((s,r)=>s+r.bf,0);
@@ -1195,7 +1195,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(155px,1fr))", gap: 10, marginBottom: 24 }}>
         {[
           [T.red,    "⛏ Бурение", tot.df,   obj.dp, "п.м"],
           [T.amber,  "💥 Взрывы",  tot.bf,   obj.bp, "м³"],
@@ -1221,7 +1221,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: T.red, textTransform: "uppercase", letterSpacing: ".25em", marginBottom: 4 }}>▌ Буровые станки</div>
         <div style={{ fontSize: 12, color: T.txt2, marginBottom: 16 }}>Нажмите на станок для просмотра отчётов по сменам</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 28 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12, marginBottom: 28 }}>
         {objRigs.map((rg) => {
           const df   = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.df   || 0), 0);
           const bf   = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.bf   || 0), 0);
@@ -1305,7 +1305,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
       </div>
 
       {/* Rig totals */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 10, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 24 }}>
         {[[T.red,"⛏ Бурение",tot.df,"п.м"],[T.amber,"💥 Взрыв",tot.bf,"м³"],[T.blue,"⚙ Работа",tot.wh,"ч"],["#ef4444","⏸ Простой",tot.dh,"ч"],[T.violet,"⛽ ГСМ",tot.fuel,"т"]].map(([color,lbl,val,unit]) => (
           <Card key={lbl} accent={color} style={{ padding: "14px 16px" }} T={T}>
             <div style={{ fontSize: 12, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 6 }}>{lbl}</div>
@@ -1534,7 +1534,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
             </span>
           )}
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:12}}>
           {objs.map((obj,i)=>{
             const ac     = colors[i%colors.length];
             const pReps  = pendingByObj(obj.id).length;
@@ -2031,7 +2031,7 @@ function UsersEditor({ users, setUsers, objs, T }) {
       {/* Engineers (read-only list) */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase", marginBottom: 10 }}>Инженеры</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 10 }}>
           {engineers.map((u) => (
             <Card key={u.id} accent={T.violet} style={{ padding: "14px 16px" }} T={T}>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -2051,7 +2051,7 @@ function UsersEditor({ users, setUsers, objs, T }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase" }}>Начальники участков ({foremen.length})</div>
         <Btn variant="secondary" onClick={() => setAddForm({ name: "", login: "", pw: "", oids: [] })} T={T} style={{ fontSize: 12, padding: "6px 14px" }}>+ Добавить</Btn>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 10 }}>
         {foremen.map((u) => {
           const assignedObjs = u.oids === "all" ? objs : objs.filter((o) => u.oids.includes(o.id));
           return (
@@ -2200,7 +2200,7 @@ function EngineerAssign({ users, setUsers, T }) {
           <div style={{ fontSize: 12, color: T.txt2 }}>Нет {tab === "engineers" ? "инженеров" : "механиков"} — добавьте выше</div>
         </Card>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 12 }}>
           {activeList.map((u) => (
             <Card key={u.id} style={{ padding: 16, borderTop: `3px solid ${activeColor}` }} T={T}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -2607,7 +2607,7 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
         </div>
 
         {/* Grand totals */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:20}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:10,marginBottom:20}}>
           {[
             {c:T.red,   icon:"⛏",  lbl:"Бурение",  val:grandDf, unit:"п.м"},
             {c:T.amber, icon:"💥", lbl:"Взрыв",    val:grandBf, unit:"м³"},
@@ -2623,7 +2623,7 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
         </div>
 
         {/* Object cards */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:12}}>
           {objs.map((obj,i)=>{
             const ac  = colors[i%colors.length];
             const df  = getMonthTotal(obj.id,"df");
@@ -3359,7 +3359,7 @@ function AssetOverviewTab({ nodeId, passport, setPassports, assetClasses, user, 
       {pp.model || pp.serial || pp.manufacturer || pp.year || pp.inventory ? (
         <div>
           <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:8 }}>Паспортные данные</div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:10 }}>
             {[
               ["Производитель", pp.manufacturer],
               ["Модель",        pp.model],
@@ -4980,7 +4980,7 @@ function ForemanDash({ objs, rigs, reps, T }) {
         <div style={{ background: T.amber, color: "#000", padding: "4px 12px", borderRadius: 3, fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>ЭТАП 1 — НАЧ. УЧАСТКА</div>
       </div>
       <SectionTitle label="Мои участки" sub="ОБЗОР" T={T} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 12 }}>
         {objs.map((obj, i) => {
           const rr = approved.filter((r) => r.oid === obj.id);
           const df = rr.reduce((s,r)=>s+r.df,0), bf = rr.reduce((s,r)=>s+r.bf,0);
@@ -5413,7 +5413,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
       </div>
 
       {/* Category cards */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8,marginBottom:20}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:8,marginBottom:20}}>
         <div onClick={()=>setSelCat(null)} style={{
           padding:"14px 16px",borderRadius:7,cursor:"pointer",
           background:!selCat?`${T.red}15`:T.bg2,
@@ -5464,7 +5464,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           <Btn variant="primary" onClick={openAddAsset} T={T} style={{marginTop:14,fontSize:12}}>+ Добавить актив</Btn>
         </Card>
       ) : (
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
           {catAssets.map(a=>{
             const cat    = cats.find(c=>c.key===a.category)||{icon:"📦",color:T.txt2,label:"Другое"};
             const obj    = objs.find(o=>o.id===Number(a.assigned_object_id));
@@ -6142,15 +6142,19 @@ export default function App() {
 
   const css = [
     "@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');",
-    "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}",
-    `body{background:${T.bg0};color:${T.txt0};font-family:'Rajdhani',sans-serif;}`,
+    "*,*::before,*::after{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;margin:0;padding:0;}",
+    `html,body{width:100%;min-height:100%;background:${T.bg0};color:${T.txt0};font-family:'Rajdhani',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}`,
+    `#root{width:100%;min-height:100vh;}`,
     `::-webkit-scrollbar{width:4px;height:4px;}`,
     `::-webkit-scrollbar-track{background:${T.bg1};}`,
     `::-webkit-scrollbar-thumb{background:${T.border};border-radius:2px;}`,
-    `input,select,textarea{font-family:'Rajdhani',sans-serif;}`,
+    `input,select,textarea{font-family:'Rajdhani',sans-serif;-webkit-appearance:none;-moz-appearance:none;}`,
     `input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}`,
-    `input[type=number]{-moz-appearance:textfield;}`,
+    `input[type=number]{-moz-appearance:textfield;appearance:textfield;}`,
     `select option{background:${T.bg2};color:${T.txt0};}`,
+    `button{-webkit-appearance:none;-moz-appearance:none;appearance:none;cursor:pointer;}`,
+    `img{max-width:100%;height:auto;}`,
+    `@-webkit-keyframes fadeUp{from{opacity:0;-webkit-transform:translateY(10px);transform:translateY(10px);}to{opacity:1;-webkit-transform:translateY(0);transform:translateY(0);}}`,
     `@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}`,
   ].join("\n");
 
