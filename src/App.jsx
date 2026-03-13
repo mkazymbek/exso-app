@@ -216,90 +216,90 @@ const INIT_NODES = [
 
 // ─── EAM 1.2 INITIAL DATA ──────────────────────────────────────────────────────
 // Asset passport data keyed by node id
-const CAT_TYPE_LABEL = { DRILL_RIG:"Буровой станок", MIXER:"СЗМ", HYDRO:"Гидромолот", EXCAVATOR:"Экскаватор", HILUX:"Легковой авт.", TRUCK:"Грузовой авт.", COMPRESSOR:"Компрессор", LOADER:"Погрузчик" };
+const CAT_TYPE_LABEL = { DRILL_RIG:"Буровой станок", COMPRESSOR:"Компрессор", MIXER:"СЗМ", HYDRO:"Гидромолот", EXCAVATOR:"Экскаватор", HILUX:"Легковой авт.", TRUCK:"Грузовой авт.", COMPRESSOR:"Компрессор", LOADER:"Погрузчик" };
 const PURPOSE_OPTIONS = ["Бурение","Зарядка","Доставка","Вспомогательные работы","Техническое обслуживание"];
 const METER_UNIT_CFG  = { ENGINE_HOURS:"мч", KM:"км", CYCLES:"цикл" };
 
 const INIT_PASSPORTS = {
   // ── Буровые станки ────────────────────────────────────────────────────────
-  a1:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-920B",    serial:"19081701",   year:"2019", inventory:"№101", commissioned:"2019",      location:"Борлы, Шыганак",           avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a2:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-920B",    serial:"",           year:"2022", inventory:"№102", commissioned:"2022-05",   location:"Город",                    avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a3:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-920B",    serial:"",           year:"2022", inventory:"№103", commissioned:"2022-10",   location:"Борлы, Коскудук, Шыганак", avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a4:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-590",     serial:"",           year:"2024", inventory:"№104", commissioned:"2024-01",   location:"",                         avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a5:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2202566",  year:"2023", inventory:"№105", commissioned:"2024-04",   location:"Коскудук",                 avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a6:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2302079L", year:"2023", inventory:"№106", commissioned:"2024-04",   location:"Шыганак",                  avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a7:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Sanrock",  model:"R68",        serial:"",           year:"2025", inventory:"№107", commissioned:"2025-05",   location:"Борлы",                    avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a8:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Sanrock",  model:"R68",        serial:"",           year:"2025", inventory:"№108", commissioned:"2025-05",   location:"Борлы",                    avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a9:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2202561",  year:"2023", inventory:"№109", commissioned:"2024-08",   location:"Коскудук",                 avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a10: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2302253L", year:"2023", inventory:"№110", commissioned:"2024-08",   location:"Коскудук",                 avg_monthly:null, total_hours:0,   fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a11: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502202L", year:"2025", inventory:"№111", commissioned:"2025-08-13",location:"Борлы, Коскудук, Шыганак", avg_monthly:null, total_hours:0,    fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a12: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502083L", year:"2025", inventory:"№112", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a13: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502197L", year:"2025", inventory:"№113", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a14: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502208L", year:"2025", inventory:"№114", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a15: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502207L", year:"2025", inventory:"№115", commissioned:"2025-09-10",location:"Бактай, Коскудук",          avg_monthly:null, total_hours:null,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a16: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502200L", year:"2025", inventory:"№116", commissioned:"2025-09-10",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a17: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"ZEGA",     model:"D545H",      serial:"",           year:"2025", inventory:"№117", commissioned:"",          location:"Бактай",                   avg_monthly:null, total_hours:0,   fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a18: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502198L", year:"2025", inventory:"№118", commissioned:"2025-12-18",location:"Коскудук",                 avg_monthly:null, total_hours:null,  fuel_rate:16.7 , toSchedule:[{name:"ТО-1",interval:250},{name:"ТО-2",interval:500},{name:"ТО-3",interval:1000},{name:"Капремонт",interval:5000}], },
-  a19: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250403",   year:"2026", inventory:"№119", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:609,   fuel_rate:16.7, toSchedule:[{name:"ТО-1",interval:250,duration_hrs:4},{name:"ТО-2",interval:500,duration_hrs:8},{name:"ТО-3",interval:1000,duration_hrs:16},{name:"Капремонт",interval:5000,duration_hrs:72}], },
-  a20: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250404",   year:"2026", inventory:"№120", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:638,   fuel_rate:16.7, toSchedule:[{name:"ТО-1",interval:250,duration_hrs:4},{name:"ТО-2",interval:500,duration_hrs:8},{name:"ТО-3",interval:1000,duration_hrs:16},{name:"Капремонт",interval:5000,duration_hrs:72}], },
-  a21: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250401",   year:"2026", inventory:"№121", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:597,   fuel_rate:16.7, toSchedule:[{name:"ТО-1",interval:250,duration_hrs:4},{name:"ТО-2",interval:500,duration_hrs:8},{name:"ТО-3",interval:1000,duration_hrs:16},{name:"Капремонт",interval:5000,duration_hrs:72}], },
+  a1:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-920B",    serial:"19081701",   year:"2019", inventory:"№101", commissioned:"2019",      location:"Борлы, Шыганак",           avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a2:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-920B",    serial:"",           year:"2022", inventory:"№102", commissioned:"2022-05",   location:"Город",                    avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a3:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-920B",    serial:"",           year:"2022", inventory:"№103", commissioned:"2022-10",   location:"Борлы, Коскудук, Шыганак", avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a4:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Kaishan",  model:"KG-590",     serial:"",           year:"2024", inventory:"№104", commissioned:"2024-01",   location:"",                         avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a5:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2202566",  year:"2023", inventory:"№105", commissioned:"2024-04",   location:"Коскудук",                 avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a6:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2302079L", year:"2023", inventory:"№106", commissioned:"2024-04",   location:"Шыганак",                  avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a7:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Sanrock",  model:"R68",        serial:"",           year:"2025", inventory:"№107", commissioned:"2025-05",   location:"Борлы",                    avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a8:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"Sanrock",  model:"R68",        serial:"",           year:"2025", inventory:"№108", commissioned:"2025-05",   location:"Борлы",                    avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a9:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2202561",  year:"2023", inventory:"№109", commissioned:"2024-08",   location:"Коскудук",                 avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a10: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2302253L", year:"2023", inventory:"№110", commissioned:"2024-08",   location:"Коскудук",                 avg_monthly:null, total_hours:0,   fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a11: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502202L", year:"2025", inventory:"№111", commissioned:"2025-08-13",location:"Борлы, Коскудук, Шыганак", avg_monthly:null, total_hours:0,    fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a12: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502083L", year:"2025", inventory:"№112", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a13: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502197L", year:"2025", inventory:"№113", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a14: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502208L", year:"2025", inventory:"№114", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a15: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502207L", year:"2025", inventory:"№115", commissioned:"2025-09-10",location:"Бактай, Коскудук",          avg_monthly:null, total_hours:null,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a16: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502200L", year:"2025", inventory:"№116", commissioned:"2025-09-10",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a17: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"ZEGA",     model:"D545H",      serial:"",           year:"2025", inventory:"№117", commissioned:"",          location:"Бактай",                   avg_monthly:null, total_hours:0,   fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a18: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502198L", year:"2025", inventory:"№118", commissioned:"2025-12-18",location:"Коскудук",                 avg_monthly:null, total_hours:null,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a19: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250403",   year:"2026", inventory:"№119", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:609,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a20: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250404",   year:"2026", inventory:"№120", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:638,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a21: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250401",   year:"2026", inventory:"№121", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:597,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
 
   // ── Компрессоры ───────────────────────────────────────────────────────────
-  comp1:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"Sanrock", model:"SR550-17",        serial:"",              year:"",   inventory:"№201", commissioned:"",          location:"Борлы, Коскудук",           avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp2:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"Sanrock", model:"SR550-17",        serial:"",              year:"",   inventory:"№202", commissioned:"2022-05-06",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp3:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"Sanrock", model:"SR550-17",        serial:"",              year:"",   inventory:"№203", commissioned:"2022-10-17",location:"Борлы",                     avg_monthly:null, total_hours:0, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp4:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"",        model:"",                serial:"",              year:"",   inventory:"№204", commissioned:"",          location:"Борлы, Коскудук, Шыганак",  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp5:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"",        model:"",                serial:"",              year:"",   inventory:"№205", commissioned:"",          location:"Борлы, Коскудук",           avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp6:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY-18/17",      serial:"",              year:"",   inventory:"№206", commissioned:"2024-01-10",location:"Борлы, Шыганак, Коскудук",  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp7:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LUY",     model:"LUY180-19",       serial:"",              year:"",   inventory:"№207", commissioned:"2025-05-05",location:"Коскудук",                  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp8:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LUY",     model:"LUY180-19",       serial:"",              year:"",   inventory:"№208", commissioned:"2025-05-05",location:"Коскудук",                  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp9:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№209", commissioned:"2025-04-10",location:"Борлы, Коскудук",           avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp10: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№210", commissioned:"2025-11-08",location:"Борлы",                     avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp11: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№211", commissioned:"2025-11-08",location:"Борлы",                     avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp12: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№212", commissioned:"2025-04-10",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp13: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№213", commissioned:"2025-04-10",location:"Коскудук",                  avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp14: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№214", commissioned:"2025-11-25",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp15: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"17182508010А",  year:"",   inventory:"№215", commissioned:"2025-12-31",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
-  comp16: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"17182508002А",  year:"",   inventory:"№216", commissioned:"2025-12-31",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"Капремонт",interval:5000}], },
+  comp1:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"Sanrock", model:"SR550-17",        serial:"",              year:"",   inventory:"№201", commissioned:"",          location:"Борлы, Коскудук",           avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[], },
+  comp2:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"Sanrock", model:"SR550-17",        serial:"",              year:"",   inventory:"№202", commissioned:"2022-05-06",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp3:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"Sanrock", model:"SR550-17",        serial:"",              year:"",   inventory:"№203", commissioned:"2022-10-17",location:"Борлы",                     avg_monthly:null, total_hours:0, fuel_rate:null , toSchedule:[], },
+  comp4:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"",        model:"",                serial:"",              year:"",   inventory:"№204", commissioned:"",          location:"Борлы, Коскудук, Шыганак",  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[], },
+  comp5:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"",        model:"",                serial:"",              year:"",   inventory:"№205", commissioned:"",          location:"Борлы, Коскудук",           avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[], },
+  comp6:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY-18/17",      serial:"",              year:"",   inventory:"№206", commissioned:"2024-01-10",location:"Борлы, Шыганак, Коскудук",  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[], },
+  comp7:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LUY",     model:"LUY180-19",       serial:"",              year:"",   inventory:"№207", commissioned:"2025-05-05",location:"Коскудук",                  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[], },
+  comp8:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LUY",     model:"LUY180-19",       serial:"",              year:"",   inventory:"№208", commissioned:"2025-05-05",location:"Коскудук",                  avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[], },
+  comp9:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№209", commissioned:"2025-04-10",location:"Борлы, Коскудук",           avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp10: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№210", commissioned:"2025-11-08",location:"Борлы",                     avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp11: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№211", commissioned:"2025-11-08",location:"Борлы",                     avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp12: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№212", commissioned:"2025-04-10",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp13: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№213", commissioned:"2025-04-10",location:"Коскудук",                  avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp14: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"",              year:"",   inventory:"№214", commissioned:"2025-11-25",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp15: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"17182508010А",  year:"",   inventory:"№215", commissioned:"2025-12-31",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
+  comp16: { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"LGCY",    model:"LGCY17/18-18/15T",serial:"17182508002А",  year:"",   inventory:"№216", commissioned:"2025-12-31",location:"",                          avg_monthly:null, total_hours:null,  fuel_rate:null , toSchedule:[], },
 
   // ── СЗМ ──────────────────────────────────────────────────────────────────
-  szm1: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"КАМАЗ",        model:"СЗМ", serial:"MI00000664", year:"2006", inventory:"№301", reg_plate:"633 BG 09",  engine_vol:11760, commissioned:"2021-01-13", location:"Город",         avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  szm2: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"HOWO",         model:"СЗМ", serial:"MI99997820", year:"2017", inventory:"№302", reg_plate:"601 AQ 09",  engine_vol:9726,  commissioned:"2023-08-08", location:"Бактай",        avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  szm3: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"Mercedes-Benz",model:"СЗМ", serial:"MI99883348", year:"2014", inventory:"№303", reg_plate:"346 BJ 09",  engine_vol:6374,  commissioned:"2025-03-12", location:"Бактай",        avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  szm4: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"КРАЗ",         model:"СЗМ", serial:"MI00005465", year:"2004", inventory:"№304", reg_plate:"369 AI 09",  engine_vol:14860, commissioned:"2022-06-17", location:"Ремонт (город)",avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
+  szm1: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"КАМАЗ",        model:"СЗМ", serial:"MI00000664", year:"2006", inventory:"№301", reg_plate:"633 BG 09",  engine_vol:11760, commissioned:"2021-01-13", location:"Город",         avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  szm2: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"HOWO",         model:"СЗМ", serial:"MI99997820", year:"2017", inventory:"№302", reg_plate:"601 AQ 09",  engine_vol:9726,  commissioned:"2023-08-08", location:"Бактай",        avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  szm3: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"Mercedes-Benz",model:"СЗМ", serial:"MI99883348", year:"2014", inventory:"№303", reg_plate:"346 BJ 09",  engine_vol:6374,  commissioned:"2025-03-12", location:"Бактай",        avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  szm4: { assetClass:"MIXER", purpose:"Зарядка", manufacturer:"КРАЗ",         model:"СЗМ", serial:"MI00005465", year:"2004", inventory:"№304", reg_plate:"369 AI 09",  engine_vol:14860, commissioned:"2022-06-17", location:"Ремонт (город)",avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
 
   // ── Лёгкие автомобили ────────────────────────────────────────────────────
-  v1:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Nissan",       model:"Pick-Up",    serial:"MF06993403", year:"1999", inventory:"№501", reg_plate:"175 BR 09",  engine_vol:2500, commissioned:"2024-04-02", location:"Борлы",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v2:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"MQ99975430", year:"2014", inventory:"№502", reg_plate:"346 AQV 09", engine_vol:2982, commissioned:"2024-08-22", location:"Механики (Договор аренды)",          avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v3:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux SURF", serial:"AK99919098", year:"1993", inventory:"№503", reg_plate:"732 BH 09",  engine_vol:2440, commissioned:"2024-09-10", location:"Коскудук",                           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v4:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"LC100VX",    serial:"MW99999928", year:"2006", inventory:"№504", reg_plate:"010 ZZ 09",  engine_vol:4664, commissioned:"2024-10-09", location:"Город",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v5:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Lexus",        model:"LX 570",     serial:"MI99884935", year:"2012", inventory:"№505", reg_plate:"090 ES 09",  engine_vol:5663, commissioned:"2024-10-31", location:"Город",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v6:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"YA99801193", year:"2007", inventory:"№506", reg_plate:"104 APJ 09", engine_vol:2492, commissioned:"2024-11-16", location:"Ремонт (город), аренда, Коскудук",   avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v7:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Nissan",       model:"Pick-Up",    serial:"KF00000066", year:"2005", inventory:"№507", reg_plate:"350 AJ 09",  engine_vol:3000, commissioned:"2022-12-01", location:"Ремонт (город), Коскудук",           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v8:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"HY99801326", year:"2010", inventory:"№508", reg_plate:"746 BQ 09",  engine_vol:2500, commissioned:"2025-01-16", location:"Коскудук, Шыганак",                  avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v9:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"MJ99777832", year:"2006", inventory:"№509", reg_plate:"175 ATB 09", engine_vol:2500, commissioned:"2025-01-17", location:"Бактай (Договор аренды), Город",     avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v10: { assetClass:"HILUX", purpose:"Доставка", manufacturer:"BYD",          model:"Leopard 8",  serial:"MI99880610", year:"2025", inventory:"№510", reg_plate:"850 BQ 09",  engine_vol:1997, commissioned:"2025-11-06", location:"Город",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  v11: { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"",           year:"2013", inventory:"№511", reg_plate:"135 BT 09",  engine_vol:2500, commissioned:"2026-01-24", location:"Жолымбет",                           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
+  v1:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Nissan",       model:"Pick-Up",    serial:"MF06993403", year:"1999", inventory:"№501", reg_plate:"175 BR 09",  engine_vol:2500, commissioned:"2024-04-02", location:"Борлы",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v2:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"MQ99975430", year:"2014", inventory:"№502", reg_plate:"346 AQV 09", engine_vol:2982, commissioned:"2024-08-22", location:"Механики (Договор аренды)",          avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v3:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux SURF", serial:"AK99919098", year:"1993", inventory:"№503", reg_plate:"732 BH 09",  engine_vol:2440, commissioned:"2024-09-10", location:"Коскудук",                           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v4:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"LC100VX",    serial:"MW99999928", year:"2006", inventory:"№504", reg_plate:"010 ZZ 09",  engine_vol:4664, commissioned:"2024-10-09", location:"Город",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v5:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Lexus",        model:"LX 570",     serial:"MI99884935", year:"2012", inventory:"№505", reg_plate:"090 ES 09",  engine_vol:5663, commissioned:"2024-10-31", location:"Город",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v6:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"YA99801193", year:"2007", inventory:"№506", reg_plate:"104 APJ 09", engine_vol:2492, commissioned:"2024-11-16", location:"Ремонт (город), аренда, Коскудук",   avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v7:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Nissan",       model:"Pick-Up",    serial:"KF00000066", year:"2005", inventory:"№507", reg_plate:"350 AJ 09",  engine_vol:3000, commissioned:"2022-12-01", location:"Ремонт (город), Коскудук",           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v8:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"HY99801326", year:"2010", inventory:"№508", reg_plate:"746 BQ 09",  engine_vol:2500, commissioned:"2025-01-16", location:"Коскудук, Шыганак",                  avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v9:  { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"MJ99777832", year:"2006", inventory:"№509", reg_plate:"175 ATB 09", engine_vol:2500, commissioned:"2025-01-17", location:"Бактай (Договор аренды), Город",     avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v10: { assetClass:"HILUX", purpose:"Доставка", manufacturer:"BYD",          model:"Leopard 8",  serial:"MI99880610", year:"2025", inventory:"№510", reg_plate:"850 BQ 09",  engine_vol:1997, commissioned:"2025-11-06", location:"Город",                              avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  v11: { assetClass:"HILUX", purpose:"Доставка", manufacturer:"Toyota",       model:"Hilux",      serial:"",           year:"2013", inventory:"№511", reg_plate:"135 BT 09",  engine_vol:2500, commissioned:"2026-01-24", location:"Жолымбет",                           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
 
   // ── Грузовые / прицепы ───────────────────────────────────────────────────
-  t1:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"ПАЗ",          model:"Автобус",         serial:"MI99880429", year:"2007", inventory:"№401", reg_plate:"145 BR 09",  engine_vol:4750,  commissioned:"2025-11-21", location:"Бактай",                                                       avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t2:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"MAN",          model:"F2000",           serial:"MI00000252", year:"1995", inventory:"№402", reg_plate:"457 AZ 09",  engine_vol:11967, commissioned:"2022-07-12", location:"Перевозка ИЗО танк-контейнер (эмульсия) и аммиачной селитры", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t3:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"ГАЗ",          model:"Газель 3302",     serial:"MJ00109239", year:"2007", inventory:"№403", reg_plate:"047 AEL 09", engine_vol:2464,  commissioned:"2022-07-12", location:"Перевозка ВМ/ТМЦ (аренда)",                                   avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t4:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"FOTON",        model:"",                serial:"AL99882370", year:"2024", inventory:"№404", reg_plate:"P028402",    engine_vol:8500,  commissioned:"2024-11-01", location:"Перевозка ВМ",                                                 avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t5:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"XCMG",         model:"Тягач",           serial:"MJ99794019", year:"2023", inventory:"№405", reg_plate:"833 BQ 09",  engine_vol:10520, commissioned:"2024-11-06", location:"Перевозка ИЗО танк-контейнер (эмульсия) и аммиачной селитры", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t6:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"КАМАЗ",        model:"55102",           serial:"MI99882193", year:"1992", inventory:"№406", reg_plate:"068 BI 09",  engine_vol:10850, commissioned:"2025-06-29", location:"Склад Бактай",                                                 avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t7:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"Mercedes-Benz",model:"Actros",          serial:"MI99879963", year:"2000", inventory:"№407", reg_plate:"721 BQ 09",  engine_vol:11946, commissioned:"2025-12-23", location:"Перевозка ИЗО танк-контейнер (эмульсия) и аммиачной селитры", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t8:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"Schmitz",      model:"Прицеп",          serial:"MJ99979419", year:"2005", inventory:"№601", reg_plate:"50 ADQ 09",  engine_vol:null,  commissioned:"2023-09-11", location:"Перевозка (аренда)",                                           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t9:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"XINHONGDONG",  model:"LHD9404TDP трал", serial:"AP99876715", year:"2024", inventory:"№602", reg_plate:"Н35202",     engine_vol:null,  commissioned:"2024-12-03", location:"Перевозка",                                                    avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  t10: { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"Krone",        model:"SD прицеп",       serial:"MI99882859", year:"2007", inventory:"№603", reg_plate:"82 AFD 09",  engine_vol:null,  commissioned:"2025-04-30", location:"Перевозка",                                                    avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
+  t1:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"ПАЗ",          model:"Автобус",         serial:"MI99880429", year:"2007", inventory:"№401", reg_plate:"145 BR 09",  engine_vol:4750,  commissioned:"2025-11-21", location:"Бактай",                                                       avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t2:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"MAN",          model:"F2000",           serial:"MI00000252", year:"1995", inventory:"№402", reg_plate:"457 AZ 09",  engine_vol:11967, commissioned:"2022-07-12", location:"Перевозка ИЗО танк-контейнер (эмульсия) и аммиачной селитры", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t3:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"ГАЗ",          model:"Газель 3302",     serial:"MJ00109239", year:"2007", inventory:"№403", reg_plate:"047 AEL 09", engine_vol:2464,  commissioned:"2022-07-12", location:"Перевозка ВМ/ТМЦ (аренда)",                                   avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t4:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"FOTON",        model:"",                serial:"AL99882370", year:"2024", inventory:"№404", reg_plate:"P028402",    engine_vol:8500,  commissioned:"2024-11-01", location:"Перевозка ВМ",                                                 avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t5:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"XCMG",         model:"Тягач",           serial:"MJ99794019", year:"2023", inventory:"№405", reg_plate:"833 BQ 09",  engine_vol:10520, commissioned:"2024-11-06", location:"Перевозка ИЗО танк-контейнер (эмульсия) и аммиачной селитры", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t6:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"КАМАЗ",        model:"55102",           serial:"MI99882193", year:"1992", inventory:"№406", reg_plate:"068 BI 09",  engine_vol:10850, commissioned:"2025-06-29", location:"Склад Бактай",                                                 avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t7:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"Mercedes-Benz",model:"Actros",          serial:"MI99879963", year:"2000", inventory:"№407", reg_plate:"721 BQ 09",  engine_vol:11946, commissioned:"2025-12-23", location:"Перевозка ИЗО танк-контейнер (эмульсия) и аммиачной селитры", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t8:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"Schmitz",      model:"Прицеп",          serial:"MJ99979419", year:"2005", inventory:"№601", reg_plate:"50 ADQ 09",  engine_vol:null,  commissioned:"2023-09-11", location:"Перевозка (аренда)",                                           avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t9:  { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"XINHONGDONG",  model:"LHD9404TDP трал", serial:"AP99876715", year:"2024", inventory:"№602", reg_plate:"Н35202",     engine_vol:null,  commissioned:"2024-12-03", location:"Перевозка",                                                    avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  t10: { assetClass:"TRUCK", purpose:"Доставка", manufacturer:"Krone",        model:"SD прицеп",       serial:"MI99882859", year:"2007", inventory:"№603", reg_plate:"82 AFD 09",  engine_vol:null,  commissioned:"2025-04-30", location:"Перевозка",                                                    avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
 
   // ── Экскаваторы ──────────────────────────────────────────────────────────
-  ex1: { assetClass:"EXCAVATOR", purpose:"Вспомогательные работы", manufacturer:"LONKING", model:"CDM6336", serial:"LSW306E3VR0022008", year:"2024", inventory:"№702", reg_plate:"", engine_vol:null, commissioned:"2025-03-01", location:"Коскудук", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  ex2: { assetClass:"EXCAVATOR", purpose:"Вспомогательные работы", manufacturer:"LONKING", model:"CDM6336", serial:"LSW306E3VS0013508", year:"2025", inventory:"№703", reg_plate:"", engine_vol:null, commissioned:"2025-07-01", location:"Борлы",    avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
+  ex1: { assetClass:"EXCAVATOR", purpose:"Вспомогательные работы", manufacturer:"LONKING", model:"CDM6336", serial:"LSW306E3VR0022008", year:"2024", inventory:"№702", reg_plate:"", engine_vol:null, commissioned:"2025-03-01", location:"Коскудук", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  ex2: { assetClass:"EXCAVATOR", purpose:"Вспомогательные работы", manufacturer:"LONKING", model:"CDM6336", serial:"LSW306E3VS0013508", year:"2025", inventory:"№703", reg_plate:"", engine_vol:null, commissioned:"2025-07-01", location:"Борлы",    avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
 
   // ── Погрузчики ───────────────────────────────────────────────────────────
-  pl1: { assetClass:"LOADER", purpose:"Вспомогательные работы", manufacturer:"", model:"Погрузчик", serial:"AUD482M",  year:"2021", inventory:"№701", reg_plate:"AUD 482 M", engine_vol:null, commissioned:"",          location:"Завод",  avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
-  pl2: { assetClass:"LOADER", purpose:"Вспомогательные работы", manufacturer:"", model:"Мамонт",    serial:"",         year:"2025", inventory:"№704", reg_plate:"",          engine_vol:null, commissioned:"",          location:"Бактай", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[{name:"ТО-1",interval:500},{name:"Капремонт",interval:3000}], },
+  pl1: { assetClass:"LOADER", purpose:"Вспомогательные работы", manufacturer:"", model:"Погрузчик", serial:"AUD482M",  year:"2021", inventory:"№701", reg_plate:"AUD 482 M", engine_vol:null, commissioned:"",          location:"Завод",  avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
+  pl2: { assetClass:"LOADER", purpose:"Вспомогательные работы", manufacturer:"", model:"Мамонт",    serial:"",         year:"2025", inventory:"№704", reg_plate:"",          engine_vol:null, commissioned:"",          location:"Бактай", avg_monthly:null, total_hours:null, fuel_rate:null , toSchedule:[], },
 };
 
 const INIT_METERS = {
@@ -556,11 +556,12 @@ const KTG_DAY_STATUS = {
 };
 
 const DEFAULT_MECH_CATS = [
-  { key:"DRILL_RIG",  label:"Буровые станки",              icon:"⛏",  color:"#f43f5e" },
-  { key:"MIXER",      label:"Смесительно-зарядные машины", icon:"🧪", color:"#8b5cf6" },
-  { key:"HYDRO",      label:"Гидромолоты / Экскаваторы",  icon:"💧", color:"#3b82f6" },
-  { key:"HILUX",      label:"Лёгкие авто (Hilux)",         icon:"🚙", color:"#10b981" },
-  { key:"TRUCK",      label:"Грузовые машины",             icon:"🚛", color:"#f59e0b" },
+  { key:"DRILL_RIG",   label:"Буровые станки",              icon:"⛏",  color:"#f43f5e" },
+  { key:"COMPRESSOR",  label:"Компрессоры",                 icon:"💨", color:"#06b6d4" },
+  { key:"MIXER",       label:"Смесительно-зарядные машины", icon:"🧪", color:"#8b5cf6" },
+  { key:"HYDRO",       label:"Гидромолоты / Экскаваторы",  icon:"💧", color:"#3b82f6" },
+  { key:"HILUX",       label:"Лёгкие авто (Hilux)",         icon:"🚙", color:"#10b981" },
+  { key:"TRUCK",       label:"Грузовые машины",             icon:"🚛", color:"#f59e0b" },
 ];
 
 const CAT_ICON_OPTIONS = ["⛏","🧪","💧","🚙","🚛","🏗","⚙","🔧","🛠","🔩","🚜","🏎","🚁","⚡","🔋"];
@@ -1126,6 +1127,24 @@ function Topbar({ user, nav, page, onNav, onOut, onUpdateUser, pending, isDark, 
 }
 
 // ─── CEO DASHBOARD ────────────────────────────────────────────────────────────
+// Глобальная утилита — используется в Dashboard, ObjDetail, RigDetail
+function repDateToIso(dateStr, anchorYear) {
+  if (!dateStr) return "0000-00-00";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) {
+    const [d, m, y] = dateStr.split(".");
+    return `${y}-${m}-${d}`;
+  }
+  const parts = dateStr.split(".");
+  if (parts.length >= 2) {
+    const d = parts[0].padStart(2,"0");
+    const m = parts[1].padStart(2,"0");
+    const y = anchorYear || new Date().getFullYear().toString();
+    return `${y}-${m}-${d}`;
+  }
+  return dateStr;
+}
+
 function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) {
 
   // ── Period state ──────────────────────────────────────────────────────────
@@ -1197,42 +1216,14 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
   //   "12.06"        → legacy dd.mm  (year guessed from anchor)
   //   "12.06.2026"   → dd.mm.yyyy
   //   "2026-03-05"   → already ISO
-  function repDateToIso(dateStr) {
-    if (!dateStr) return "0000-00-00";
-    // Already ISO
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-    // dd.mm.yyyy
-    if (/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) {
-      const [d, m, y] = dateStr.split(".");
-      return `${y}-${m}-${d}`;
-    }
-    // dd.mm  (legacy — assume anchor year)
-    const parts = dateStr.split(".");
-    if (parts.length >= 2) {
-      const d = parts[0].padStart(2,"0");
-      const m = parts[1].padStart(2,"0");
-      const y = anchor.slice(0, 4);
-      return `${y}-${m}-${d}`;
-    }
-    return dateStr;
-  }
+  function repDateToIsoLocal(dateStr) { return repDateToIso(dateStr, anchor.slice(0,4)); }
 
   const filteredReps = useMemo(() => {
-    // Для текущего месяца ограничиваем факт теми же завершёнными днями что и план
-    const todayIso     = new Date().toISOString().slice(0, 10);
-    const curMonthStart = getMonthStart(todayIso);
-    const isCurrentMonth = mode === "month" && rangeStart === curMonthStart;
-    // yesterday = последний день за который есть утверждённые данные
-    const yesterday = (() => {
-      const d = new Date(); d.setDate(d.getDate() - 1);
-      return d.toISOString().slice(0, 10);
-    })();
-    const effectiveEnd = isCurrentMonth ? yesterday : rangeEnd;
-
+    const todayIso = new Date().toISOString().slice(0, 10);
     return reps.filter((r) => {
-      if (r.status === "draft") return false; // черновики не показываем
-      const iso = repDateToIso(r.date);
-      return iso >= rangeStart && iso <= effectiveEnd;
+      if (r.status === "draft") return false;
+      const iso = repDateToIsoLocal(r.date);
+      return iso >= rangeStart && iso <= rangeEnd;
     });
   }, [reps, rangeStart, rangeEnd, anchor, mode]);
 
@@ -1290,7 +1281,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
   function getChartData(oid) {
     const factMap = {};
     filteredReps.filter((r) => r.oid === oid).forEach((r) => {
-      const iso = repDateToIso(r.date);
+      const iso = repDateToIsoLocal(r.date);
       factMap[iso] = (factMap[iso] || 0) + r.df;
     });
     const planMap = {};
@@ -1365,6 +1356,21 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
     );
   }
 
+  // КТГ план по объекту из принятых KTG-планов за текущий месяц
+  function ktgPlanForObj(objId) {
+    const ym = rangeStart.slice(0,7);
+    const plan = (ktgPlans||[]).find(p => p.status==="ACCEPTED" && p.object_id===objId && p.year_month===ym);
+    if (!plan?.items) return null;
+    let totalH=0, maxH=0;
+    Object.keys(plan.items).forEach(aid => {
+      Object.values(plan.items[aid]||{}).forEach(v => {
+        totalH += Number(v)||0;
+        maxH   += DAY_CAP;
+      });
+    });
+    return maxH>0 ? Math.round(totalH/maxH*100) : null;
+  }
+
   return (
     <div>
       {/* ── Period selector ── */}
@@ -1410,17 +1416,21 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                 План {planLabel}: <b style={{ color: T.txt0 }}>{planTotals.bf.toLocaleString()}</b>
               </div>}
             </Card>
-            <Card accent={T.green} style={{ padding: "16px 18px", display: "flex", gap: 14, alignItems: "center" }} T={T}>
-              <KTGGauge v={totalKtg} plan={planAvgKtg} size={78} T={T} />
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.green, textTransform: "uppercase", marginBottom: 6 }}>КТГ</div>
-                <div style={{ fontSize: 12, color: T.txt2, marginBottom: 2 }}>
-                  ПЛАН <b style={{ color: planAvgKtg!==null?T.txt0:"#5a7499" }}>{planAvgKtg!==null?`${planAvgKtg}%`:"нет принятых планов"}</b>
+            <Card accent={T.green} style={{ padding: "16px 18px" }} T={T}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.green, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>⚙ КТГ</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 6 }}>
+                <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
+                  <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>ПЛАН</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: planAvgKtg!==null?T.txt0:"#5a7499", fontFamily: "'Inter',sans-serif" }}>
+                    {planAvgKtg!==null?`${planAvgKtg}%`:"—"}
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, color: T.txt2, marginBottom: 2 }}>
-                  ФАКТ <b style={{ color: totalKtg!==null?T.txt0:"#5a7499" }}>{totalKtg!==null?`${totalKtg}%`:"нет отчётов"}</b>
+                <div style={{ background: `${T.green}10`, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.green}30` }}>
+                  <div style={{ fontSize: 12, color: T.green, textTransform: "uppercase", marginBottom: 1, fontWeight: 700 }}>ФАКТ</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: totalKtg!==null?scoreColor(totalKtg,85,70,T):"#5a7499", fontFamily: "'Inter',sans-serif" }}>
+                    {totalKtg!==null?`${totalKtg}%`:"—"}
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, color: T.txt2 }}>РАБОТА <b style={{ color: T.txt0 }}>{totals.wh.toLocaleString()} ч</b> · ПРОСТОЙ <b style={{ color: "#ef4444" }}>{totals.dh} ч</b></div>
               </div>
             </Card>
             <Card accent={T.violet} style={{ padding: "16px 18px" }} T={T}>
@@ -1460,7 +1470,6 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                     <span style={{ color: ac, fontWeight: 700 }}>{rigs.filter(r=>r.o===obj.id).length}</span> станков · {rr.length} отчётов
                   </div>
                 </div>
-                <KTGGauge v={kv} plan={pp.kp || obj.kp} size={60} T={T} />
               </div>
               <div style={{ padding: "12px 16px 14px" }}>
                 {[[pDf, dp, df, "Бурение пог.м", T.red], [pBf, bp, bf, "Взрывы м³", T.amber]].map(([perc, plan, fact, lbl, color]) => {
@@ -1492,17 +1501,38 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                     </div>
                   );
                 })}
-                {/* Mini chart: plan vs fact by day */}
-                {chartData.length > 0 && (
-                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3, display: "flex", gap: 10 }}>
-                      <span>Бурение по дням</span>
-                      <span style={{ color: T.border }}>▪ план</span>
-                      <span style={{ color: ac }}>▪ факт</span>
+                {/* КТГ план/факт по объекту */}
+                {(()=>{
+                  const ktgPlan = ktgPlanForObj(obj.id);
+                  const ktgFact = kv;
+                  const ktgPerc = ktgFact !== null && ktgPlan !== null ? Math.round(ktgFact/ktgPlan*100) : null;
+                  const cc = ktgFact !== null ? scoreColor(ktgFact, 85, 70, T) : T.txt2;
+                  return (
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase" }}>⚙ КТГ</span>
+                        {ktgFact !== null && <span style={{ fontSize: 12, fontWeight: 700, color: cc }}>{ktgFact}%</span>}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 4 }}>
+                        <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
+                          <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>ПЛАН</div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: ktgPlan !== null ? T.txt0 : T.txt2, fontFamily: "'Inter',sans-serif" }}>
+                            {ktgPlan !== null ? `${ktgPlan}%` : "—"}
+                          </div>
+                        </div>
+                        <div style={{ background: `${T.green}10`, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.green}30` }}>
+                          <div style={{ fontSize: 12, color: T.green, textTransform: "uppercase", marginBottom: 1, fontWeight: 700 }}>ФАКТ</div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: ktgFact !== null ? cc : T.txt2, fontFamily: "'Inter',sans-serif" }}>
+                            {ktgFact !== null ? `${ktgFact}%` : "—"}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ height: 2, background: T.cardSh, borderRadius: 2 }}>
+                        <div style={{ height: "100%", width: `${Math.min(ktgFact||0,100)}%`, background: cc, borderRadius: 2 }} />
+                      </div>
                     </div>
-                    <MiniBarChart data={chartData} ac={ac} />
-                  </div>
-                )}
+                  );
+                })()}
                 <div style={{ display: "flex", gap: 6, paddingTop: 8, borderTop: `1px solid ${T.border}`, marginTop: 4 }}>
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
                     <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ ГСМ уд.</div>
@@ -1530,8 +1560,8 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
 // ─── OBJECT DETAIL ────────────────────────────────────────────────────────────
 function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   const obj = objs.find((o) => o.id === objId);
-  const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
   if (!obj) return null;
+  const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
 
   const tot = { df: 0, bf: 0, wh: 0, dh: 0, fuel: 0 };
   approved.forEach((r) => { tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel; });
@@ -2868,12 +2898,19 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
   }
   function ktgAvg(plan){
     if(!plan?.items)return null;
+    const DAY_CAP=22;
     const[y,m]=plan.year_month.split("-").map(Number);
     const dim=new Date(y,m,0).getDate();
     const days=Array.from({length:dim},(_,i)=>`${plan.year_month}-${String(i+1).padStart(2,"0")}`);
     const aids=Object.keys(plan.items);
     if(!aids.length)return null;
-    return Math.round(days.map(d=>{const r=aids.filter(aid=>((plan.items[aid]||{})[d]??-1)>0).length;return Math.round(r/aids.length*100);}).reduce((s,v)=>s+v,0)/days.length);
+    const dayKtgs=days.map(d=>{
+      const filled=aids.filter(aid=>(plan.items[aid]||{})[d]!=null);
+      if(!filled.length)return null;
+      const sumH=filled.reduce((s,aid)=>s+(Number((plan.items[aid]||{})[d])||0),0);
+      return Math.round(sumH/(filled.length*DAY_CAP)*100);
+    }).filter(v=>v!==null);
+    return dayKtgs.length?Math.round(dayKtgs.reduce((s,v)=>s+v,0)/dayKtgs.length):null;
   }
 
   // ── Overview: object cards ─────────────────────────────────────────────────
@@ -3059,11 +3096,22 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
               {/* Mini calendar view */}
               {(()=>{
                 if(!ktgSel.items)return null;
+                const DAY_CAP=22;
                 const[y,m]=ktgSel.year_month.split("-").map(Number);
                 const dim=new Date(y,m,0).getDate();
                 const days=Array.from({length:dim},(_,i)=>`${ktgSel.year_month}-${String(i+1).padStart(2,"0")}`);
                 const aids=Object.keys(ktgSel.items);
                 if(!aids.length)return null;
+                function cellCfg(h,toName){
+                  if(h==null)      return{bg:"transparent",               border:T.border,                  icon:"·"};
+                  if(h===0&&toName)return{bg:"rgba(245,158,11,0.15)",     border:"rgba(245,158,11,0.4)",     icon:"🔧"};
+                  if(h===0)        return{bg:"rgba(239,68,68,0.18)",      border:"rgba(239,68,68,0.4)",      icon:"🛠"};
+                  if(h===DAY_CAP)  return{bg:"rgba(16,185,129,0.12)",     border:"rgba(16,185,129,0.35)",    icon:"✅"};
+                  const pct=h/DAY_CAP;
+                  if(pct>=0.8)     return{bg:"rgba(16,185,129,0.08)",     border:"rgba(16,185,129,0.25)",    icon:"✅"};
+                  if(pct>=0.5)     return{bg:"rgba(245,158,11,0.12)",     border:"rgba(245,158,11,0.3)",     icon:"🔧"};
+                  return                {bg:"rgba(239,68,68,0.10)",       border:"rgba(249,115,22,0.3)",     icon:"⚠"};
+                }
                 return(
                   <div style={{overflowX:"auto",marginBottom:16}}>
                     <table style={{borderCollapse:"collapse",width:"100%",minWidth:dim*30+120}}>
@@ -3072,7 +3120,8 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
                           <th style={{padding:"6px 10px",textAlign:"left",fontSize:11,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:90,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
                           {days.map(d=>{
                             const dn=parseInt(d.slice(8),10);
-                            const ktgV=aids.length?Math.round(aids.filter(aid=>((ktgSel.items[aid]||{})[d]??-1)>0).length/aids.length*100):null;
+                            const filled=aids.filter(aid=>(ktgSel.items[aid]||{})[d]!=null);
+                            const ktgV=filled.length?Math.round(filled.reduce((s,aid)=>s+(Number((ktgSel.items[aid]||{})[d])||0),0)/(filled.length*DAY_CAP)*100):null;
                             return(<th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:9,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:26,background:T.bg3}}>
                               <div style={{fontWeight:700}}>{dn}</div>
                               {ktgV!==null&&<div style={{fontSize:8,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
@@ -3084,18 +3133,23 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
                       <tbody>
                         {aids.map((aid,ai)=>{
                           const node=nodes?.find(n=>n.id===aid);
-                          const rDays=days.filter(d=>((ktgSel.items[aid]||{})[d]??-1)>0).length;
-                          const ktg=Math.round(rDays/dim*100);
+                          const filledDays=days.filter(d=>(ktgSel.items[aid]||{})[d]!=null);
+                          const totalH=filledDays.reduce((s,d)=>s+(Number((ktgSel.items[aid]||{})[d])||0),0);
+                          const ktg=filledDays.length?Math.round(totalH/(filledDays.length*DAY_CAP)*100):0;
                           return(<tr key={aid} style={{background:ai%2?T.rowAlt:"transparent"}}>
-                            <td style={{padding:"4px 10px",fontSize:11,fontWeight:700,color:T.txt0,position:"sticky",left:0,background:ai%2?T.rowAlt:T.bg2,zIndex:1}}>{node?.name||aid}</td>
-                            {days.map(d=>{const st=(ktgSel.items[aid]||{})[d]||"NONE";const cfg=KTG_DAY_STATUS[st]||KTG_DAY_STATUS.NONE;
+                            <td style={{padding:"4px 10px",fontSize:11,fontWeight:700,color:T.txt0,position:"sticky",left:0,background:ai%2?T.rowAlt:T.bg2,zIndex:1,whiteSpace:"nowrap"}}>{node?.name||aid}</td>
+                            {days.map(d=>{
+                              const rawH=(ktgSel.items[aid]||{})[d];
+                              const h=(rawH==null)?null:Number(rawH);
+                              const toName=(ktgSel.to_info?.[aid]||{})[d]||null;
+                              const cfg=cellCfg(h,toName);
                               return(<td key={d} style={{padding:"1px",textAlign:"center"}}>
-                                <div style={{width:22,height:20,borderRadius:3,margin:"0 auto",background:cfg.bg,border:`1px solid ${st==="NONE"?T.border:cfg.color+"40"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>
-                                  {st!=="NONE"?cfg.icon:"·"}
+                                <div title={toName||(h!=null?`${h}ч`:"—")} style={{width:22,height:20,borderRadius:3,margin:"0 auto",background:cfg.bg,border:`1px solid ${cfg.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>
+                                  {h==null?"·":cfg.icon}
                                 </div>
                               </td>);
                             })}
-                            <td style={{padding:"4px 8px",textAlign:"center",fontWeight:700,fontSize:13,color:ktg>=85?T.green:ktg>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif"}}>{ktg}%</td>
+                            <td style={{padding:"4px 8px",textAlign:"center",fontWeight:700,fontSize:13,color:ktg>=85?T.green:ktg>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif"}}>{filledDays.length?`${ktg}%`:"—"}</td>
                           </tr>);
                         })}
                       </tbody>
@@ -3708,26 +3762,28 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
   );
 
   function planStats(plan){
-    if(!plan?.items) return{avg:null,byAsset:[]};
+    if(!plan?.items) return{avg:null,byAsset:[],dailyKtg:[],dim:31,days:[]};
+    const DAY_CAP=22;
     const[y,m]=plan.year_month.split("-").map(Number);
     const dim=new Date(y,m,0).getDate();
     const days=Array.from({length:dim},(_,i)=>`${plan.year_month}-${String(i+1).padStart(2,"0")}`);
     const assetIds=Object.keys(plan.items);
     const byAsset=assetIds.map(aid=>{
       const node=nodes.find(n=>n.id===aid);
-      const readyDays=days.filter(d=>((plan.items[aid]||{})[d]??-1)>0).length;
-      const maintDays=days.filter(d=>(plan.items[aid]||{})[d]==="MAINTENANCE").length;
-      const repairDays=days.filter(d=>(plan.items[aid]||{})[d]==="REPAIR").length;
-      const spareDays=days.filter(d=>(plan.items[aid]||{})[d]==="SPARE_WAIT").length;
-      const ktg=Math.round(readyDays/dim*100);
-      return{id:aid,name:node?.name||aid,ktg,readyDays,maintDays,repairDays,spareDays,dim};
+      const filledDays=days.filter(d=>(plan.items[aid]||{})[d]!=null);
+      const totalH=filledDays.reduce((s,d)=>s+(Number((plan.items[aid]||{})[d])||0),0);
+      const ktg=filledDays.length?Math.round(totalH/(filledDays.length*DAY_CAP)*100):0;
+      const maintDays=filledDays.filter(d=>Number((plan.items[aid]||{})[d])===0&&!!((plan.to_info?.[aid]||{})[d])).length;
+      const downtimeDays=filledDays.filter(d=>Number((plan.items[aid]||{})[d])===0&&!((plan.to_info?.[aid]||{})[d])).length;
+      const readyDays=filledDays.filter(d=>Number((plan.items[aid]||{})[d])>0).length;
+      return{id:aid,name:node?.name||aid,ktg,readyDays,maintDays,downtimeDays,dim:filledDays.length};
     });
     const avg=byAsset.length?Math.round(byAsset.reduce((s,a)=>s+a.ktg,0)/byAsset.length):null;
-    // daily ktg across all assets
     const dailyKtg=days.map(d=>{
-      if(!assetIds.length)return{date:d,ktg:null};
-      const ready=assetIds.filter(aid=>((plan.items[aid]||{})[d]??-1)>0).length;
-      return{date:d,ktg:Math.round(ready/assetIds.length*100)};
+      const filled=assetIds.filter(aid=>(plan.items[aid]||{})[d]!=null);
+      if(!filled.length)return{date:d,ktg:null};
+      const sumH=filled.reduce((s,aid)=>s+(Number((plan.items[aid]||{})[d])||0),0);
+      return{date:d,ktg:Math.round(sumH/(filled.length*DAY_CAP)*100)};
     });
     return{avg,byAsset,dailyKtg,dim,days};
   }
@@ -3802,10 +3858,9 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
             {/* Summary stats */}
             <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
               {[
-                [T.green,"✅ Готов",stats.byAsset.reduce((s,a)=>s+a.readyDays,0),"ст/дн"],
-                [T.amber,"ТО",stats.byAsset.reduce((s,a)=>s+a.maintDays,0),"ст/дн"],
-                ["#ef4444","Ремонт",stats.byAsset.reduce((s,a)=>s+a.repairDays,0),"ст/дн"],
-                [T.violet,"Запчасти",stats.byAsset.reduce((s,a)=>s+a.spareDays,0),"ст/дн"],
+                [T.green,"✅ Готов",  stats.byAsset.reduce((s,a)=>s+a.readyDays,0),   "ст/дн"],
+                [T.amber,"🔧 ТО",    stats.byAsset.reduce((s,a)=>s+a.maintDays,0),   "ст/дн"],
+                ["#ef4444","🛠 Простой",stats.byAsset.reduce((s,a)=>s+a.downtimeDays,0),"ст/дн"],
               ].map(([c,lbl,val,u])=>(
                 <div key={lbl} style={{textAlign:"center",padding:"8px 12px",background:`${c}12`,borderRadius:6,border:`1px solid ${c}30`,minWidth:70}}>
                   <div style={{fontSize:11,color:c,fontWeight:700,marginBottom:2}}>{lbl}</div>
@@ -3884,12 +3939,11 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
                     {/* Day breakdown */}
                     <div style={{display:"flex",gap:6,flexShrink:0}}>
                       {[
-                        {c:T.green, icon:"✅", v:a.readyDays},
-                        {c:T.amber, icon:"🔧", v:a.maintDays},
-                        {c:"#ef4444",icon:"🛠",v:a.repairDays},
-                        {c:T.violet,icon:"📦",v:a.spareDays},
+                        {c:T.green,   icon:"✅", lbl:"Раб",     v:a.readyDays},
+                        {c:T.amber,   icon:"🔧", lbl:"ТО",      v:a.maintDays},
+                        {c:"#ef4444", icon:"🛠", lbl:"Простой", v:a.downtimeDays},
                       ].filter(x=>x.v>0).map(x=>(
-                        <span key={x.icon} style={{fontSize:11,color:x.c,fontWeight:700,
+                        <span key={x.lbl} title={x.lbl} style={{fontSize:11,color:x.c,fontWeight:700,
                           padding:"2px 6px",background:`${x.c}12`,borderRadius:3,border:`1px solid ${x.c}30`}}>
                           {x.icon} {x.v}д
                         </span>
@@ -4654,6 +4708,7 @@ function ClassManagerModal({ assetClasses, setAssetClasses, onClose, T }) {
 // ── EAM 1.2: Asset Classification Badge ──────────────────────────────────────
 const ASSET_CLASS_CFG_DEFAULT = {
   DRILL_RIG:  { label:"Буровой станок",    icon:"⛏",  color:"#f43f5e" },
+  COMPRESSOR: { label:"Компрессор",         icon:"💨", color:"#06b6d4" },
   MIXER:      { label:"СЗМ",               icon:"🧪", color:"#8b5cf6" },
   HYDRO:      { label:"Гидромолот",        icon:"💧", color:"#3b82f6" },
   EXCAVATOR:  { label:"Экскаватор",        icon:"🦾", color:"#06b6d4" },
@@ -7486,7 +7541,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
 
 
 // ─── MECHANIC KTG CALENDAR PAGE ───────────────────────────────────────────────
-function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPlans, user, T }) {
+function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, setKtgPlans, user, T }) {
   const cats  = mechCats || DEFAULT_MECH_CATS;
   const today = new Date().toISOString().slice(0,10);
   const [selObjId,  setSelObjId]  = useState(objs[0]?.id || null);
@@ -7514,36 +7569,184 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
     const v = plan?.items?.[assetId]?.[date];
     return (v === undefined || v === null) ? null : Number(v);
   }
+
+  // ── Пересчёт ТО для одного актива поверх текущих items ───────────────────
+  function recalcTO(assetId, items, toInfo, colorInfo, pinnedDays) {
+    const pinned = pinnedDays || new Set();
+    const pp    = passports?.[assetId] || {};
+    const sched = (pp.toSchedule && pp.toSchedule.length > 0)
+      ? pp.toSchedule
+      : [{name:"ТО-250", interval:250, duration_hrs:2, color:"#f59e0b"}];
+
+    if (!items[assetId]) {
+      items[assetId] = {};
+      days.forEach(d => { items[assetId][d] = DAY_CAPACITY; });
+    }
+
+    // Сбрасываем старые ТО-ячейки обратно в 22 (кроме pinnedDays)
+    const oldTo = toInfo[assetId] || {};
+    Object.keys(oldTo).forEach(d => {
+      if (!pinned.has(d)) {
+        items[assetId][d] = DAY_CAPACITY;
+      }
+    });
+
+    const newTo  = {};
+    const newClr = {};
+
+    sched.forEach(item => {
+      const dur       = item.duration_hrs || 2;
+      const workHrsTO = Math.max(0, DAY_CAPACITY - dur);
+
+      let hoursToNext = item.interval - ((parseFloat(meters?.[assetId]?.current ?? pp.total_hours) || 0) % item.interval);
+      if (hoursToNext === 0) hoursToNext = item.interval;
+
+      for (let i = 0; i < daysInMonth; i++) {
+        const ds = days[i];
+
+        // Уже помечен ТО в этом проходе — пропускаем
+        if (newTo[ds]) continue;
+
+        // Зафиксированный пользователем день — накапливаем часы, не трогаем ТО
+        if (pinned.has(ds)) {
+          hoursToNext -= Number(items[assetId][ds] ?? DAY_CAPACITY);
+          continue;
+        }
+
+        const h = Number(items[assetId][ds] ?? DAY_CAPACITY);
+
+        if (hoursToNext <= h) {
+          // ТО наступает в этот день
+          items[assetId][ds] = workHrsTO;
+          newTo[ds]  = item.name;
+          newClr[ds] = item.color || "#f59e0b";
+          hoursToNext = item.interval; // сброс до следующего ТО
+        } else {
+          hoursToNext -= h;
+        }
+      }
+    });
+
+    toInfo[assetId]    = newTo;
+    // Полностью пересоздаём colorInfo для этого актива
+    colorInfo[assetId] = newClr;
+  }
+
+  // ── Инициализировать план с 22ч + авто-ТО ────────────────────────────────
+  function initPlan() {
+    if (isLocked || objAssets.length === 0) return;
+    const newItems     = {};
+    const newToInfo    = {};
+    const newColorInfo = {};
+    // 1. Все ячейки = 22
+    objAssets.forEach(a => {
+      newItems[a.id] = {};
+      days.forEach(d => { newItems[a.id][d] = DAY_CAPACITY; });
+    });
+    // 2. Расставить ТО
+    objAssets.forEach(a => recalcTO(a.id, newItems, newToInfo, newColorInfo));
+
+    setKtgPlans(prev => {
+      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
+      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
+        status:"DRAFT", created_by:user.name, engineer_comment:"",
+        submitted_at:null, decided_at:null };
+      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
+        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
+      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
+    });
+    showToast("План инициализирован: 22ч/день + авто-ТО");
+  }
+
+  // ── Применить кисть к ячейке + пересчитать ТО для этого актива ───────────
   function setHours(assetId, date, h) {
     if (isLocked) return;
     const val = Math.max(0, Math.min(DAY_CAPACITY, Math.round(Number(h))));
     setKtgPlans(prev => {
       const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      if (existing) {
-        return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
-          ? {...p, items:{...p.items,[assetId]:{...(p.items[assetId]||{}),[date]:val}}}
-          : p);
+      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
+      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
+      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
+
+      if (!newItems[assetId]) {
+        newItems[assetId] = {};
+        days.forEach(d => { newItems[assetId][d] = DAY_CAPACITY; });
       }
-      return [...prev,{
-        id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
+      // Ставим значение кисти
+      newItems[assetId][date] = val;
+      // Пересчитываем ТО; этот день зафиксирован — ТО его не перезапишет
+      recalcTO(assetId, newItems, newToInfo, newColorInfo, new Set([date]));
+
+      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
         status:"DRAFT", created_by:user.name, engineer_comment:"",
-        submitted_at:null, decided_at:null,
-        items:{[assetId]:{[date]:val}}, to_info:{},
-      }];
+        submitted_at:null, decided_at:null };
+      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
+        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
+      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
     });
   }
 
-  function fillRow(assetId) { if(!isLocked) days.forEach(d=>setHours(assetId,d,paintHours)); }
-  function fillCol(date)    { if(!isLocked) objAssets.forEach(a=>setHours(a.id,date,paintHours)); }
+  function fillRow(assetId) {
+    if (isLocked) return;
+    setKtgPlans(prev => {
+      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
+      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
+      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
+      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
+      if (!newItems[assetId]) newItems[assetId] = {};
+      days.forEach(d => { newItems[assetId][d] = paintHours; });
+      // Сброс ТО-меток строки
+      newToInfo[assetId]    = {};
+      if (newColorInfo[assetId]) {
+        days.forEach(d => delete newColorInfo[assetId][d]);
+      }
+      // Пересчёт ТО
+      recalcTO(assetId, newItems, newToInfo, newColorInfo);
+      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
+        status:"DRAFT", created_by:user.name, engineer_comment:"",
+        submitted_at:null, decided_at:null };
+      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
+        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
+      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
+    });
+  }
+
+  function fillCol(date) {
+    if (isLocked) return;
+    setKtgPlans(prev => {
+      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
+      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
+      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
+      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
+      objAssets.forEach(a => {
+        if (!newItems[a.id]) {
+          newItems[a.id] = {};
+          days.forEach(d => { newItems[a.id][d] = DAY_CAPACITY; });
+        }
+        newItems[a.id][date] = paintHours;
+        if (newToInfo[a.id])    delete newToInfo[a.id][date];
+        if (newColorInfo[a.id]) delete newColorInfo[a.id][date];
+        recalcTO(a.id, newItems, newToInfo, newColorInfo);
+      });
+      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
+        status:"DRAFT", created_by:user.name, engineer_comment:"",
+        submitted_at:null, decided_at:null };
+      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
+        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
+      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
+    });
+  }
 
   function cellCfg(h, toName) {
-    if (h === null)         return { bg:"transparent",           color:"#5a7499", label:"Не задан",    icon:null,  textColor:"#5a7499" };
-    if (h === 0)            return { bg:"rgba(239,68,68,0.18)",  color:"#ef4444", label:"Простой 0ч",  icon:"🛠",  textColor:"#f87171" };
-    if (h === DAY_CAPACITY) return { bg:"rgba(16,185,129,0.15)", color:"#10b981", label:`${h}ч / Готов`,icon:null, textColor:"#10b981" };
+    if (h === null)         return { bg:"transparent",            color:"#5a7499", label:"Не задан",       icon:null,  textColor:"#5a7499" };
+    if (h === 0 && toName)  return { bg:"rgba(245,158,11,0.18)",  color:"#f59e0b", label:`${toName}`,       icon:"🔧",  textColor:"#fbbf24" };
+    if (h === 0)            return { bg:"rgba(239,68,68,0.18)",   color:"#ef4444", label:"Простой 0ч",     icon:"🛠",  textColor:"#f87171" };
+    if (toName)             return { bg:"rgba(245,158,11,0.15)",  color:"#f59e0b", label:`${toName}: ${h}ч`,icon:"🔧", textColor:"#fbbf24" };
+    if (h === DAY_CAPACITY) return { bg:"rgba(99,120,160,0.12)",  color:"#6378a0", label:`${h}ч`,          icon:null,  textColor:"#8899bb" };
     const pct = h / DAY_CAPACITY;
-    if (pct >= 0.8) return { bg:"rgba(16,185,129,0.10)", color:"#10b981", label:toName||`${h}ч`, icon:"🔧", textColor:"#34d399" };
-    if (pct >= 0.5) return { bg:"rgba(245,158,11,0.15)", color:"#f59e0b", label:toName||`${h}ч`, icon:"🔧", textColor:"#fbbf24" };
-    return               { bg:"rgba(239,68,68,0.12)",    color:"#f97316", label:toName||`${h}ч`, icon:"🔧", textColor:"#fb923c" };
+    if (pct >= 0.8) return { bg:"rgba(99,120,160,0.10)",  color:"#6378a0", label:`${h}ч`, icon:null, textColor:"#8899bb" };
+    if (pct >= 0.5) return { bg:"rgba(245,158,11,0.15)",  color:"#f59e0b", label:`${h}ч`, icon:"🔧", textColor:"#fbbf24" };
+    return               { bg:"rgba(239,68,68,0.12)",    color:"#f97316", label:`${h}ч`, icon:"🔧", textColor:"#fb923c" };
   }
 
   function ktgForDay(date) {
@@ -7564,104 +7767,48 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
     return vals.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : null;
   })();
 
-  function autoScheduleMaintenance() {
-    if (isLocked) return;
-    const newItems  = plan ? JSON.parse(JSON.stringify(plan.items||{})) : {};
-    const newToInfo = plan ? JSON.parse(JSON.stringify(plan.to_info||{})) : {};
-    let   toCount   = 0;
-
-    objAssets.forEach(asset => {
-      const pp    = passports?.[asset.id] || {};
-      const sched = (pp.toSchedule && pp.toSchedule.length>0) ? pp.toSchedule : null;
-      if (!sched) return;
-
-      const avgMonthly = parseFloat(pp.avg_monthly) || 250;
-      const totalHours = parseFloat(pp.total_hours)  || 0;
-      const dailyRate  = avgMonthly / daysInMonth;
-
-      if (!newItems[asset.id])  newItems[asset.id]  = {};
-      if (!newToInfo[asset.id]) newToInfo[asset.id] = {};
-
-      sched.forEach(item => {
-        const dur         = item.duration_hrs || 2;
-        const blockDays   = dur > DAY_CAPACITY ? Math.ceil(dur / DAY_CAPACITY) : 1;
-        const lastDayWork = dur > DAY_CAPACITY ? 0 : Math.max(0, DAY_CAPACITY - dur);
-
-        const remainder    = totalHours % item.interval;
-        const hoursToFirst = remainder===0 ? item.interval : (item.interval - remainder);
-        const daysToFirst  = Math.max(1, Math.ceil(hoursToFirst / dailyRate));
-        const intervalDays = Math.ceil(item.interval / dailyRate);
-
-        let offset = daysToFirst;
-        while (offset <= daysInMonth) {
-          for (let d=0; d<blockDays; d++) {
-            const dn = offset + d;
-            if (dn < 1 || dn > daysInMonth) continue;
-            const ds  = `${yearMonth}-${String(dn).padStart(2,"0")}`;
-            const hrs = (d < blockDays-1) ? 0 : lastDayWork;
-            if (newItems[asset.id][ds]===undefined || newToInfo[asset.id][ds]) {
-              newItems[asset.id][ds]  = hrs;
-              newToInfo[asset.id][ds] = item.name;
-              toCount++;
-            }
-          }
-          offset += intervalDays;
-        }
-      });
-    });
-
-    setKtgPlans(prev => {
-      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?{...p,items:newItems,to_info:newToInfo}:p);
-      return [...prev,{id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:newItems,to_info:newToInfo}];
-    });
-    showToast(`Авто-ТО: ${toCount} ячеек по расписанию`);
-  }
-
   // ── Кисть: настраиваемые пресеты ─────────────────────────────────────────
-  // Инициализируем из toSchedule объекта, можно редактировать
   const toTypes = [...new Map(
     objAssets.flatMap(a=>(passports?.[a.id]?.toSchedule||[]).map(s=>[s.name,s]))
   ).values()];
-  const defaultPresets = [
-    { id:"p_full", label:"Полный день",   hours:22, color:"#10b981", icon:"✅", locked:true  },
+  const defaultPresets = useMemo(()=>[
+    { id:"p_full", label:"Полный день", hours:22, color:"#6378a0", icon:"🔵", locked:true  },
     ...toTypes.map((s,i)=>{
       const dur=s.duration_hrs||2;
-      const work=dur>DAY_CAPACITY?0:DAY_CAPACITY-dur;
+      const work=Math.max(0, DAY_CAPACITY-dur);
       return { id:`p_to_${i}`, label:s.name, hours:work, color:"#f59e0b", icon:"🔧", locked:false };
     }),
-    { id:"p_stop", label:"Простой",       hours:0,  color:"#ef4444", icon:"🛠", locked:true  },
-  ];
-  const [brushPresets, setBrushPresets] = useState(defaultPresets);
-  const [showBrushEdit, setShowBrushEdit] = useState(false);
-  const [editPresets, setEditPresets]   = useState(defaultPresets);
-
-  function openBrushEdit() {
-    setEditPresets(brushPresets.map(p=>({...p})));
-    setShowBrushEdit(true);
-  }
-  function saveBrushEdit() {
-    setBrushPresets(editPresets.filter(p=>p.label.trim()&&p.hours>=0&&p.hours<=22));
-    setShowBrushEdit(false);
-  }
+    { id:"p_stop", label:"Простой",    hours:0,  color:"#ef4444", icon:"🛠", locked:true  },
+  ], [selObjId]);
+  const [brushPresets,   setBrushPresets]   = useState(defaultPresets);
+  const [showBrushEdit,  setShowBrushEdit]  = useState(false);
+  const [editPresets,    setEditPresets]    = useState(defaultPresets);
+  function openBrushEdit()  { setEditPresets(brushPresets.map(p=>({...p}))); setShowBrushEdit(true); }
+  function saveBrushEdit()  { setBrushPresets(editPresets.filter(p=>p.label.trim()&&p.hours>=0&&p.hours<=22)); setShowBrushEdit(false); }
   function updateEP(id,k,v) { setEditPresets(prev=>prev.map(p=>p.id===id?{...p,[k]:v}:p)); }
-  function removeEP(id)     { setEditPresets(prev=>prev.filter(p=>p.id!==id)); }
+  function removeEP(id)     { setEditPresets(prev=>prev.filter(p=>p.id!==id||p.locked)); }
   function addEP()          { setEditPresets(prev=>[...prev,{id:"p_"+genId(),label:"",hours:22,color:"#10b981",icon:"🔧",locked:false}]); }
 
-  // Fill all cells at once
+  // Заполнить всё выбранным значением + пересчёт ТО
   function fillAll() {
     if (isLocked) return;
     setKtgPlans(prev => {
-      const newItems = plan ? JSON.parse(JSON.stringify(plan.items||{})) : {};
-      objAssets.forEach(a => {
-        if (!newItems[a.id]) newItems[a.id]={};
-        days.forEach(d => { newItems[a.id][d] = Math.max(0,Math.min(DAY_CAPACITY,Math.round(paintHours))); });
-      });
       const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?{...p,items:newItems}:p);
-      return [...prev,{id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:newItems,to_info:{}}];
+      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
+      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
+      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
+      objAssets.forEach(a => {
+        newItems[a.id]  = {};
+        newToInfo[a.id] = {};
+        if (newColorInfo[a.id]) days.forEach(d=>delete newColorInfo[a.id][d]);
+        days.forEach(d => { newItems[a.id][d] = paintHours; });
+        recalcTO(a.id, newItems, newToInfo, newColorInfo);
+      });
+      const base = {id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null};
+      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?{...p,items:newItems,to_info:newToInfo,color_info:newColorInfo}:p);
+      return [...prev,{...base,items:newItems,to_info:newToInfo,color_info:newColorInfo}];
     });
-    showToast(`Все ячейки заполнены: ${paintHours}ч`);
+    showToast(`Заполнено ${paintHours}ч + ТО пересчитано`);
   }
 
   const [confirmModal, setConfirmModal] = useState(false);
@@ -7679,6 +7826,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
     setKtgPlans(prev=>prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?{...p,status:"SUBMITTED",submitted_at:new Date().toISOString()}:p));
     setConfirmModal(false);
     showToast("КТГ-план отправлен инженеру!");
+
   }
 
   const MON_RU=["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
@@ -7778,37 +7926,31 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
           <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.cyan}`,borderRadius:8,width:"100%",maxWidth:500,padding:24,maxHeight:"80vh",overflowY:"auto"}}>
             <div style={{fontSize:15,fontWeight:700,color:T.txt0,marginBottom:4}}>🎨 Настройка кисти</div>
             <div style={{fontSize:12,color:T.txt2,marginBottom:18}}>Задайте пресеты — метки и количество рабочих часов (0–22)</div>
-
-            <div style={{display:"grid",gridTemplateColumns:"1fr 60px 36px 32px",gap:8,marginBottom:6}}>
-              {["Название","Часы","Иконка",""].map(h=>(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 60px 36px 36px 32px",gap:8,marginBottom:6}}>
+              {["Название","Часы","Иконка","Цвет",""].map(h=>(
                 <div key={h} style={{fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>{h}</div>
               ))}
             </div>
-
             {editPresets.map(p=>{
-              const iStyle={width:"100%",padding:"7px 10px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",boxSizing:"border-box"};
+              const iS={width:"100%",padding:"7px 10px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",boxSizing:"border-box"};
               return(
-                <div key={p.id} style={{display:"grid",gridTemplateColumns:"1fr 60px 36px 32px",gap:8,marginBottom:8,alignItems:"center"}}>
-                  <input value={p.label} onChange={e=>updateEP(p.id,"label",e.target.value)}
-                    placeholder="Название пресета" style={iStyle} disabled={p.locked}/>
-                  <input type="number" min="0" max="22" value={p.hours}
-                    onChange={e=>updateEP(p.id,"hours",Math.max(0,Math.min(22,Number(e.target.value))))}
-                    style={{...iStyle,textAlign:"center"}}/>
-                  <select value={p.icon} onChange={e=>updateEP(p.id,"icon",e.target.value)}
-                    style={{...iStyle,padding:"7px 4px",textAlign:"center"}}>
-                    {["✅","🔧","🛠","📦","⚙","🔩","⏸","🚫","🟢","🟡","🔴"].map(ic=><option key={ic} value={ic}>{ic}</option>)}
+                <div key={p.id} style={{display:"grid",gridTemplateColumns:"1fr 60px 36px 36px 32px",gap:8,marginBottom:8,alignItems:"center"}}>
+                  <input value={p.label} onChange={e=>updateEP(p.id,"label",e.target.value)} placeholder="Название" style={iS} disabled={p.locked}/>
+                  <input type="number" min="0" max="22" value={p.hours} onChange={e=>updateEP(p.id,"hours",Math.max(0,Math.min(22,Number(e.target.value))))} style={{...iS,textAlign:"center"}}/>
+                  <select value={p.icon} onChange={e=>updateEP(p.id,"icon",e.target.value)} style={{...iS,padding:"7px 4px",textAlign:"center"}}>
+                    {["🔵","✅","🔧","🛠","📦","⚙","🔩","⏸","🚫","🟢","🟡","🔴"].map(ic=><option key={ic} value={ic}>{ic}</option>)}
                   </select>
+                  <div style={{position:"relative",width:36,height:34}}>
+                    <input type="color" value={p.color||"#6378a0"} onChange={e=>updateEP(p.id,"color",e.target.value)} disabled={p.locked}
+                      style={{position:"absolute",inset:0,width:"100%",height:"100%",padding:2,border:`1px solid ${T.border}`,borderRadius:4,cursor:p.locked?"default":"pointer",background:T.inputBg,opacity:p.locked?0.4:1}}/>
+                  </div>
                   {p.locked
                     ? <div style={{width:32}}/>
-                    : <button onClick={()=>removeEP(p.id)}
-                        style={{width:32,height:34,background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,color:"#f87171",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-                  }
+                    : <button onClick={()=>removeEP(p.id)} style={{width:32,height:34,background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,color:"#f87171",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
                 </div>
               );
             })}
-
             <Btn variant="ghost" onClick={addEP} T={T} style={{fontSize:12,marginBottom:16}}>+ Добавить пресет</Btn>
-
             <div style={{display:"flex",gap:10}}>
               <Btn variant="primary" onClick={saveBrushEdit} T={T} style={{flex:1}}>✓ Сохранить</Btn>
               <Btn variant="ghost" onClick={()=>setShowBrushEdit(false)} T={T}>Отмена</Btn>
@@ -7819,44 +7961,24 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
 
       {!isLocked&&(
         <div style={{marginBottom:14,padding:"14px 16px",background:T.bg2,borderRadius:6,border:`1px solid ${T.border}`}}>
-          {/* Header row */}
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
             <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>⚡ Кисть</div>
             <div style={{fontSize:11,color:T.txt2}}>— нажмите ячейку или заголовок строки/столбца</div>
-            <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-              <button onClick={openBrushEdit}
-                style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,
-                  background:"transparent",border:`1px solid ${T.cyan}`,color:T.cyan,
-                  fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>
-                🎨 Настроить
-              </button>
-              <button onClick={autoScheduleMaintenance}
-                style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,
-                  background:"rgba(245,158,11,0.12)",border:`1px solid rgba(245,158,11,0.5)`,color:T.amber,
-                  fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>
-                🔧 Авто-ТО
-              </button>
-              <button onClick={fillAll}
-                style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,
-                  background:"rgba(16,185,129,0.12)",border:`1px solid rgba(16,185,129,0.4)`,color:T.green,
-                  fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>
-                ▦ Заполнить всё
-              </button>
+            <div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap"}}>
+              <button onClick={openBrushEdit} style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"transparent",border:`1px solid ${T.cyan}`,color:T.cyan,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>🎨 Настроить</button>
+              <button onClick={fillAll} style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"rgba(99,120,160,0.12)",border:`1px solid rgba(99,120,160,0.4)`,color:"#8899bb",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>▦ Заполнить всё</button>
+              <button onClick={initPlan} style={{padding:"5px 14px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"rgba(16,185,129,0.12)",border:`1px solid rgba(16,185,129,0.5)`,color:T.green,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:5}}>🗓 Инициализировать</button>
             </div>
           </div>
-          {/* Preset buttons + custom input */}
           <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             {brushPresets.map(p=>{
               const active=paintHours===p.hours;
               return(
                 <button key={p.id} onClick={()=>setPaintHours(p.hours)}
                   style={{padding:"6px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,
-                    background:active?`${p.color}25`:"transparent",
-                    border:`2px solid ${active?p.color:T.border}`,
-                    color:active?p.color:T.txt1,
-                    fontFamily:"'Inter',sans-serif",transition:"all 0.1s",display:"flex",alignItems:"center",gap:5}}>
-                  <span>{p.icon}</span>
-                  <span>{p.label}</span>
+                    background:active?`${p.color}25`:"transparent",border:`2px solid ${active?p.color:T.border}`,
+                    color:active?p.color:T.txt1,fontFamily:"'Inter',sans-serif",transition:"all 0.1s",display:"flex",alignItems:"center",gap:5}}>
+                  <span>{p.icon}</span><span>{p.label}</span>
                   <span style={{fontSize:10,opacity:.7,fontWeight:400}}>{p.hours}ч</span>
                 </button>
               );
@@ -7865,8 +7987,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
               <span style={{fontSize:11,color:T.txt2}}>Custom:</span>
               <input type="number" min="0" max="22" value={paintHours}
                 onChange={e=>setPaintHours(Math.max(0,Math.min(22,Number(e.target.value))))}
-                style={{width:44,padding:"3px 6px",background:T.inputBg,border:`1px solid ${T.border}`,
-                  borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",textAlign:"center"}}/>
+                style={{width:44,padding:"3px 6px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",textAlign:"center"}}/>
               <span style={{fontSize:11,color:T.txt2}}>ч</span>
             </div>
           </div>
@@ -7929,8 +8050,10 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
                       </td>
                       {days.map(d=>{
                         const h      = getHours(asset.id,d);
-                        const toName = plan?.to_info?.[asset.id]?.[d]||null;
-                        const cfg    = cellCfg(h, toName);
+                        const toName   = plan?.to_info?.[asset.id]?.[d]||null;
+                        const cellClr  = plan?.color_info?.[asset.id]?.[d]||null;
+                        const baseCfg  = cellCfg(h, toName);
+                        const cfg      = cellClr ? {...baseCfg, bg:`${cellClr}22`, color:cellClr, textColor:cellClr} : baseCfg;
                         return(
                           <td key={d} style={{padding:"2px 1px",textAlign:"center"}}>
                             <div onClick={()=>!isLocked&&setHours(asset.id,d,paintHours)}
@@ -7938,19 +8061,17 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, ktgPlans, setKtgPla
                               style={{width:30,height:28,borderRadius:4,margin:"0 auto",background:cfg.bg,border:`1px solid ${cfg.color}60`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:isLocked?"default":"pointer",transition:"background 0.08s",gap:0}}>
                               {h===null?(
                                 <span style={{fontSize:8,color:"#5a7499"}}>·</span>
-                              ):h===DAY_CAPACITY?(
-                                <span style={{fontSize:10,fontWeight:700,color:cfg.textColor}}>✓</span>
                               ):(
                                 <>
                                   {cfg.icon&&<span style={{fontSize:8,lineHeight:1}}>{cfg.icon}</span>}
-                                  <span style={{fontSize:9,fontWeight:700,color:cfg.textColor,lineHeight:1}}>{h}</span>
+                                  <span style={{fontSize:9,fontWeight:700,color:cfg.textColor,lineHeight:1}}>{toName||h}</span>
                                 </>
                               )}
                             </div>
                           </td>
                         );
                       })}
-                      <td style={{padding:"5px 6px",textAlign:"center",fontWeight:700,fontSize:13,color:assetK===null?"#5a7499":assetK>=85?T.green:assetK>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif"}}>{assetK!==null?`${assetK}%`:"—"}</td>
+                      <td style={{padding:"5px 6px",textAlign:"center",fontWeight:700,fontSize:13,color:assetK===null?"#5a7499":assetK>=85?"#8899bb":assetK>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif"}}>{assetK!==null?`${assetK}%`:"—"}</td>
                       <td style={{padding:"5px 4px",textAlign:"center",fontSize:11,color:T.txt2,fontFamily:"'Inter',sans-serif"}}>{avgH!==null?avgH:"—"}</td>
                     </tr>
                   );
@@ -9683,7 +9804,7 @@ export default function App() {
   } else if (subPage === "finance") {
     content = <FinancePage T={T} />;
   } else if (subPage === "ktgplan" && user.role === "mechanic") {
-    content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} T={T} />;
+    content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} meters={meters} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} T={T} />;
   } else if (subPage === "assets" && user.role === "mechanic") {
     content = <MechanicAssetsPage nodes={nodes} setNodes={setNodes} objs={objs} reps={reps} assetClasses={assetClasses} mechCats={mechCats} setMechCats={setMechCats} passports={passports} setPassports={setPassports} maintRecords={maintRecords} setMaintRecords={setMaintRecords} user={user} T={T} />;
   } else if (user.role === "mechanic") {
