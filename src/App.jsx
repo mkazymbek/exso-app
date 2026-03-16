@@ -2101,8 +2101,8 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
     setSiteId(String(rep.oid));
     setDate(rep.date);
     setShiftType(rep.sh);
-    setBf(rep.bf ? String(rep.bf) : "");
-    setFuelKg(rep.fuel_kg ? String(rep.fuel_kg) : "");
+    setBf(rep.bf != null ? String(rep.bf) : "");
+    setFuelKg(rep.fuel_kg != null ? String(rep.fuel_kg) : "");
     setComment(rep.comment || "");
     const loadedEntries = (rep.rigEntries || []).length > 0
       ? rep.rigEntries
@@ -2327,14 +2327,18 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
             </span>
           </div>
           <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
-            <div style={{ flex:"1 1 140px" }}>
+            <div style={{ flex:"1 1 180px" }}>
               <label style={{ display:"block", fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>Взрыв м³</label>
-              <input type="text" inputMode="numeric" value={bf} onChange={e => setBf(e.target.value)} placeholder="0"
+              <input type="text" inputMode="numeric" value={bf} onChange={e => setBf(e.target.value)}
+                onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) setBf(v); }}
+                placeholder="0"
                 style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.amber}80`, borderRadius:4, fontSize:14, fontWeight:700, color:T.amber, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
             </div>
-            <div style={{ flex:"1 1 140px" }}>
+            <div style={{ flex:"1 1 180px" }}>
               <label style={{ display:"block", fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>ВВ кг</label>
-              <input type="text" inputMode="numeric" value={fuelKg} onChange={e => setFuelKg(e.target.value)} placeholder="0"
+              <input type="text" inputMode="numeric" value={fuelKg} onChange={e => setFuelKg(e.target.value)}
+                onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) setFuelKg(v); }}
+                placeholder="0"
                 style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.cyan}80`, borderRadius:4, fontSize:14, fontWeight:700, color:T.cyan, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
             </div>
             {(toNum(bf) > 0 || toNum(fuelKg) > 0) && (
