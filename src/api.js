@@ -159,7 +159,7 @@ export async function submitReport(repObj, userId) {
       over_drill:         repObj.rigs?.reduce((s, r) => s + (r.overDrill || 0), 0) || 0,
       status:             'submitted',
       comment:            repObj.comment || null,
-      submitted_by:       userId,
+      submitted_by:       null,
       submitted_at:       new Date().toISOString(),
     })
     .select()
@@ -214,7 +214,7 @@ export async function approveReport(reportId, updates, userId) {
     .update({
       ...updates,
       status:      'approved',
-      approved_by: userId,
+      approved_by: null,
       approved_at: new Date().toISOString(),
     })
     .eq('id', reportId)
