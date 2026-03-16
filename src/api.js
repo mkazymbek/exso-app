@@ -209,7 +209,14 @@ export async function submitReport(repObj, userId) {
     if (dtError) throw dtError;
   }
 
-  return mapReportFromDB(report);
+  // 5. Перечитываем с полным join чтобы вернуть актуальные данные
+  const { data: full, error: fetchError } = await supabase
+    .from('shift_reports')
+    .select('*, rig_entries(*), downtime_events(*)')
+    .eq('id', report.id)
+    .single();
+  if (fetchError) throw fetchError;
+  return mapReportFromDB(full);
 }
 
 export async function deleteReport(reportId) {
