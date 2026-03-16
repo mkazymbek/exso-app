@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import supabase, { getObjects, getRigs, getReports, getPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, login as supabaseLogin } from "./api.js";
+import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK = {
@@ -2979,11 +2979,13 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
   function monthLabel(ym){const[y,m]=ym.split("-");return`${MON_RU[parseInt(m,10)-1]} ${y}`;}
   function acceptKtg(plan){
     setKtgPlans(prev=>prev.map(p=>p.id===plan.id?{...p,status:"ACCEPTED",decided_at:new Date().toISOString()}:p));
+    updateKtgPlanStatus(plan.object_id, plan.year_month, "ACCEPTED", {decided_at:new Date().toISOString()}).catch(e=>console.warn("KTG accept error:",e.message));
     setKtgSel(null);
   }
   function returnKtg(plan){
     if(!ktgComment.trim()){setKtgComErr("Укажите причину возврата");return;}
     setKtgPlans(prev=>prev.map(p=>p.id===plan.id?{...p,status:"RETURNED",engineer_comment:ktgComment.trim(),decided_at:new Date().toISOString()}:p));
+    updateKtgPlanStatus(plan.object_id, plan.year_month, "RETURNED", {decided_at:new Date().toISOString()}).catch(e=>console.warn("KTG return error:",e.message));
     setKtgSel(null);setKtgComment("");setKtgComErr("");
   }
   function ktgAvg(plan){
@@ -4089,12 +4091,15 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
     return getPlan(objId,field)?.dates?.reduce((s,d)=>s+d.val,0) || 0;
   }
   function upsertPlan(objId, field, newDates, monthTotal) {
+    const patch = monthTotal !== undefined ? { dates: newDates, monthTotal } : { dates: newDates };
     setPlans(prev => {
       const ex = prev.find(p=>p.oid===objId&&p.field===field&&p.mode==="month"&&p.periodKey===yearMonth);
-      const patch = monthTotal !== undefined ? { dates: newDates, monthTotal } : { dates: newDates };
       if (ex) return prev.map(p=>p.oid===objId&&p.field===field&&p.mode==="month"&&p.periodKey===yearMonth?{...p,...patch}:p);
       return [...prev, {id:genId(),oid:objId,field,mode:"month",periodKey:yearMonth,dates:newDates,...patch}];
     });
+    // Сохраняем в БД
+    savePlanToDB({ oid:objId, field, mode:"month", periodKey:yearMonth, dates:newDates, ...patch })
+      .catch(e => console.warn("Plan save error:", e.message));
   }
   // Spread total evenly across all days, store monthTotal for accurate pro-rata
   function setMonthTotal(objId, field, totalStr) {
@@ -7904,7 +7909,10 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
   const [confirmModal, setConfirmModal] = useState(false);
 
   function saveDraft() {
-    if (!plan) setKtgPlans(prev=>[...prev,{id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:{},to_info:{}}]);
+    const base = {id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:{},to_info:{}};
+    if (!plan) setKtgPlans(prev=>[...prev, base]);
+    const savePlan = plan || base;
+    saveKtgPlanToDB(savePlan).catch(e=>console.warn("KTG draft save error:", e.message));
     showToast("Черновик сохранён");
   }
   function openSubmitConfirm() {
@@ -7914,9 +7922,14 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
   }
   function confirmSubmit() {
     setKtgPlans(prev=>prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?{...p,status:"SUBMITTED",submitted_at:new Date().toISOString()}:p));
+    // Сохраняем в БД
+    const curPlan = (window.__ktgPlansRef||[]).find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
+    if (curPlan) {
+      saveKtgPlanToDB({...curPlan, status:"SUBMITTED"})
+        .catch(e=>console.warn("KTG save error:", e.message));
+    }
     setConfirmModal(false);
     showToast("КТГ-план отправлен инженеру!");
-
   }
 
   const MON_RU=["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
@@ -8426,6 +8439,7 @@ function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
 
   function accept(plan){
     setKtgPlans(prev=>prev.map(p=>p.id===plan.id?{...p,status:"ACCEPTED",decided_at:new Date().toISOString()}:p));
+    updateKtgPlanStatus(plan.object_id, plan.year_month, "ACCEPTED", {decided_at:new Date().toISOString()}).catch(e=>console.warn("KTG accept error:",e.message));
     setSelPlan(null);
   }
   function returnPlan(plan){
@@ -9766,16 +9780,18 @@ export default function App() {
   useEffect(() => {
     async function loadFromDB() {
       try {
-        const [dbObjs, dbRigs, dbReps, dbPlans] = await Promise.all([
+        const [dbObjs, dbRigs, dbReps, dbPlans, dbKtg] = await Promise.all([
           getObjects(),
           getRigs(),
           getReports(),
           getPlans(),
+          getKtgPlans(),
         ]);
         if (dbObjs?.length)  setObjs(dbObjs);
         if (dbRigs?.length)  setRigs(dbRigs);
         if (dbReps?.length)  setReps(dbReps);
         if (dbPlans?.length) setPlans(dbPlans);
+        if (dbKtg?.length)   setKtgPlans(dbKtg);
       } catch (e) {
         console.warn("Supabase недоступен, работаем локально:", e.message);
       } finally {
