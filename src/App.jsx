@@ -7226,6 +7226,23 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
   const [passportEdit,  setPassportEdit]  = useState(false);
   const [ppForm,        setPpForm]        = useState({});
 
+  const [moveModal,     setMoveModal]    = useState(null); // { nodeId, nodeName, currentOid }
+
+  function openMoveAsset(a, e) {
+    if (e) e.stopPropagation();
+    setMoveModal({ nodeId: a.id, nodeName: a.name, currentOid: a.assigned_object_id ?? null });
+  }
+  function doMoveAsset(newOid) {
+    setNodes(prev => prev.map(n => n.id === moveModal.nodeId
+      ? { ...n, assigned_object_id: newOid }
+      : n
+    ));
+    if (detailNode?.id === moveModal.nodeId) {
+      setDetailNode(prev => prev ? { ...prev, assigned_object_id: newOid } : prev);
+    }
+    setMoveModal(null);
+  }
+
   const assets = nodes.filter(n => n.type === "ASSET").map(n => ({
     ...n,
     category: passports[n.id]?.assetClass || "DRILL_RIG",
@@ -7288,6 +7305,50 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
   function deleteCat(key) { setMechCats(prev => prev.filter(c => c.key !== key)); }
 
   const activeCat = cats.find(c => c.key === selCat);
+
+  // ── MOVE MODAL ────────────────────────────────────────────────────────────────
+  const MoveModal = moveModal ? (
+    <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.cyan}`,borderRadius:8,width:"100%",maxWidth:400}}>
+        <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>📦 Переместить актив</div>
+            <div style={{fontSize:12,color:T.cyan,marginTop:2}}>{moveModal.nodeName}</div>
+          </div>
+          <button onClick={()=>setMoveModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
+        </div>
+        <div style={{padding:16,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:11,color:T.txt2,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Выберите объект назначения</div>
+          <div onClick={()=>doMoveAsset(null)}
+            style={{padding:"10px 14px",borderRadius:6,cursor:"pointer",border:`1.5px solid ${moveModal.currentOid===null?T.amber:T.border}`,
+              background:moveModal.currentOid===null?`${T.amber}12`:"transparent",
+              display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.12s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=T.amber}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=moveModal.currentOid===null?T.amber:T.border}>
+            <span style={{fontSize:13,color:moveModal.currentOid===null?T.amber:T.txt2,fontStyle:"italic"}}>— Не назначен (на склад)</span>
+            {moveModal.currentOid===null && <span style={{fontSize:11,color:T.amber,fontWeight:700}}>текущий</span>}
+          </div>
+          {objs.map(obj=>{
+            const isCurrent = Number(moveModal.currentOid) === obj.id;
+            return (
+              <div key={obj.id} onClick={()=>!isCurrent && doMoveAsset(obj.id)}
+                style={{padding:"10px 14px",borderRadius:6,
+                  cursor:isCurrent?"default":"pointer",
+                  border:`1.5px solid ${isCurrent?T.cyan:T.border}`,
+                  background:isCurrent?`${T.cyan}12`:"transparent",
+                  display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.12s",
+                  opacity:isCurrent?1:0.9}}
+                onMouseEnter={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.cyan;}}
+                onMouseLeave={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.border;}}>
+                <span style={{fontSize:13,fontWeight:isCurrent?700:400,color:isCurrent?T.cyan:T.txt0}}>📍 {obj.name}</span>
+                {isCurrent && <span style={{fontSize:11,color:T.cyan,fontWeight:700}}>текущий</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   // ── ASSET DETAIL VIEW ──────────────────────────────────────────────────────
   if (detailNode) {
@@ -7396,12 +7457,15 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           </div>
         )}
 
+        {MoveModal}
+
         {/* Breadcrumb */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>
           <button onClick={()=>setDetailNode(null)} style={{padding:"6px 14px",borderRadius:5,border:`1px solid ${T.border}`,background:T.bg2,color:T.txt2,cursor:"pointer",fontSize:12,fontFamily:"'Inter',sans-serif",fontWeight:600}}>← Все активы</button>
           <span style={{color:T.txt2}}>›</span>
           <div style={{padding:"5px 14px",borderRadius:5,background:`${cat.color}15`,border:`1px solid ${cat.color}40`,fontSize:13,fontWeight:700,color:cat.color,fontFamily:"'Inter',sans-serif"}}>{cat.icon} {a.name}</div>
           <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+            <button onClick={()=>openMoveAsset(a)} style={{padding:"6px 14px",borderRadius:5,border:`1.5px solid ${T.cyan}`,background:`${T.cyan}10`,color:T.cyan,cursor:"pointer",fontSize:12,fontFamily:"'Inter',sans-serif",fontWeight:700}}>📦 Переместить</button>
             <button onClick={openPassportEdit} style={{padding:"6px 14px",borderRadius:5,border:`1px solid ${T.border}`,background:T.bg2,color:T.txt1,cursor:"pointer",fontSize:12,fontFamily:"'Inter',sans-serif",fontWeight:600}}>✏ Редактировать</button>
             <button onClick={()=>setDeleteConfId(a.id)} style={{padding:"6px 12px",borderRadius:5,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#f87171",cursor:"pointer",fontSize:12}}>🗑</button>
           </div>
@@ -7688,7 +7752,9 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           <Btn variant="primary" onClick={openAddAsset} T={T} style={{marginTop:14,fontSize:12}}>+ Добавить актив</Btn>
         </Card>
       ) : (
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
+        <>
+          {MoveModal}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
           {catAssets.map(a=>{
             const cat    = cats.find(c=>c.key===a.category)||{icon:"📦",color:T.txt2,label:"Другое"};
             const obj    = objs.find(o=>o.id===Number(a.assigned_object_id));
@@ -7714,6 +7780,8 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
                       </div>
                     </div>
                     <div style={{display:"flex",gap:2}} onClick={e=>e.stopPropagation()}>
+                      <button onClick={e=>openMoveAsset(a,e)} title="Переместить на другой объект"
+                        style={{background:`${T.cyan}12`,border:`1px solid ${T.cyan}40`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.cyan,padding:"3px 7px",fontWeight:700}}>↔</button>
                       <button onClick={()=>openEditAsset(a)} style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.txt2,padding:"3px 7px"}}>✏</button>
                       <button onClick={()=>setDeleteConfId(a.id)} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:11,color:"#f87171",padding:"3px 7px"}}>🗑</button>
                     </div>
@@ -7751,7 +7819,8 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
               </div>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
