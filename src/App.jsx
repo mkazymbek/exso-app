@@ -58,12 +58,16 @@ const INIT_RIGS = [
   { id: 19, n: "JK-106",          o: 5 },
 ];
 const INIT_USERS = [
-  { id: 1, name: "Жукенов Е.С.",   login: "ceo",      pw: "ceo123",   role: "ceo",      oids: "all", ini: "ЖЕ" },
-  { id: 2, name: "Иванов Н.С.",    login: "engineer", pw: "eng123",   role: "engineer", oids: "all", ini: "ИН" },
-  { id: 5, name: "Жанабеков К.А.", login: "zhanab",   pw: "foreman3", role: "foreman",  oids: [4],   ini: "ЖК" },  // Жолымбет — пилот
-  { id: 3, name: "Сейткали Е.Б.",  login: "seitkali", pw: "foreman1", role: "foreman",  oids: [1],   ini: "СЕ" },
-  { id: 4, name: "Момбеков Т.Р.",  login: "mombekov", pw: "foreman2", role: "foreman",  oids: [2],   ini: "МТ" },
-  { id: 6, name: "Асанов Б.М.",     login: "mechanic", pw: "mech123",  role: "mechanic", oids: "all", ini: "АБ" },
+  { id: 1,  name: "Жукенов Е.С.",   login: "ceo",      pw: "ceo123",   role: "ceo",      oids: "all", ini: "ЖЕ" },
+  { id: 2,  name: "Иванов Н.С.",    login: "engineer", pw: "eng123",   role: "engineer", oids: "all", ini: "ИН" },
+  { id: 5,  name: "Жанабеков К.А.", login: "zhanab",   pw: "foreman3", role: "foreman",  oids: [4],   ini: "ЖК" },  // Жолымбет
+  { id: 3,  name: "Сейткали Е.Б.",  login: "seitkali", pw: "foreman1", role: "foreman",  oids: [1],   ini: "СЕ" },  // Борлы
+  { id: 4,  name: "Момбеков Т.Р.",  login: "mombekov", pw: "foreman2", role: "foreman",  oids: [2],   ini: "МТ" },  // Коскудук
+  { id: 7,  name: "Нач. участка",   login: "foreman4", pw: "foreman4", role: "foreman",  oids: [3],   ini: "НУ" },  // Бактай
+  { id: 8,  name: "Нач. участка",   login: "foreman5", pw: "foreman5", role: "foreman",  oids: [5],   ini: "НУ" },  // Шыганак
+  { id: 9,  name: "Нач. участка",   login: "foreman6", pw: "foreman6", role: "foreman",  oids: [6],   ini: "НУ" },  // Сарыопан
+  { id: 10, name: "Нач. участка",   login: "foreman7", pw: "foreman7", role: "foreman",  oids: [7],   ini: "НУ" },  // Улькенсай
+  { id: 6,  name: "Асанов Б.М.",    login: "mechanic", pw: "mech123",  role: "mechanic", oids: "all", ini: "АБ" },
 ];
 
 function makeRep(id, oid, date, sh, by, rows, status = "approved") {
@@ -594,7 +598,7 @@ function StatusBadge({ status }) {
       display: "inline-flex", alignItems: "center", gap: 5,
       padding: "3px 10px", borderRadius: 5,
       background: cfg.bg, border: `1px solid ${cfg.border}`,
-      color: cfg.color, fontSize: 11, fontWeight: 600,
+      color: cfg.color, fontSize:12, fontWeight: 600,
       letterSpacing: 0,
     }}>
       <span style={{ width: 4, height: 4, borderRadius: "50%", background: cfg.color, display: "inline-block" }} />
@@ -914,29 +918,29 @@ function DowntimeLogger({ downtimeLog, setDowntimeLog, siteRigs, rigs, T }) {
   const siteLog = downtimeLog.filter(d=>siteRigs.some(r=>r.id===d.rig_id));
   return (
     <div style={{ padding:"12px 18px", borderBottom:`1px solid ${T.border}`, background:`${T.blue}06` }}>
-      <div style={{ fontSize:11, fontWeight:700, color:T.blue, textTransform:"uppercase", letterSpacing:".1em", marginBottom:8 }}>⏱ Классификация простоев</div>
+      <div style={{ fontSize:12, fontWeight:700, color:T.blue, textTransform:"uppercase", letterSpacing:".1em", marginBottom:8 }}>⏱ Классификация простоев</div>
       <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"flex-end" }}>
         <div style={{ flex:"1 1 120px" }}>
-          <label style={{ display:"block", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Станок</label>
+          <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Станок</label>
           <select value={form.rig_id} onChange={e=>setForm(p=>({...p,rig_id:e.target.value}))} style={{ width:"100%", padding:"6px 8px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:12 }}>
             {siteRigs.map(r=><option key={r.id} value={r.id}>{r.n}</option>)}
           </select>
         </div>
         <div style={{ flex:"1 1 150px" }}>
-          <label style={{ display:"block", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Категория</label>
+          <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Категория</label>
           <select value={form.cat} onChange={e=>setForm(p=>({...p,cat:e.target.value,sub:""}))} style={{ width:"100%", padding:"6px 8px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:DOWNTIME_CATS[form.cat]?.color||T.txt0, fontSize:12, fontWeight:700 }}>
             {Object.entries(DOWNTIME_CATS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
           </select>
         </div>
         <div style={{ flex:"1 1 170px" }}>
-          <label style={{ display:"block", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Подкатегория</label>
+          <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Подкатегория</label>
           <select value={form.sub} onChange={e=>setForm(p=>({...p,sub:e.target.value}))} style={{ width:"100%", padding:"6px 8px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:12 }}>
             <option value="">— выберите —</option>
             {subs.map(s=><option key={s}>{s}</option>)}
           </select>
         </div>
         <div style={{ flex:"0 0 80px" }}>
-          <label style={{ display:"block", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Часов</label>
+          <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:3 }}>Часов</label>
           <input type="number" value={form.hours} onChange={e=>setForm(p=>({...p,hours:e.target.value}))} placeholder="2.5" style={{ width:"100%", padding:"6px 8px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:12, fontFamily:"'JetBrains Mono',monospace" }} />
         </div>
         <button onClick={add} style={{ padding:"7px 12px", borderRadius:5, background:T.blue, color:"#fff", border:"none", fontSize:12, fontWeight:700, cursor:"pointer", alignSelf:"flex-end" }}>+</button>
@@ -944,7 +948,7 @@ function DowntimeLogger({ downtimeLog, setDowntimeLog, siteRigs, rigs, T }) {
       {siteLog.length>0&&(
         <div style={{ marginTop:8, display:"flex", flexDirection:"column", gap:3 }}>
           {siteLog.slice(0,4).map(d=>(
-            <div key={d.id} style={{ display:"flex", gap:8, fontSize:11, alignItems:"center" }}>
+            <div key={d.id} style={{ display:"flex", gap:8, fontSize:12, alignItems:"center" }}>
               <span style={{ color:DOWNTIME_CATS[d.cat]?.color||T.txt2, fontWeight:700, minWidth:20 }}>●</span>
               <span style={{ color:T.txt1 }}>{DOWNTIME_CATS[d.cat]?.label}</span>
               {d.sub&&<span style={{ color:T.txt2 }}>— {d.sub}</span>}
@@ -1434,14 +1438,14 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
             <Card accent={T.red} style={{ padding: "16px 18px" }} T={T}>
               <div style={{ fontSize: 12, fontWeight: 700, color: T.red, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>⛏ Бурение</div>
               <ProgressBar fact={totals.df} plan={planTotals.df || objs.reduce((s,o)=>s+o.dp,0)} T={T} />
-              {planTotals.df > 0 && <div style={{ fontSize: 11, color: T.txt2, marginTop: 6 }}>
+              {planTotals.df > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 6 }}>
                 План {planLabel}: <b style={{ color: T.txt0 }}>{planTotals.df.toLocaleString()}</b>
               </div>}
             </Card>
             <Card accent={T.amber} style={{ padding: "16px 18px" }} T={T}>
               <div style={{ fontSize: 12, fontWeight: 700, color: T.amber, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>💥 Взрывы</div>
               <ProgressBar fact={totals.bf} plan={planTotals.bf || objs.reduce((s,o)=>s+o.bp,0)} T={T} />
-              {planTotals.bf > 0 && <div style={{ fontSize: 11, color: T.txt2, marginTop: 6 }}>
+              {planTotals.bf > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 6 }}>
                 План {planLabel}: <b style={{ color: T.txt0 }}>{planTotals.bf.toLocaleString()}</b>
               </div>}
             </Card>
@@ -1510,7 +1514,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                         <div>
                           <span style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase" }}>{lbl}</span>
                           {todayPlanFraction < 1 && plan > 0 && (
-                            <span style={{ fontSize: 10, color: T.txt2, marginLeft: 5 }}>план {planLabel}</span>
+                            <span style={{ fontSize:12, color: T.txt2, marginLeft: 5 }}>план {planLabel}</span>
                           )}
                         </div>
                         {perc !== null && <span style={{ fontSize: 12, fontWeight: 700, color: cc }}>{perc}%</span>}
@@ -1565,23 +1569,23 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                 })()}
                 <div style={{ display: "flex", gap: 6, paddingTop: 8, borderTop: `1px solid ${T.border}`, marginTop: 4 }}>
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ ГСМ уд.</div>
+                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ ГСМ уд.</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: fuelPer ? T.violet : T.txt2, fontFamily: "'Inter',sans-serif" }}>
                       {fuelPer || "—"}
-                      {fuelPer && <span style={{ fontSize: 10, color: T.txt2, fontWeight: 400 }}> л/м³</span>}
+                      {fuelPer && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> л/м³</span>}
                     </div>
-                    {fuel > 0 && <div style={{ fontSize: 10, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} л всего</div>}
+                    {fuel > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} л всего</div>}
                   </div>
                   {overDrill > 0 && (
                     <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                      <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>📏 Перебур</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif" }}>{overDrill.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 400 }}>м</span></div>
+                      <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>📏 Перебур</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif" }}>{overDrill.toLocaleString()} <span style={{ fontSize:12, fontWeight: 400 }}>м</span></div>
                     </div>
                   )}
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⏸ Простои</div>
+                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⏸ Простои</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: dh > 0 ? "#ef4444" : T.txt2, fontFamily: "'Inter',sans-serif" }}>{dh} ч</div>
-                    {wh > 0 && dh > 0 && <div style={{ fontSize: 10, color: "#ef4444", marginTop: 1 }}>{Math.round(dh/(wh+dh)*100)}% от раб.</div>}
+                    {wh > 0 && dh > 0 && <div style={{ fontSize:12, color: "#ef4444", marginTop: 1 }}>{Math.round(dh/(wh+dh)*100)}% от раб.</div>}
                   </div>
                 </div>
               </div>
@@ -1926,7 +1930,7 @@ function SR_DowntimeEditor({ rigName, downtimes, shiftDurationHours, workingHour
         <div style={{ padding:"14px 18px", borderBottom:`1px solid ${T.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", background:T.bg3 }}>
           <div>
             <div style={{ fontSize:14, fontWeight:700, color:T.txt0, fontFamily:"'Inter',sans-serif" }}>⏸ Простои — {rigName}</div>
-            <div style={{ fontSize:11, color:T.txt2, marginTop:2 }}>
+            <div style={{ fontSize:12, color:T.txt2, marginTop:2 }}>
               Смена {shiftDurationHours}ч · Работа {toNum(workingHours)}ч · Простои {usedHours.toFixed(1)}ч
               {overLimit
                 ? <span style={{ color:"#ef4444", fontWeight:700 }}> · ⚠ Превышение!</span>
@@ -1951,7 +1955,7 @@ function SR_DowntimeEditor({ rigName, downtimes, shiftDurationHours, workingHour
               </>);
             })()}
           </div>
-          <div style={{ display:"flex", gap:14, fontSize:11, color:T.txt2 }}>
+          <div style={{ display:"flex", gap:14, fontSize:12, color:T.txt2 }}>
             <span><span style={{ color:T.blue }}>■</span> Работа {toNum(workingHours)}ч</span>
             <span><span style={{ color:"#ef4444" }}>■</span> Простои {usedHours.toFixed(1)}ч</span>
             <span style={{ marginLeft:"auto", color: overLimit ? "#ef4444" : T.txt2, fontWeight: overLimit ? 700 : 400 }}>
@@ -1969,7 +1973,7 @@ function SR_DowntimeEditor({ rigName, downtimes, shiftDurationHours, workingHour
                   <div key={item.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px", background:T.bg3, borderRadius:5, border:`1px solid ${T.border}`, borderLeft:`3px solid ${cc?.color||T.border}` }}>
                     <div style={{ flex:1 }}>
                       <div style={{ fontSize:12, fontWeight:700, color:T.txt0 }}>{rLabel}</div>
-                      <div style={{ fontSize:11, color:T.txt2 }}>{cc?.label}{item.comment ? ` · ${item.comment}` : ""}</div>
+                      <div style={{ fontSize:12, color:T.txt2 }}>{cc?.label}{item.comment ? ` · ${item.comment}` : ""}</div>
                     </div>
                     <div style={{ fontSize:14, fontWeight:700, color:cc?.color||T.txt0, fontFamily:"'JetBrains Mono',monospace", minWidth:38, textAlign:"right" }}>{item.durationHours}ч</div>
                     <button onClick={() => removeItem(item.id)} style={{ background:"none", border:"none", color:T.txt2, fontSize:16, cursor:"pointer", padding:"0 2px", lineHeight:1 }}>×</button>
@@ -1988,7 +1992,7 @@ function SR_DowntimeEditor({ rigName, downtimes, shiftDurationHours, workingHour
                   <button key={k} onClick={() => setDraft(p => ({ ...p, category:k, reason:"" }))}
                     style={{ padding:"7px 8px", borderRadius:5, border:`1.5px solid ${draft.category===k ? v.color : T.border}`,
                       background: draft.category===k ? `${v.color}18` : "transparent",
-                      color: draft.category===k ? v.color : T.txt2, fontSize:11, fontWeight:700, cursor:"pointer", textAlign:"center" }}>
+                      color: draft.category===k ? v.color : T.txt2, fontSize:12, fontWeight:700, cursor:"pointer", textAlign:"center" }}>
                     {v.label}
                   </button>
                 ))}
@@ -1999,7 +2003,7 @@ function SR_DowntimeEditor({ rigName, downtimes, shiftDurationHours, workingHour
                   <button key={r.key} onClick={() => setDraft(p => ({ ...p, reason:r.key, customReason:"" }))}
                     style={{ padding:"5px 10px", borderRadius:4, border:`1px solid ${draft.reason===r.key ? catCfg.color : T.border}`,
                       background: draft.reason===r.key ? `${catCfg.color}18` : T.bg3,
-                      color: draft.reason===r.key ? catCfg.color : T.txt1, fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                      color: draft.reason===r.key ? catCfg.color : T.txt1, fontSize:12, fontWeight:600, cursor:"pointer" }}>
                     {r.label}
                   </button>
                 ))}
@@ -2007,7 +2011,7 @@ function SR_DowntimeEditor({ rigName, downtimes, shiftDurationHours, workingHour
                 <button onClick={() => setDraft(p => ({ ...p, reason:"custom", customReason:"" }))}
                   style={{ padding:"5px 10px", borderRadius:4, border:`1px solid ${draft.reason==="custom" ? catCfg.color : T.border}`,
                     background: draft.reason==="custom" ? `${catCfg.color}18` : T.bg3,
-                    color: draft.reason==="custom" ? catCfg.color : T.txt2, fontSize:11, fontWeight:600, cursor:"pointer", fontStyle:"italic" }}>
+                    color: draft.reason==="custom" ? catCfg.color : T.txt2, fontSize:12, fontWeight:600, cursor:"pointer", fontStyle:"italic" }}>
                   ✏ Другое
                 </button>
               </div>
@@ -2235,7 +2239,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
     <div>
       {/* Заголовок */}
       <div style={{ marginBottom:20 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".18em", marginBottom:4 }}>▌ СМЕННЫЕ ОТЧЁТЫ</div>
+        <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".18em", marginBottom:4 }}>▌ СМЕННЫЕ ОТЧЁТЫ</div>
         <div style={{ fontSize:22, fontWeight:700, color:T.txt0, fontFamily:"'Inter',sans-serif" }}>
           {myObjs.find(o=>o.id===Number(siteId))?.name || "—"}
         </div>
@@ -2269,7 +2273,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
           <FieldInput label="Дата" type="date" value={date} onChange={e => setDate(e.target.value)} T={T} style={{ flex:"1 1 140px" }} />
           {/* Красивый переключатель смены */}
           <div style={{ flex:"1 1 200px" }}>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>Смена</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>Смена</div>
             <div style={{ display:"flex", gap:0, borderRadius:6, overflow:"hidden", border:`1px solid ${T.border}`, height:38 }}>
               {[
                 { val:"day",   icon:"☀", label:"Дневная", activeColor:"#f59e0b", activeBg:"rgba(245,158,11,0.15)" },
@@ -2320,7 +2324,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
           );
         })()}
         <div style={{ padding:"12px 18px", borderBottom:`1px solid ${T.border}`, background:`${T.amber}08` }}>
-          <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".04em", marginBottom:8 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".04em", marginBottom:8 }}>
             💥 Взрывные работы — данные по участку в целом
             <span style={{ marginLeft:10, fontWeight:400, color:T.txt2, textTransform:"none", letterSpacing:"normal" }}>
               · ВВ кг будет автоматически списано со склада Анфо
@@ -2328,14 +2332,14 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
           </div>
           <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
             <div style={{ flex:"1 1 180px" }}>
-              <label style={{ display:"block", fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>Взрыв м³</label>
+              <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>Взрыв м³</label>
               <input type="text" inputMode="numeric" value={bf} onChange={e => setBf(e.target.value)}
                 onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) setBf(v); }}
                 placeholder="0"
                 style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.amber}80`, borderRadius:4, fontSize:14, fontWeight:700, color:T.amber, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
             </div>
             <div style={{ flex:"1 1 180px" }}>
-              <label style={{ display:"block", fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>ВВ кг</label>
+              <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>ВВ кг</label>
               <input type="text" inputMode="numeric" value={fuelKg} onChange={e => setFuelKg(e.target.value)}
                 onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) setFuelKg(v); }}
                 placeholder="0"
@@ -2353,8 +2357,8 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
 
         {/* Таблица станков 2.0 */}
         <div style={{ padding:"8px 18px 0", background:`${T.red}06`, borderBottom:`1px solid ${T.border}` }}>
-          <span style={{ fontSize:11, fontWeight:700, color:T.red, textTransform:"uppercase", letterSpacing:".04em" }}>⛏ Буровые станки</span>
-          <span style={{ fontSize:11, color:T.txt2, marginLeft:10 }}>Кликните на простои чтобы открыть редактор</span>
+          <span style={{ fontSize:12, fontWeight:700, color:T.red, textTransform:"uppercase", letterSpacing:".04em" }}>⛏ Буровые станки</span>
+          <span style={{ fontSize:12, color:T.txt2, marginLeft:10 }}>Кликните на простои чтобы открыть редактор</span>
         </div>
         <div style={{ overflowX:"auto" }}>
           <table style={{ width:"100%", borderCollapse:"collapse", minWidth:720 }}>
@@ -2483,7 +2487,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
 
         {/* Комментарий */}
         <div style={{ padding:"12px 18px", borderTop:`1px solid ${T.border}` }}>
-          <label style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", display:"block", marginBottom:5 }}>Комментарий к смене</label>
+          <label style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", display:"block", marginBottom:5 }}>Комментарий к смене</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2} placeholder="Особые условия, замечания..."
             style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt1, fontSize:12, resize:"vertical", fontFamily:"'Inter',sans-serif", outline:"none" }} />
         </div>
@@ -2533,13 +2537,13 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
             {/* Шапка */}
             <div style={{ padding:"16px 22px", borderBottom:`1px solid ${T.border}`, background:`${T.amber}10`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
-                <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".1em", marginBottom:3 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".1em", marginBottom:3 }}>
                   📋 ПРОВЕРЬТЕ ДАННЫЕ ПЕРЕД ОТПРАВКОЙ
                 </div>
                 <div style={{ fontSize:16, fontWeight:700, color:T.txt0 }}>
                   {myObjs.find(o=>o.id===Number(siteId))?.name} · {date} · {shiftType==="day"?"☀ Дневная":"☾ Ночная"} смена
                 </div>
-                {editRepId && <div style={{ fontSize:11, color: editingStatus==="approved" ? T.blue : T.amber, marginTop:2 }}>
+                {editRepId && <div style={{ fontSize:12, color: editingStatus==="approved" ? T.blue : T.amber, marginTop:2 }}>
                   {editingStatus==="approved" ? "⚠ Исправление утверждённого отчёта — после сохранения вернётся на проверку инженеру" : "✏ Редактирование отчёта"}
                 </div>}
               </div>
@@ -2558,22 +2562,22 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                   [T.cyan,    "💣 ВВ",         totals.fuelKg,  "кг"],
                 ].filter(([,,v])=>v>0).map(([c,lbl,val,unit])=>(
                   <div key={lbl} style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${c}`, borderRadius:6, padding:"10px 12px", textAlign:"center" }}>
-                    <div style={{ fontSize:9, color:c, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>{lbl}</div>
+                    <div style={{ fontSize:12, color:c, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>{lbl}</div>
                     <div style={{ fontSize:22, fontWeight:700, color:c, fontFamily:"'Inter',sans-serif" }}>{val.toLocaleString()}</div>
-                    <div style={{ fontSize:10, color:T.txt2 }}>{unit}</div>
+                    <div style={{ fontSize:12, color:T.txt2 }}>{unit}</div>
                   </div>
                 ))}
               </div>
 
               {/* Таблица по станкам */}
               <div>
-                <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:8 }}>По станкам</div>
+                <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:8 }}>По станкам</div>
                 <div style={{ border:`1px solid ${T.border}`, borderRadius:6, overflow:"hidden", overflowX:"auto" }}>
                   <table style={{ width:"100%", borderCollapse:"collapse", minWidth:480 }}>
                     <thead>
                       <tr style={{ background:T.rowHdr }}>
                         {["Станок","Работа ч","Бурение п.м","Перебур м","ГСМ л","Простои"].map(h=>(
-                          <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
+                          <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -2593,10 +2597,10 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                                 ? <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
                                     {dtItems.map((d,di)=>{
                                       const cc = d.category==="technical"?"#ef4444":d.category==="organizational"?"#f59e0b":"#3b82f6";
-                                      return <span key={di} style={{ fontSize:10, color:cc, fontWeight:600 }}>{d.reason} {d.durationHours}ч</span>;
+                                      return <span key={di} style={{ fontSize:12, color:cc, fontWeight:600 }}>{d.reason} {d.durationHours}ч</span>;
                                     })}
                                   </div>
-                                : <span style={{ fontSize:11, color:T.txt2 }}>—</span>
+                                : <span style={{ fontSize:12, color:T.txt2 }}>—</span>
                               }
                             </td>
                           </tr>
@@ -2610,7 +2614,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
               {/* Взрывные работы */}
               {(totals.bf>0||totals.fuelKg>0) && (
                 <div style={{ padding:"10px 14px", background:`${T.amber}12`, border:`1px solid ${T.amber}30`, borderRadius:6, display:"flex", gap:14, flexWrap:"wrap", alignItems:"center" }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:T.amber }}>💥 ВЗРЫВНЫЕ РАБОТЫ</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:T.amber }}>💥 ВЗРЫВНЫЕ РАБОТЫ</span>
                   {totals.bf>0 && <span style={{ fontSize:12, color:T.txt1 }}>Взрыв: <b style={{ color:T.amber }}>{totals.bf} м³</b></span>}
                   {totals.fuelKg>0 && <span style={{ fontSize:12, color:T.txt1 }}>ВВ: <b style={{ color:T.cyan }}>{totals.fuelKg} кг</b></span>}
                 </div>
@@ -2689,9 +2693,9 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
         <div style={{ fontSize:13, fontWeight:700, color:T.txt0 }}>История отчётов</div>
         <div style={{ display:"flex", gap:8 }}>
-          <span style={{ fontSize:11, padding:"3px 10px", borderRadius:10, background:`${T.green}18`, color:T.green, fontWeight:700 }}>✓ {approvedCnt}</span>
-          {submittedCnt>0 && <span style={{ fontSize:11, padding:"3px 10px", borderRadius:10, background:`${T.amber}18`, color:T.amber, fontWeight:700 }}>⏳ {submittedCnt}</span>}
-          <span style={{ fontSize:11, padding:"3px 10px", borderRadius:10, background:T.bg3, color:T.txt2 }}>Всего {reps.length}</span>
+          <span style={{ fontSize:12, padding:"3px 10px", borderRadius:10, background:`${T.green}18`, color:T.green, fontWeight:700 }}>✓ {approvedCnt}</span>
+          {submittedCnt>0 && <span style={{ fontSize:12, padding:"3px 10px", borderRadius:10, background:`${T.amber}18`, color:T.amber, fontWeight:700 }}>⏳ {submittedCnt}</span>}
+          <span style={{ fontSize:12, padding:"3px 10px", borderRadius:10, background:T.bg3, color:T.txt2 }}>Всего {reps.length}</span>
         </div>
       </div>
 
@@ -2708,11 +2712,11 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
             <div key={date} style={{ background:T.bg2, border:`1px solid ${isToday?T.amber:T.border}`, borderRadius:8, overflow:"hidden" }}>
               {/* Строка-заголовок дня */}
               <div style={{ padding:"8px 16px", background:isToday?`${T.amber}10`:T.bg3, borderBottom:`1px solid ${T.border}`, display:"flex", alignItems:"center", gap:8 }}>
-                {isToday && <span style={{ fontSize:9, background:T.amber, color:"#000", padding:"2px 6px", borderRadius:2, fontWeight:900, letterSpacing:".06em" }}>СЕГОДНЯ</span>}
+                {isToday && <span style={{ fontSize:12, background:T.amber, color:"#000", padding:"2px 6px", borderRadius:2, fontWeight:900, letterSpacing:".06em" }}>СЕГОДНЯ</span>}
                 <span style={{ fontSize:12, fontWeight:700, color:isToday?T.amber:T.txt0 }}>
                   {DOW_RU[d.getDay()]}, {d.getDate()} {MON_RU[d.getMonth()]} {d.getFullYear()}
                 </span>
-                <span style={{ fontSize:11, color:T.txt2, marginLeft:"auto" }}>{dayReps.length} {dayReps.length===1?"смена":"смены"}</span>
+                <span style={{ fontSize:12, color:T.txt2, marginLeft:"auto" }}>{dayReps.length} {dayReps.length===1?"смена":"смены"}</span>
               </div>
 
               {/* Смены этого дня */}
@@ -2738,7 +2742,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                         </div>
                         <div style={{ display:"inline-flex", alignItems:"center", gap:4, marginTop:2,
                           padding:"2px 8px", borderRadius:10, background:sc.bg,
-                          border:`1px solid ${sc.color}30`, fontSize:11, fontWeight:700, color:sc.color }}>
+                          border:`1px solid ${sc.color}30`, fontSize:12, fontWeight:700, color:sc.color }}>
                           {sc.icon} {sc.label}
                         </div>
                       </div>
@@ -2749,25 +2753,25 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                       {r.df>0 && (
                         <div style={{ textAlign:"center" }}>
                           <div style={{ fontSize:18, fontWeight:700, color:ac, lineHeight:1 }}>{r.df.toLocaleString()}</div>
-                          <div style={{ fontSize:9, color:T.txt2, textTransform:"uppercase", marginTop:1 }}>п.м бурение</div>
+                          <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase", marginTop:1 }}>п.м бурение</div>
                         </div>
                       )}
                       {r.bf>0 && (
                         <div style={{ textAlign:"center" }}>
                           <div style={{ fontSize:18, fontWeight:700, color:T.amber, lineHeight:1 }}>{r.bf.toLocaleString()}</div>
-                          <div style={{ fontSize:9, color:T.txt2, textTransform:"uppercase", marginTop:1 }}>м³ взрыв</div>
+                          <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase", marginTop:1 }}>м³ взрыв</div>
                         </div>
                       )}
                       {kv!==null && (
                         <div style={{ textAlign:"center" }}>
                           <div style={{ fontSize:18, fontWeight:700, color:T.green, lineHeight:1 }}>{kv}%</div>
-                          <div style={{ fontSize:9, color:T.txt2, textTransform:"uppercase", marginTop:1 }}>КТГ</div>
+                          <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase", marginTop:1 }}>КТГ</div>
                         </div>
                       )}
                       {dtH>0 && (
                         <div style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", background:"#ef444415", border:"1px solid #ef444430", borderRadius:5 }}>
-                          <span style={{ fontSize:11, color:"#ef4444", fontWeight:700 }}>⚠ {dtH.toFixed(1)} ч простоев</span>
-                          {dtAll.length>0 && <span style={{ fontSize:10, color:"#ef4444" }}>· {dtAll.length} событий</span>}
+                          <span style={{ fontSize:12, color:"#ef4444", fontWeight:700 }}>⚠ {dtH.toFixed(1)} ч простоев</span>
+                          {dtAll.length>0 && <span style={{ fontSize:12, color:"#ef4444" }}>· {dtAll.length} событий</span>}
                         </div>
                       )}
                     </div>
@@ -2786,7 +2790,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                         </button>
                       )}
                       {!canEdit && r.status==="approved" && (
-                        <span style={{ fontSize:11, color:T.txt2, padding:"4px 8px", border:`1px solid ${T.border}`, borderRadius:5 }}
+                        <span style={{ fontSize:12, color:T.txt2, padding:"4px 8px", border:`1px solid ${T.border}`, borderRadius:5 }}
                           title="Редактирование доступно только в течение 24 ч после утверждения">
                           🔒 Заблокировано
                         </span>
@@ -2816,7 +2820,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                 <div style={{ fontSize:14, fontWeight:700, color:T.txt0 }}>
                   {obj?.name} · {openRep.date} · {openRep.sh==="day"?"☀ Дневная":"🌙 Ночная"}
                 </div>
-                <div style={{ fontSize:11, color:T.txt2, marginTop:3, display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+                <div style={{ fontSize:12, color:T.txt2, marginTop:3, display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
                   {openRep.by && <span>Отправил: <b style={{ color:T.txt1 }}>{openRep.by}</b></span>}
                   {openRep.submittedAt && <span>{openRep.submittedAt}</span>}
                   <span style={{ fontWeight:700, color:STATUS[openRep.status]?.color }}>
@@ -2853,9 +2857,9 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                   [T.cyan,    "💣 ВВ",       openRep.fuel_kg||0, "кг"],
                 ].filter(([,,v])=>v>0).map(([c,lbl,val,unit])=>(
                   <div key={lbl} style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`2px solid ${c}`, borderRadius:5, padding:"10px 12px", textAlign:"center" }}>
-                    <div style={{ fontSize:9, color:c, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>{lbl}</div>
+                    <div style={{ fontSize:12, color:c, fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>{lbl}</div>
                     <div style={{ fontSize:20, fontWeight:700, color:c }}>{typeof val==="number"?val.toLocaleString():val}</div>
-                    <div style={{ fontSize:10, color:T.txt2 }}>{unit}</div>
+                    <div style={{ fontSize:12, color:T.txt2 }}>{unit}</div>
                   </div>
                 ))}
               </div>
@@ -2863,13 +2867,13 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
               {/* По станкам */}
               {(openRep.rigEntries||openRep.rigs) && (
                 <div>
-                  <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:6 }}>По станкам</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:6 }}>По станкам</div>
                   <div style={{ border:`1px solid ${T.border}`, borderRadius:5, overflow:"hidden", overflowX:"auto" }}>
                     <table style={{ width:"100%", borderCollapse:"collapse", minWidth:480 }}>
                       <thead>
                         <tr style={{ background:T.rowHdr }}>
                           {["Станок","Работа ч","Бурение п.м","Перебур м","ГСМ л","Простои ч"].map(h=>(
-                            <th key={h} style={{ padding:"7px 10px", textAlign:"left", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
+                            <th key={h} style={{ padding:"7px 10px", textAlign:"left", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -2904,7 +2908,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                 const catLabels = { technical:"Техн.", organizational:"Орг.", external:"Внешн." };
                 return (
                   <div>
-                    <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:6 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:6 }}>
                       Простои · {dt.reduce((s,d)=>s+toNum(d.durationHours),0).toFixed(1)} ч
                     </div>
                     <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
@@ -2913,10 +2917,10 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                         return (
                           <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px",
                             background:i%2?T.rowAlt:"transparent", borderLeft:`3px solid ${cc}`, borderRadius:3 }}>
-                            <span style={{ fontSize:10, fontWeight:700, color:cc, background:`${cc}18`, padding:"1px 5px", borderRadius:2, minWidth:36, textAlign:"center" }}>{catLabels[d.category]||"—"}</span>
-                            <span style={{ fontSize:11, color:T.txt2, minWidth:80 }}>{d.rigName}</span>
+                            <span style={{ fontSize:12, fontWeight:700, color:cc, background:`${cc}18`, padding:"1px 5px", borderRadius:2, minWidth:36, textAlign:"center" }}>{catLabels[d.category]||"—"}</span>
+                            <span style={{ fontSize:12, color:T.txt2, minWidth:80 }}>{d.rigName}</span>
                             <span style={{ fontSize:12, fontWeight:600, color:T.txt0, flex:1 }}>{d.reason}</span>
-                            {d.comment&&<span style={{ fontSize:11, color:T.txt2, fontStyle:"italic" }}>{d.comment}</span>}
+                            {d.comment&&<span style={{ fontSize:12, color:T.txt2, fontStyle:"italic" }}>{d.comment}</span>}
                             <span style={{ fontSize:13, fontWeight:700, color:cc, fontFamily:"'JetBrains Mono',monospace" }}>{d.durationHours}ч</span>
                           </div>
                         );
@@ -3095,12 +3099,12 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                       {icon:"⚙",lbl:"КТГ-планы",pending:pKtg,total:allKtg,c:T.green},
                     ].map(({icon,lbl,pending,total,c})=>(
                       <div key={lbl} style={{padding:"8px 10px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-                        <div style={{fontSize:10,color:c,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>{icon} {lbl}</div>
+                        <div style={{fontSize:12,color:c,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>{icon} {lbl}</div>
                         {pending>0
                           ?<div style={{fontSize:16,fontWeight:700,color:T.red,fontFamily:"'Inter',sans-serif"}}>{pending} новых</div>
                           :<div style={{fontSize:12,color:T.txt2}}>Нет новых</div>
                         }
-                        <div style={{fontSize:10,color:T.txt2,marginTop:2}}>Всего: {total}</div>
+                        <div style={{fontSize:12,color:T.txt2,marginTop:2}}>Всего: {total}</div>
                       </div>
                     ))}
                   </div>
@@ -3150,7 +3154,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
               {/* Взрывные работы участка — только для просмотра */}
               {(sel?.bf > 0 || sel?.fuel_kg > 0) && (
                 <div style={{padding:"10px 14px",background:`${T.amber}10`,border:`1px solid ${T.amber}25`,borderRadius:5,display:"flex",gap:16,flexWrap:"wrap"}}>
-                  <span style={{fontSize:11,fontWeight:700,color:T.amber,textTransform:"uppercase"}}>💥 Взрывные работы участка</span>
+                  <span style={{fontSize:12,fontWeight:700,color:T.amber,textTransform:"uppercase"}}>💥 Взрывные работы участка</span>
                   {sel?.bf > 0 && <span style={{fontSize:12,color:T.txt1}}>Взрыв: <b style={{color:T.amber}}>{sel.bf.toLocaleString()} м³</b></span>}
                   {sel?.fuel_kg > 0 && <span style={{fontSize:12,color:T.txt1}}>ВВ: <b style={{color:T.cyan}}>{sel.fuel_kg.toLocaleString()} кг</b></span>}
                   {sel?.bf > 0 && sel?.fuel_kg > 0 && <span style={{fontSize:12,color:T.txt2}}>Уд.: <b style={{color:T.txt0}}>{(sel.fuel_kg/sel.bf).toFixed(2)} кг/м³</b></span>}
@@ -3182,12 +3186,12 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                             background:i%2 ? T.rowAlt : "transparent",
                             borderLeft:`3px solid ${cc}`,
                           }}>
-                            <span style={{fontSize:10,fontWeight:700,color:cc,background:`${cc}18`,padding:"2px 6px",borderRadius:3,whiteSpace:"nowrap",minWidth:38,textAlign:"center"}}>
+                            <span style={{fontSize:12,fontWeight:700,color:cc,background:`${cc}18`,padding:"2px 6px",borderRadius:3,whiteSpace:"nowrap",minWidth:38,textAlign:"center"}}>
                               {catLabels[d.category]||d.category}
                             </span>
                             <span style={{fontSize:12,color:T.txt2,minWidth:70,whiteSpace:"nowrap"}}>{d.rigName}</span>
                             <span style={{fontSize:12,fontWeight:600,color:T.txt0,flex:1}}>{d.reason}</span>
-                            {d.comment && <span style={{fontSize:11,color:T.txt2,fontStyle:"italic"}}>{d.comment}</span>}
+                            {d.comment && <span style={{fontSize:12,color:T.txt2,fontStyle:"italic"}}>{d.comment}</span>}
                             <span style={{fontSize:13,fontWeight:700,color:cc,fontFamily:"'JetBrains Mono',monospace",minWidth:38,textAlign:"right"}}>{toNum(d.durationHours)}ч</span>
                           </div>
                         );
@@ -3227,7 +3231,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                 <div style={{marginBottom:16,padding:"14px 20px",borderRadius:6,
                   background:avg>=85?`${T.green}12`:`rgba(245,158,11,0.1)`,
                   border:`1px solid ${avg>=85?T.green+"30":"rgba(245,158,11,0.3)"}`}}>
-                  <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>Средний КТГ плана</div>
+                  <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>Средний КТГ плана</div>
                   <div style={{fontSize:36,fontWeight:700,color:avg>=85?T.green:T.amber,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{avg}%</div>
                   <div style={{fontSize:12,color:T.txt2,marginTop:4}}>💡 Рекомендуется как целевой КТГ для плана производства</div>
                 </div>
@@ -3256,17 +3260,17 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                     <table style={{borderCollapse:"collapse",width:"100%",minWidth:dim*30+120}}>
                       <thead>
                         <tr style={{background:T.bg3}}>
-                          <th style={{padding:"6px 10px",textAlign:"left",fontSize:11,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:90,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
+                          <th style={{padding:"6px 10px",textAlign:"left",fontSize:12,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:90,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
                           {days.map(d=>{
                             const dn=parseInt(d.slice(8),10);
                             const filled=aids.filter(aid=>(ktgSel.items[aid]||{})[d]!=null);
                             const ktgV=filled.length?Math.round(filled.reduce((s,aid)=>s+(Number((ktgSel.items[aid]||{})[d])||0),0)/(filled.length*DAY_CAP)*100):null;
-                            return(<th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:9,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:26,background:T.bg3}}>
+                            return(<th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:12,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:26,background:T.bg3}}>
                               <div style={{fontWeight:700}}>{dn}</div>
-                              {ktgV!==null&&<div style={{fontSize:8,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
+                              {ktgV!==null&&<div style={{fontSize:12,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
                             </th>);
                           })}
-                          <th style={{padding:"6px 8px",fontSize:11,color:T.green,textAlign:"center",borderBottom:`1px solid ${T.border}`,minWidth:46}}>КТГ</th>
+                          <th style={{padding:"6px 8px",fontSize:12,color:T.green,textAlign:"center",borderBottom:`1px solid ${T.border}`,minWidth:46}}>КТГ</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -3276,14 +3280,14 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                           const totalH=filledDays.reduce((s,d)=>s+(Number((ktgSel.items[aid]||{})[d])||0),0);
                           const ktg=filledDays.length?Math.round(totalH/(filledDays.length*DAY_CAP)*100):0;
                           return(<tr key={aid} style={{background:ai%2?T.rowAlt:"transparent"}}>
-                            <td style={{padding:"4px 10px",fontSize:11,fontWeight:700,color:T.txt0,position:"sticky",left:0,background:ai%2?T.rowAlt:T.bg2,zIndex:1,whiteSpace:"nowrap"}}>{node?.name||aid}</td>
+                            <td style={{padding:"4px 10px",fontSize:12,fontWeight:700,color:T.txt0,position:"sticky",left:0,background:ai%2?T.rowAlt:T.bg2,zIndex:1,whiteSpace:"nowrap"}}>{node?.name||aid}</td>
                             {days.map(d=>{
                               const rawH=(ktgSel.items[aid]||{})[d];
                               const h=(rawH==null)?null:Number(rawH);
                               const toName=(ktgSel.to_info?.[aid]||{})[d]||null;
                               const cfg=cellCfg(h,toName);
                               return(<td key={d} style={{padding:"1px",textAlign:"center"}}>
-                                <div title={toName||(h!=null?`${h}ч`:"—")} style={{width:22,height:20,borderRadius:3,margin:"0 auto",background:cfg.bg,border:`1px solid ${cfg.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>
+                                <div title={toName||(h!=null?`${h}ч`:"—")} style={{width:22,height:20,borderRadius:3,margin:"0 auto",background:cfg.bg,border:`1px solid ${cfg.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
                                   {h==null?"·":cfg.icon}
                                 </div>
                               </td>);
@@ -3330,7 +3334,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
             background:tab===k?`${objColor}15`:"transparent",color:tab===k?objColor:T.txt2,
             fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Inter',sans-serif",transition:"all 0.15s"}}>
             {l}
-            {badge>0&&<span style={{marginLeft:6,background:T.red,color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:11,fontWeight:700}}>{badge}</span>}
+            {badge>0&&<span style={{marginLeft:6,background:T.red,color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:12,fontWeight:700}}>{badge}</span>}
           </button>
         ))}
       </div>
@@ -3421,7 +3425,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                       <div style={{fontSize:12,color:T.txt2,marginBottom:6}}>{r.by} · {r.submittedAt}</div>
                       <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
                         {[["⛏",r.df,"п.м",T.red],["💥",r.bf,"м³",T.amber],["⛽",r.fuel,"л",T.violet]].map(([ic,val,unit,c])=>(
-                          <span key={ic} style={{fontSize:12}}><span style={{color:T.txt2}}>{ic} </span><b style={{color:c,fontFamily:"'Inter',sans-serif"}}>{val}</b><span style={{color:T.txt2,fontSize:10}}> {unit}</span></span>
+                          <span key={ic} style={{fontSize:12}}><span style={{color:T.txt2}}>{ic} </span><b style={{color:c,fontFamily:"'Inter',sans-serif"}}>{val}</b><span style={{color:T.txt2,fontSize:12}}> {unit}</span></span>
                         ))}
                       </div>
                     </div>
@@ -3471,7 +3475,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                           background:avg>=85?`${T.green}15`:`rgba(245,158,11,0.12)`,
                           border:`1px solid ${avg>=85?T.green+"40":"rgba(245,158,11,0.3)"}`}}>
                           <span style={{fontSize:18,fontWeight:700,color:avg>=85?T.green:T.amber,fontFamily:"'Inter',sans-serif"}}>{avg}%</span>
-                          <span style={{fontSize:11,color:T.txt2}}>ср. КТГ</span>
+                          <span style={{fontSize:12,color:T.txt2}}>ср. КТГ</span>
                         </div>
                       )}
                       {plan.status==="RETURNED"&&plan.engineer_comment&&(
@@ -3586,10 +3590,48 @@ function ObjectsEditor({ objs, setObjs, rigs, setRigs, T }) {
 }
 
 // ─── ENGINEER: USERS EDITOR ───────────────────────────────────────────────────
+function UserModalForm({ data, setData, onSave, onClose, title, objs, toggleOid, T }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: T.modalBg, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, width: "100%", maxWidth: 500, padding: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>{title}</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: T.txt2 }}>×</button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <FieldInput label="ФИО" value={data.name || ""} onChange={(e) => setData((p) => ({ ...p, name: e.target.value }))} T={T} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldInput label="Логин" value={data.login || ""} onChange={(e) => setData((p) => ({ ...p, login: e.target.value }))} T={T} />
+            <FieldInput label="Пароль" value={data.pw || ""} onChange={(e) => setData((p) => ({ ...p, pw: e.target.value }))} T={T} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 500, color: T.txt2, display: "block", marginBottom: 6 }}>Участки</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {objs.map((o) => {
+                const has = data.oids === "all" || (data.oids || []).includes(o.id);
+                return (
+                  <div key={o.id} onClick={() => toggleOid(o.id)}
+                    style={{ padding: "5px 12px", background: has ? `${T.blue}20` : T.bg3, border: `1px solid ${has ? T.blue : T.border}`, borderRadius: 3, fontSize: 12, fontWeight: 600, color: has ? T.blue : T.txt2, cursor: "pointer" }}>
+                    {o.name}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+          <Btn variant="success" style={{ flex: 1 }} onClick={() => onSave(data)} T={T}>Сохранить</Btn>
+          <Btn variant="ghost" onClick={onClose} T={T}>Отмена</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function UsersEditor({ users, setUsers, objs, T }) {
-  const [editing,   setEditing]   = useState(null);     // foreman object being edited
-  const [addForm,   setAddForm]   = useState(null);     // null or {} for new foreman form
-  const [deleteConf, setDeleteConf] = useState(null);   // user to confirm delete
+  const [editing,   setEditing]   = useState(null);
+  const [addForm,   setAddForm]   = useState(null);
+  const [deleteConf, setDeleteConf] = useState(null);
 
   const foremen   = users.filter((u) => u.role === "foreman");
   const engineers = users.filter((u) => u.role === "engineer");
@@ -3598,12 +3640,13 @@ function UsersEditor({ users, setUsers, objs, T }) {
     if (edited.id) {
       setUsers((prev) => prev.map((u) => u.id === edited.id ? edited : u));
     } else {
-      if (!edited.name || !edited.login || !edited.pw) return;
+      if (!edited.login || !edited.pw) return;
       setUsers((prev) => [...prev, {
         ...edited,
         id: genId(),
         role: "foreman",
-        ini: edited.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+        name: edited.name || "Нач. участка",
+        ini: edited.name ? edited.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "НУ",
       }]);
     }
     setEditing(null);
@@ -3615,58 +3658,19 @@ function UsersEditor({ users, setUsers, objs, T }) {
     setDeleteConf(null);
   }
 
-  function toggleOid(oid) {
+  function toggleEditOid(oid) {
     setEditing((prev) => {
       const cur  = prev.oids === "all" ? objs.map((o) => o.id) : [...prev.oids];
       const next = cur.includes(oid) ? cur.filter((x) => x !== oid) : [...cur, oid];
       return { ...prev, oids: next };
     });
   }
-  function toggleOidAdd(oid) {
+  function toggleAddOid(oid) {
     setAddForm((prev) => {
       const cur  = (prev.oids || []);
       const next = cur.includes(oid) ? cur.filter((x) => x !== oid) : [...cur, oid];
       return { ...prev, oids: next };
     });
-  }
-
-  function UserModal({ data, setData, onSave, onClose, title }) {
-    return (
-      <div style={{ position: "fixed", inset: 0, background: T.modalBg, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, width: "100%", maxWidth: 500, padding: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>{title}</div>
-            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: T.txt2 }}>×</button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <FieldInput label="ФИО" value={data.name || ""} onChange={(e) => setData((p) => ({ ...p, name: e.target.value }))} T={T} />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <FieldInput label="Логин" value={data.login || ""} onChange={(e) => setData((p) => ({ ...p, login: e.target.value }))} T={T} />
-              <FieldInput label="Пароль" value={data.pw || ""} onChange={(e) => setData((p) => ({ ...p, pw: e.target.value }))} T={T} />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: T.txt2, display: "block", marginBottom: 6 }}>Участки</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {objs.map((o) => {
-                  const has = data.oids === "all" || (data.oids || []).includes(o.id);
-                  return (
-                    <div key={o.id}
-                      onClick={() => data.id ? toggleOid(o.id) : toggleOidAdd(o.id)}
-                      style={{ padding: "5px 12px", background: has ? `${T.blue}20` : T.bg3, border: `1px solid ${has ? T.blue : T.border}`, borderRadius: 3, fontSize: 12, fontWeight: 600, color: has ? T.blue : T.txt2, cursor: "pointer" }}>
-                      {o.name}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
-            <Btn variant="success" style={{ flex: 1 }} onClick={() => onSave(data)} T={T}>Сохранить</Btn>
-            <Btn variant="ghost" onClick={onClose} T={T}>Отмена</Btn>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -3677,16 +3681,15 @@ function UsersEditor({ users, setUsers, objs, T }) {
       </div>
       <SectionTitle label="Персонал" sub="ПОЛЬЗОВАТЕЛИ" T={T} />
 
-      {/* Edit modal */}
       {editing && (
-        <UserModal data={editing} setData={setEditing} onSave={saveUser} onClose={() => setEditing(null)} title="РЕДАКТИРОВАТЬ НАЧ. УЧАСТКА" />
+        <UserModalForm data={editing} setData={setEditing} onSave={saveUser} onClose={() => setEditing(null)}
+          title="РЕДАКТИРОВАТЬ НАЧ. УЧАСТКА" objs={objs} toggleOid={toggleEditOid} T={T} />
       )}
-      {/* Add modal */}
       {addForm && (
-        <UserModal data={addForm} setData={setAddForm} onSave={saveUser} onClose={() => setAddForm(null)} title="НОВЫЙ НАЧ. УЧАСТКА" />
+        <UserModalForm data={addForm} setData={setAddForm} onSave={saveUser} onClose={() => setAddForm(null)}
+          title="НОВЫЙ НАЧ. УЧАСТКА" objs={objs} toggleOid={toggleAddOid} T={T} />
       )}
 
-      {/* Delete confirmation */}
       {deleteConf && (
         <div style={{ position: "fixed", inset: 0, background: T.modalBg, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: T.bg2, border: "1px solid rgba(239,68,68,0.4)", borderRadius: 8, maxWidth: 400, width: "100%", padding: 28, textAlign: "center" }}>
@@ -3737,17 +3740,14 @@ function UsersEditor({ users, setUsers, objs, T }) {
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                   <div style={{ width: 36, height: 36, borderRadius: 5, background: `${T.blue}20`, border: `1px solid ${T.blue}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: T.blue }}>{u.ini}</div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: T.txt0 }}>{u.name}</div>
                     <div style={{ fontSize: 12, color: T.blue, textTransform: "uppercase", fontWeight: 700 }}>Нач. участка</div>
+                    <div style={{ fontSize:12, color: T.txt2, fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>{u.login}</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 4 }}>
                   <Btn variant="ghost" onClick={() => setEditing({ ...u })} style={{ fontSize: 12, padding: "4px 10px" }} T={T}>✏ Изм.</Btn>
                   <Btn variant="danger" onClick={() => setDeleteConf(u)} style={{ fontSize: 12, padding: "4px 10px" }} T={T}>🗑</Btn>
                 </div>
-              </div>
-              <div style={{ marginTop: 10, background: T.bg1, borderRadius: 3, padding: "6px 10px", border: `1px solid ${T.border}`, fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: T.txt2 }}>
-                <span style={{ color: T.txt0 }}>{u.login}</span> / {u.pw}
               </div>
               <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
                 {assignedObjs.map((o) => (
@@ -3937,7 +3937,7 @@ function PlanningPage({ objs, plans, setPlans, ktgPlans, setKtgPlans, nodes, T }
           }}>
             {tab.label}
             {tab.badge>0&&(
-              <span style={{marginLeft:8,background:T.red,color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:11,fontWeight:700}}>
+              <span style={{marginLeft:8,background:T.red,color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:12,fontWeight:700}}>
                 {tab.badge}
               </span>
             )}
@@ -4048,11 +4048,11 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
                 border:`2px solid ${isSel?ac:T.border}`,
                 minWidth:140,transition:"all 0.15s"}}>
               <div style={{fontSize:13,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>{obj?.name||"—"}</div>
-              <div style={{fontSize:11,color:T.txt2,marginBottom:6}}>{monthLabel(plan.year_month)}</div>
+              <div style={{fontSize:12,color:T.txt2,marginBottom:6}}>{monthLabel(plan.year_month)}</div>
               <div style={{fontSize:26,fontWeight:900,color:ac,fontFamily:"'Inter',sans-serif",lineHeight:1}}>
                 {s.avg!==null?`${s.avg}%`:"—"}
               </div>
-              <div style={{fontSize:10,color:T.txt2,marginTop:2}}>ср. КТГ</div>
+              <div style={{fontSize:12,color:T.txt2,marginTop:2}}>ср. КТГ</div>
             </div>
           );
         })}
@@ -4065,15 +4065,15 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
             background:T.bg2,borderRadius:8,border:`1px solid ${T.border}`,
             borderLeft:`4px solid ${stats.avg>=85?T.green:stats.avg>=70?T.amber:"#ef4444"}`,flexWrap:"wrap"}}>
             <div>
-              <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",letterSpacing:".1em",marginBottom:2}}>
+              <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",letterSpacing:".1em",marginBottom:2}}>
                 {objs.find(o=>o.id===selPlan.object_id)?.name} · {monthLabel(selPlan.year_month)}
               </div>
-              <div style={{fontSize:11,color:T.txt2}}>Утверждён: {selPlan.decided_at?.slice(0,10)||"—"} · от {selPlan.created_by}</div>
+              <div style={{fontSize:12,color:T.txt2}}>Утверждён: {selPlan.decided_at?.slice(0,10)||"—"} · от {selPlan.created_by}</div>
             </div>
             {/* Big KTG gauge */}
             <div style={{textAlign:"center",marginLeft:"auto"}}>
               <KTGGauge v={stats.avg} plan={85} size={80} T={T}/>
-              <div style={{fontSize:11,color:T.txt2,marginTop:2}}>Общий КТГ</div>
+              <div style={{fontSize:12,color:T.txt2,marginTop:2}}>Общий КТГ</div>
             </div>
             {/* Summary stats */}
             <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
@@ -4083,9 +4083,9 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
                 ["#ef4444","🛠 Простой",stats.byAsset.reduce((s,a)=>s+a.downtimeDays,0),"ст/дн"],
               ].map(([c,lbl,val,u])=>(
                 <div key={lbl} style={{textAlign:"center",padding:"8px 12px",background:`${c}12`,borderRadius:6,border:`1px solid ${c}30`,minWidth:70}}>
-                  <div style={{fontSize:11,color:c,fontWeight:700,marginBottom:2}}>{lbl}</div>
+                  <div style={{fontSize:12,color:c,fontWeight:700,marginBottom:2}}>{lbl}</div>
                   <div style={{fontSize:20,fontWeight:700,color:c,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{val}</div>
-                  <div style={{fontSize:10,color:T.txt2}}>{u}</div>
+                  <div style={{fontSize:12,color:T.txt2}}>{u}</div>
                 </div>
               ))}
             </div>
@@ -4095,7 +4095,7 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
           <Card T={T} style={{padding:"16px 20px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <div style={{fontSize:12,fontWeight:700,color:T.txt0,textTransform:"uppercase"}}>📈 КТГ по дням</div>
-              <div style={{display:"flex",gap:12,fontSize:11,color:T.txt2}}>
+              <div style={{display:"flex",gap:12,fontSize:12,color:T.txt2}}>
                 <span style={{color:T.green}}>▬ ≥85%</span>
                 <span style={{color:T.amber}}>▬ 70–84%</span>
                 <span style={{color:"#ef4444"}}>▬ &lt;70%</span>
@@ -4110,17 +4110,17 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
                   const dow=new Date(d.date).getDay();
                   return(
                     <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:1,minWidth:12}}>
-                      <div style={{fontSize:9,color:c,fontWeight:700,marginBottom:2}}>{v>0?`${v}`:"·"}</div>
+                      <div style={{fontSize:12,color:c,fontWeight:700,marginBottom:2}}>{v>0?`${v}`:"·"}</div>
                       <div style={{width:"100%",maxWidth:18,borderRadius:"2px 2px 0 0",
                         height:Math.max(3,Math.round(v/100*80)),
                         background:c,opacity:0.85,transition:"height 0.3s"}}/>
-                      <div style={{fontSize:8,color:dow===0||dow===6?T.amber:T.txt2,marginTop:2}}>{dayNum}</div>
+                      <div style={{fontSize:12,color:dow===0||dow===6?T.amber:T.txt2,marginTop:2}}>{dayNum}</div>
                     </div>
                   );
                 })}
               </div>
               {/* 85% target line label */}
-              <div style={{fontSize:10,color:T.green,marginTop:4}}>── цель 85%</div>
+              <div style={{fontSize:12,color:T.green,marginTop:4}}>── цель 85%</div>
             </div>
           </Card>
 
@@ -4129,7 +4129,7 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
             <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,
               display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div style={{fontSize:12,fontWeight:700,color:T.txt0,textTransform:"uppercase"}}>⚙ Разбивка по станкам</div>
-              <div style={{fontSize:11,color:T.txt2}}>{stats.byAsset.length} единиц техники</div>
+              <div style={{fontSize:12,color:T.txt2}}>{stats.byAsset.length} единиц техники</div>
             </div>
             <div style={{padding:"8px 0"}}>
               {stats.byAsset.sort((a,b)=>b.ktg-a.ktg).map((a,i)=>{
@@ -4143,7 +4143,7 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
                   }}>
                     {/* Rank */}
                     <div style={{width:24,height:24,borderRadius:"50%",background:`${c}20`,border:`1px solid ${c}40`,
-                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:c,flexShrink:0}}>
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:c,flexShrink:0}}>
                       {i+1}
                     </div>
                     {/* Name */}
@@ -4163,7 +4163,7 @@ function KTGAcceptedView({ ktgPlans, objs, nodes, T }) {
                         {c:T.amber,   icon:"🔧", lbl:"ТО",      v:a.maintDays},
                         {c:"#ef4444", icon:"🛠", lbl:"Простой", v:a.downtimeDays},
                       ].filter(x=>x.v>0).map(x=>(
-                        <span key={x.lbl} title={x.lbl} style={{fontSize:11,color:x.c,fontWeight:700,
+                        <span key={x.lbl} title={x.lbl} style={{fontSize:12,color:x.c,fontWeight:700,
                           padding:"2px 6px",background:`${x.c}12`,borderRadius:3,border:`1px solid ${x.c}30`}}>
                           {x.icon} {x.v}д
                         </span>
@@ -4296,9 +4296,9 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
             {c:T.txt2,  icon:"📅", lbl:"Дней",     val:dim, unit:"в месяце"},
           ].map(({c,icon,lbl,val,unit})=>(
             <Card key={lbl} T={T} style={{padding:"12px 16px"}}>
-              <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>{icon} {lbl}</div>
+              <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>{icon} {lbl}</div>
               <div style={{fontSize:24,fontWeight:700,color:c,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{val>0?val.toLocaleString():"—"}</div>
-              <div style={{fontSize:10,color:T.txt2,marginTop:2}}>{unit}</div>
+              <div style={{fontSize:12,color:T.txt2,marginTop:2}}>{unit}</div>
             </Card>
           ))}
         </div>
@@ -4322,14 +4322,14 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                     <div>
                       <div style={{fontSize:15,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",letterSpacing:"1px"}}>{obj.name.toUpperCase()}</div>
-                      <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{MON_RU[mo-1]} {yr} · {dim} дней</div>
+                      <div style={{fontSize:12,color:T.txt2,marginTop:2}}>{MON_RU[mo-1]} {yr} · {dim} дней</div>
                     </div>
                     {ktg!==null&&(
                       <div style={{textAlign:"center",padding:"6px 12px",borderRadius:6,
                         background:ktg>=85?`${T.green}15`:`rgba(245,158,11,0.12)`,
                         border:`1px solid ${ktg>=85?T.green+"40":"rgba(245,158,11,0.3)"}`}}>
                         <div style={{fontSize:20,fontWeight:700,color:ktg>=85?T.green:T.amber,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{ktg}%</div>
-                        <div style={{fontSize:9,color:T.txt2,marginTop:2}}>КТГ</div>
+                        <div style={{fontSize:12,color:T.txt2,marginTop:2}}>КТГ</div>
                       </div>
                     )}
                   </div>
@@ -4339,10 +4339,10 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
                       {c:T.amber, icon:"💥", lbl:"Взрыв",   val:bf, unit:"м³"},
                     ].map(({c,icon,lbl,val,unit})=>(
                       <div key={lbl} style={{padding:"8px 10px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-                        <div style={{fontSize:10,color:c,fontWeight:700,textTransform:"uppercase",marginBottom:3}}>{icon} {lbl}</div>
+                        <div style={{fontSize:12,color:c,fontWeight:700,textTransform:"uppercase",marginBottom:3}}>{icon} {lbl}</div>
                         {val>0
                           ?<><div style={{fontSize:18,fontWeight:700,color:c,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{val.toLocaleString()}</div>
-                            <div style={{fontSize:10,color:T.txt2,marginTop:1}}>{unit}</div></>
+                            <div style={{fontSize:12,color:T.txt2,marginTop:1}}>{unit}</div></>
                           :<div style={{fontSize:12,color:T.txt2}}>Не задан</div>}
                       </div>
                     ))}
@@ -4389,7 +4389,7 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
           <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.bg3}}>
             <div>
               <div style={{fontSize:15,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>{obj?.name} · {dn} {MON_RU[mo-1]} {yr}</div>
-              <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{DOW_SH[dow]}{dayKtg!==null?` · КТГ: ${dayKtg}%`:""}</div>
+              <div style={{fontSize:12,color:T.txt2,marginTop:2}}>{DOW_SH[dow]}{dayKtg!==null?` · КТГ: ${dayKtg}%`:""}</div>
             </div>
             <button onClick={()=>setEditCell(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.txt2,lineHeight:1}}>×</button>
           </div>
@@ -4433,44 +4433,44 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
       <div style={{display:"flex",gap:12,marginBottom:18,flexWrap:"wrap"}}>
         {/* Drill total input */}
         <Card accent={T.red} style={{padding:"12px 18px",minWidth:180}} T={T}>
-          <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",marginBottom:6,letterSpacing:".1em"}}>⛏ Бурение — план месяца</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:6,letterSpacing:".1em"}}>⛏ Бурение — план месяца</div>
           <input type="number" value={totDf||""} placeholder="0"
             onChange={e=>setMonthTotal(selObjId,"df",e.target.value)}
             style={{fontSize:28,fontWeight:700,color:T.red,fontFamily:"'Inter',sans-serif",
               background:"transparent",border:"none",outline:"none",width:"100%",padding:0,lineHeight:1,
               borderBottom:`2px solid ${T.red}50`}}/>
-          <div style={{fontSize:11,color:T.txt2,marginTop:6}}>п.м · раскидает равномерно по дням</div>
+          <div style={{fontSize:12,color:T.txt2,marginTop:6}}>п.м · раскидает равномерно по дням</div>
         </Card>
 
         {/* Blast total input */}
         <Card accent={T.amber} style={{padding:"12px 18px",minWidth:180}} T={T}>
-          <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",marginBottom:6,letterSpacing:".1em"}}>💥 Взрыв — план месяца</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:6,letterSpacing:".1em"}}>💥 Взрыв — план месяца</div>
           <input type="number" value={totBf||""} placeholder="0"
             onChange={e=>setMonthTotal(selObjId,"bf",e.target.value)}
             style={{fontSize:28,fontWeight:700,color:T.amber,fontFamily:"'Inter',sans-serif",
               background:"transparent",border:"none",outline:"none",width:"100%",padding:0,lineHeight:1,
               borderBottom:`2px solid ${T.amber}50`}}/>
-          <div style={{fontSize:11,color:T.txt2,marginTop:6}}>м³ · раскидает равномерно по дням</div>
+          <div style={{fontSize:12,color:T.txt2,marginTop:6}}>м³ · раскидает равномерно по дням</div>
         </Card>
 
         {/* KTG from mechanic */}
         {ktgAvg!==null?(
           <Card accent={T.green} style={{padding:"12px 18px",minWidth:150}} T={T}>
-            <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",marginBottom:6,letterSpacing:".1em"}}>⚙ КТГ план (механик)</div>
+            <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:6,letterSpacing:".1em"}}>⚙ КТГ план (механик)</div>
             <div style={{fontSize:32,fontWeight:700,color:ktgAvg>=85?T.green:T.amber,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{ktgAvg}%</div>
-            <div style={{fontSize:11,color:T.txt2,marginTop:6}}>Из согласованного плана</div>
+            <div style={{fontSize:12,color:T.txt2,marginTop:6}}>Из согласованного плана</div>
           </Card>
         ):(
           <Card style={{padding:"12px 18px",minWidth:150,border:`2px dashed ${T.border}`}} T={T}>
-            <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",marginBottom:6}}>⚙ КТГ план</div>
+            <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:6}}>⚙ КТГ план</div>
             <div style={{fontSize:13,color:T.txt2,fontStyle:"italic"}}>Не согласован</div>
-            <div style={{fontSize:11,color:T.txt2,marginTop:4}}>Запросите план у механика</div>
+            <div style={{fontSize:12,color:T.txt2,marginTop:4}}>Запросите план у механика</div>
           </Card>
         )}
 
         {/* Hint card */}
         <Card style={{padding:"12px 18px",flex:1,minWidth:180}} T={T}>
-          <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",marginBottom:8}}>💡 Быстрый ввод</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:8}}>💡 Быстрый ввод</div>
           <div style={{fontSize:12,color:T.txt1,lineHeight:1.7}}>
             <span style={{color:T.txt0,fontWeight:600}}>Итог</span> → введи месячный объём, дни заполнятся равномерно<br/>
             <span style={{color:T.txt0,fontWeight:600}}>Ячейка</span> → нажми на конкретный день для точной правки
@@ -4484,13 +4484,13 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
           <div style={{fontSize:13,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",textTransform:"uppercase"}}>
             📅 Дневной план — {MON_RU[mo-1]} {yr}
           </div>
-          <div style={{fontSize:11,color:T.txt2}}>Нажмите на ячейку для правки конкретного дня</div>
+          <div style={{fontSize:12,color:T.txt2}}>Нажмите на ячейку для правки конкретного дня</div>
         </div>
         <div style={{overflowX:"auto"}}>
           <table style={{borderCollapse:"collapse",width:"100%",minWidth:Math.max(640,dim*40+180)}}>
             <thead>
               <tr style={{background:T.bg3}}>
-                <th style={{padding:"8px 14px",textAlign:"left",fontSize:11,fontWeight:700,color:T.txt2,
+                <th style={{padding:"8px 14px",textAlign:"left",fontSize:12,fontWeight:700,color:T.txt2,
                   textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,
                   minWidth:120,position:"sticky",left:0,background:T.bg3,zIndex:3,
                   borderRight:`1px solid ${T.border}`}}>Показатель</th>
@@ -4499,15 +4499,15 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
                   const dow = new Date(d).getDay();
                   const isWe = dow===0||dow===6;
                   return(
-                    <th key={d} style={{padding:"3px 1px",textAlign:"center",fontSize:10,fontWeight:700,
+                    <th key={d} style={{padding:"3px 1px",textAlign:"center",fontSize:12,fontWeight:700,
                       color:isWe?T.amber:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:38,
                       background:isWe?`${T.amber}0A`:T.bg3}}>
                       <div style={{lineHeight:1.4}}>{dn}</div>
-                      <div style={{fontSize:8,opacity:0.7,lineHeight:1}}>{DOW_SH[dow]}</div>
+                      <div style={{fontSize:12,opacity:0.7,lineHeight:1}}>{DOW_SH[dow]}</div>
                     </th>
                   );
                 })}
-                <th style={{padding:"8px 10px",textAlign:"center",fontSize:11,fontWeight:700,color:T.txt1,
+                <th style={{padding:"8px 10px",textAlign:"center",fontSize:12,fontWeight:700,color:T.txt1,
                   borderBottom:`1px solid ${T.border}`,minWidth:70,
                   position:"sticky",right:0,background:T.bg3,zIndex:3,borderLeft:`2px solid ${T.border}`}}>
                   ИТОГО
@@ -4554,7 +4554,7 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
                       position:"sticky",right:0,background:ri%2?T.rowAlt:T.bg2,zIndex:2,
                       borderLeft:`2px solid ${T.border}`,whiteSpace:"nowrap"}}>
                       {rowTotal>0?rowTotal.toLocaleString():"—"}
-                      {rowTotal>0&&<div style={{fontSize:9,color:T.txt2,fontFamily:"'Inter',sans-serif",fontWeight:400}}>{unit}</div>}
+                      {rowTotal>0&&<div style={{fontSize:12,color:T.txt2,fontFamily:"'Inter',sans-serif",fontWeight:400}}>{unit}</div>}
                     </td>
                   </tr>
                 );
@@ -4581,12 +4581,12 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
                             <div style={{width:36,height:30,margin:"0 auto",borderRadius:5,
                               background:`${c}15`,border:`1px solid ${c}40`,
                               display:"flex",alignItems:"center",justifyContent:"center",
-                              fontSize:9,fontWeight:700,color:c}}>
+                              fontSize:12,fontWeight:700,color:c}}>
                               {v}%
                             </div>
                           ):(
                             <div style={{width:36,height:30,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <span style={{fontSize:9,color:T.txt2}}>—</span>
+                              <span style={{fontSize:12,color:T.txt2}}>—</span>
                             </div>
                           )}
                         </td>
@@ -4599,7 +4599,7 @@ function PlanningBVRTab({ objs, plans, setPlans, ktgPlans, T }) {
                       position:"sticky",right:0,background:`${T.green}06`,zIndex:2,
                       borderLeft:`2px solid ${T.border}`}}>
                       {ktgAvg!==null?`${ktgAvg}%`:"—"}
-                      {ktgAvg!==null&&<div style={{fontSize:9,color:T.txt2,fontFamily:"'Inter',sans-serif",fontWeight:400}}>ср.</div>}
+                      {ktgAvg!==null&&<div style={{fontSize:12,color:T.txt2,fontFamily:"'Inter',sans-serif",fontWeight:400}}>ср.</div>}
                     </td>
                   </tr>
                 );
@@ -4784,7 +4784,7 @@ function TreeNode({ node, nodes, selectedId, onSelect, level, searchQ, T }) {
         onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = highlight ? `${cfg.color}10` : "transparent"; }}
       >
         {/* Expand arrow */}
-        <span style={{ fontSize:10, color:T.txt2, width:12, textAlign:"center", flexShrink:0 }}>
+        <span style={{ fontSize:12, color:T.txt2, width:12, textAlign:"center", flexShrink:0 }}>
           {hasChildren ? (shouldOpen ? "▼" : "▶") : ""}
         </span>
         <span style={{ fontSize:14 }}>{cfg.icon}</span>
@@ -4792,7 +4792,7 @@ function TreeNode({ node, nodes, selectedId, onSelect, level, searchQ, T }) {
           {node.name}
         </span>
         {hasChildren && (
-          <span style={{ fontSize:11, color:T.txt2, flexShrink:0 }}>{children.length}</span>
+          <span style={{ fontSize:12, color:T.txt2, flexShrink:0 }}>{children.length}</span>
         )}
       </div>
       {shouldOpen && hasChildren && children.map(child => (
@@ -4910,7 +4910,7 @@ function ClassManagerModal({ assetClasses, setAssetClasses, onClose, T }) {
                 <span style={{ fontSize:20 }}>{v.icon}</span>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:700, color:T.txt0 }}>{v.label}</div>
-                  <div style={{ fontSize:11, color:T.txt2, fontFamily:"'JetBrains Mono',monospace" }}>{k}</div>
+                  <div style={{ fontSize:12, color:T.txt2, fontFamily:"'JetBrains Mono',monospace" }}>{k}</div>
                 </div>
                 <div style={{ width:16, height:16, borderRadius:"50%", background:v.color, flexShrink:0 }} />
                 <Btn variant="ghost"   onClick={() => openEdit(k)}   T={T} style={{ fontSize:12, padding:"4px 10px" }}>✏</Btn>
@@ -5283,7 +5283,7 @@ function AssetPointsTab({ nodeId, points, setPoints, measurements, setMeasuremen
         <div style={{ padding:"10px 12px", borderBottom:`1px solid ${T.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <span style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase" }}>Точки</span>
           <button onClick={() => setAddPoint(true)}
-            style={{ fontSize:11, padding:"3px 8px", borderRadius:3, border:`1px solid ${T.green}50`, background:`${T.green}10`, color:T.green, cursor:"pointer", fontFamily:"'Inter',sans-serif", fontWeight:700 }}>
+            style={{ fontSize:12, padding:"3px 8px", borderRadius:3, border:`1px solid ${T.green}50`, background:`${T.green}10`, color:T.green, cursor:"pointer", fontFamily:"'Inter',sans-serif", fontWeight:700 }}>
             + Добавить
           </button>
         </div>
@@ -5325,10 +5325,10 @@ function AssetPointsTab({ nodeId, points, setPoints, measurements, setMeasuremen
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
                   <div style={{ fontSize:12, fontWeight:700, color:selPoint?.id===pt.id?T.green:T.txt0 }}>{pt.name}</div>
-                  <div style={{ fontSize:11, color:T.txt2 }}>{pt.unit} · {pt.dataType}</div>
+                  <div style={{ fontSize:12, color:T.txt2 }}>{pt.unit} · {pt.dataType}</div>
                 </div>
                 <button onClick={e => { e.stopPropagation(); deletePoint(pt.id); }}
-                  style={{ fontSize:11, color:"#ef4444", background:"none", border:"none", cursor:"pointer" }}>🗑</button>
+                  style={{ fontSize:12, color:"#ef4444", background:"none", border:"none", cursor:"pointer" }}>🗑</button>
               </div>
             </div>
           ))
@@ -5599,9 +5599,9 @@ function AssetMaintenanceTab({ nodeId, nodeName, passport, meters, maintRecords,
 
             {/* Header row */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 120px 110px 32px",gap:8,marginBottom:6}}>
-              <div style={{fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>Вид ТО</div>
-              <div style={{fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>Интервал (мч)</div>
-              <div style={{fontSize:11,fontWeight:700,color:T.violet,textTransform:"uppercase"}}>Длит-ть (ч)</div>
+              <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>Вид ТО</div>
+              <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>Интервал (мч)</div>
+              <div style={{fontSize:12,fontWeight:700,color:T.violet,textTransform:"uppercase"}}>Длит-ть (ч)</div>
               <div/>
             </div>
 
@@ -5652,8 +5652,8 @@ function AssetMaintenanceTab({ nodeId, nodeName, passport, meters, maintRecords,
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                 <div style={{fontSize:13,fontWeight:700,color:tColor(item.name)}}>{item.name}</div>
                 <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:T.txt2}}>каждые {item.interval} мч</div>
-                  {item.duration_hrs && <div style={{fontSize:10,color:T.violet,fontWeight:700}}>⏱ {item.duration_hrs} ч простоя</div>}
+                  <div style={{fontSize:12,fontWeight:700,color:T.txt2}}>каждые {item.interval} мч</div>
+                  {item.duration_hrs && <div style={{fontSize:12,color:T.violet,fontWeight:700}}>⏱ {item.duration_hrs} ч простоя</div>}
                 </div>
               </div>
               <div style={{fontSize:st.overdue?14:22,fontWeight:700,color:st.color,fontFamily:"'Inter',sans-serif",lineHeight:1,marginBottom:6}}>
@@ -5662,7 +5662,7 @@ function AssetMaintenanceTab({ nodeId, nodeName, passport, meters, maintRecords,
               <div style={{height:5,background:T.border,borderRadius:3,overflow:"hidden",marginBottom:5}}>
                 <div style={{height:"100%",width:`${st.pct}%`,background:st.color,borderRadius:3}}/>
               </div>
-              <div style={{fontSize:10,color:T.txt2}}>
+              <div style={{fontSize:12,color:T.txt2}}>
                 {st.lastDate ? `Последнее: ${st.lastDate}` : "Не выполнялось"}
                 {" · "}след.: {st.nextAt.toLocaleString()} мч
               </div>
@@ -5677,11 +5677,11 @@ function AssetMaintenanceTab({ nodeId, nodeName, passport, meters, maintRecords,
           <div style={{fontSize:13,fontWeight:700,color:T.txt0,marginBottom:12}}>+ Записать выполненное ТО</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
             <div>
-              <label style={{fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase",display:"block",marginBottom:5}}>Дата</label>
+              <label style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",display:"block",marginBottom:5}}>Дата</label>
               <input type="date" value={form.date} onChange={e=>setForm(p=>({...p,date:e.target.value}))} style={inputStyle}/>
             </div>
             <div>
-              <label style={{fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase",display:"block",marginBottom:5}}>Тип ТО</label>
+              <label style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",display:"block",marginBottom:5}}>Тип ТО</label>
               <select value={form.type} onChange={e=>setForm(p=>({...p,type:e.target.value}))} style={inputStyle}>
                 {[...scheduleTypes,"Внеплановое"].map(t=><option key={t}>{t}</option>)}
               </select>
@@ -5724,14 +5724,14 @@ function AssetMaintenanceTab({ nodeId, nodeName, passport, meters, maintRecords,
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}>
                     <span style={{fontSize:13,fontWeight:700,color:tColor(r.type)}}>{r.type}</span>
-                    <span style={{fontSize:11,color:T.txt2}}>{r.date}</span>
-                    <span style={{fontSize:11,padding:"1px 7px",borderRadius:3,background:`${tColor(r.type)}15`,color:tColor(r.type),fontWeight:700}}>
+                    <span style={{fontSize:12,color:T.txt2}}>{r.date}</span>
+                    <span style={{fontSize:12,padding:"1px 7px",borderRadius:3,background:`${tColor(r.type)}15`,color:tColor(r.type),fontWeight:700}}>
                       {Number(r.hours).toLocaleString()} мч
                     </span>
-                    {i===0 && <span style={{fontSize:10,padding:"1px 6px",borderRadius:3,background:`${T.green}20`,color:T.green,fontWeight:700}}>ПОСЛЕДНЕЕ</span>}
+                    {i===0 && <span style={{fontSize:12,padding:"1px 6px",borderRadius:3,background:`${T.green}20`,color:T.green,fontWeight:700}}>ПОСЛЕДНЕЕ</span>}
                   </div>
                   {r.note && <div style={{fontSize:12,color:T.txt1}}>{r.note}</div>}
-                  <div style={{fontSize:11,color:T.txt2,marginTop:2}}>Записал: {r.by}</div>
+                  <div style={{fontSize:12,color:T.txt2,marginTop:2}}>Записал: {r.by}</div>
                 </div>
               </div>
             ))}
@@ -6260,7 +6260,7 @@ function LocationManagerModal({ locations, setLocations, onClose, T }) {
                 <div key={l.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 14px", background:T.bg3, borderRadius:5, border:`1px solid ${T.border}`, borderLeft:`4px solid ${lc.color}` }}>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:13, fontWeight:700, color:T.txt0 }}>{l.name}</div>
-                    <div style={{ fontSize:11, color:lc.color, fontWeight:600 }}>{lc.label}</div>
+                    <div style={{ fontSize:12, color:lc.color, fontWeight:600 }}>{lc.label}</div>
                   </div>
                   {delConf === l.id ? (
                     <div style={{ display:"flex", gap:6 }}>
@@ -6421,7 +6421,7 @@ function MovementJournalPage({ movements, setMovements, nodes, locations, setLoc
               <span style={{ fontSize:18 }}>{v.icon}</span>
               <div>
                 <div style={{ fontSize:18, fontWeight:700, color:v.color, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{cnt}</div>
-                <div style={{ fontSize:11, color:v.color, fontWeight:600 }}>{v.label}</div>
+                <div style={{ fontSize:12, color:v.color, fontWeight:600 }}>{v.label}</div>
               </div>
             </div>
           );
@@ -6845,7 +6845,7 @@ function WarrantyRegistryPage({ warranties, setWarranties, providers, setProvide
             <span style={{ fontSize:20 }}>{v.icon}</span>
             <div>
               <div style={{ fontSize:22, fontWeight:700, color:v.color, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{counts[k]||0}</div>
-              <div style={{ fontSize:11, color:v.color, fontWeight:600 }}>{v.label}</div>
+              <div style={{ fontSize:12, color:v.color, fontWeight:600 }}>{v.label}</div>
             </div>
           </div>
         ))}
@@ -6949,7 +6949,7 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
     <div>
       {/* Шапка */}
       <div style={{ marginBottom:22 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".18em", marginBottom:4 }}>
+        <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".18em", marginBottom:4 }}>
           ▌ ПРОИЗВОДСТВЕННАЯ СВОДКА
         </div>
         <div style={{ fontSize:24, fontWeight:700, color:T.txt0, fontFamily:"'Inter',sans-serif", letterSpacing:"-0.5px" }}>
@@ -7015,15 +7015,15 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
                 const cc   = perc!==null ? (perc>=100?T.green:perc>=80?T.amber:"#ef4444") : ac;
                 return (
                   <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${cc}`, borderRadius:7, padding:"14px 16px" }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:cc, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>⛏ Бурение</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:cc, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>⛏ Бурение</div>
                     <div style={{ fontSize:26, fontWeight:700, color:cc, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{tot.df.toLocaleString()}</div>
-                    <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>п.м всего</div>
+                    <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>п.м всего</div>
                     {pDf>0 && <>
-                      <div style={{ fontSize:11, color:T.txt2, marginTop:5 }}>план: <b style={{ color:T.txt1 }}>{pDf.toLocaleString()}</b></div>
+                      <div style={{ fontSize:12, color:T.txt2, marginTop:5 }}>план: <b style={{ color:T.txt1 }}>{pDf.toLocaleString()}</b></div>
                       <div style={{ height:3, background:T.bg3, borderRadius:2, marginTop:4 }}>
                         <div style={{ height:"100%", width:`${Math.min(perc||0,100)}%`, background:cc, borderRadius:2 }}/>
                       </div>
-                      <div style={{ fontSize:11, fontWeight:700, color:cc, marginTop:3 }}>{perc}%</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:cc, marginTop:3 }}>{perc}%</div>
                     </>}
                   </div>
                 );
@@ -7035,15 +7035,15 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
                 const cc   = perc!==null ? (perc>=100?T.green:perc>=80?T.amber:"#ef4444") : T.amber;
                 return (
                   <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${cc}`, borderRadius:7, padding:"14px 16px" }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:cc, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>💥 Взрывы</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:cc, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>💥 Взрывы</div>
                     <div style={{ fontSize:26, fontWeight:700, color:cc, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{tot.bf.toLocaleString()}</div>
-                    <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>м³ всего</div>
+                    <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>м³ всего</div>
                     {pBf>0 && <>
-                      <div style={{ fontSize:11, color:T.txt2, marginTop:5 }}>план: <b style={{ color:T.txt1 }}>{pBf.toLocaleString()}</b></div>
+                      <div style={{ fontSize:12, color:T.txt2, marginTop:5 }}>план: <b style={{ color:T.txt1 }}>{pBf.toLocaleString()}</b></div>
                       <div style={{ height:3, background:T.bg3, borderRadius:2, marginTop:4 }}>
                         <div style={{ height:"100%", width:`${Math.min(perc||0,100)}%`, background:cc, borderRadius:2 }}/>
                       </div>
-                      <div style={{ fontSize:11, fontWeight:700, color:cc, marginTop:3 }}>{perc}%</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:cc, marginTop:3 }}>{perc}%</div>
                     </>}
                   </div>
                 );
@@ -7051,29 +7051,29 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
 
               {/* КТГ */}
               <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${T.green}`, borderRadius:7, padding:"14px 16px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-                <div style={{ fontSize:10, fontWeight:700, color:T.green, textTransform:"uppercase", letterSpacing:".1em", marginBottom:8 }}>КТГ</div>
+                <div style={{ fontSize:12, fontWeight:700, color:T.green, textTransform:"uppercase", letterSpacing:".1em", marginBottom:8 }}>КТГ</div>
                 <KTGGauge v={kv} plan={obj.kp} size={66} T={T} />
-                <div style={{ fontSize:10, color:T.txt2, marginTop:6, textAlign:"center" }}>план {obj.kp}%</div>
+                <div style={{ fontSize:12, color:T.txt2, marginTop:6, textAlign:"center" }}>план {obj.kp}%</div>
               </div>
 
               {/* Этот месяц */}
               <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${T.blue}`, borderRadius:7, padding:"14px 16px" }}>
-                <div style={{ fontSize:10, fontWeight:700, color:T.blue, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>📅 Этот месяц</div>
+                <div style={{ fontSize:12, fontWeight:700, color:T.blue, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>📅 Этот месяц</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <span style={{ fontSize:11, color:T.txt2 }}>Бурение</span>
+                    <span style={{ fontSize:12, color:T.txt2 }}>Бурение</span>
                     <span style={{ fontSize:12, fontWeight:700, color:ac }}>{mon.df.toLocaleString()} п.м</span>
                   </div>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <span style={{ fontSize:11, color:T.txt2 }}>Взрывы</span>
+                    <span style={{ fontSize:12, color:T.txt2 }}>Взрывы</span>
                     <span style={{ fontSize:12, fontWeight:700, color:T.amber }}>{mon.bf.toLocaleString()} м³</span>
                   </div>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <span style={{ fontSize:11, color:T.txt2 }}>КТГ</span>
+                    <span style={{ fontSize:12, color:T.txt2 }}>КТГ</span>
                     <span style={{ fontSize:12, fontWeight:700, color:kvMon!==null?scoreColor(kvMon,obj.kp,obj.kp-12,T):T.txt2 }}>{kvMon!==null?kvMon+"%":"—"}</span>
                   </div>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <span style={{ fontSize:11, color:T.txt2 }}>Простои</span>
+                    <span style={{ fontSize:12, color:T.txt2 }}>Простои</span>
                     <span style={{ fontSize:12, fontWeight:700, color:mon.dh>0?"#ef4444":T.txt2 }}>{mon.dh} ч</span>
                   </div>
                 </div>
@@ -7081,23 +7081,23 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
 
               {/* Простои */}
               <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid #ef4444`, borderRadius:7, padding:"14px 16px" }}>
-                <div style={{ fontSize:10, fontWeight:700, color:"#ef4444", textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>⏸ Простои</div>
+                <div style={{ fontSize:12, fontWeight:700, color:"#ef4444", textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>⏸ Простои</div>
                 <div style={{ fontSize:26, fontWeight:700, color:tot.dh>0?"#ef4444":T.txt2, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{tot.dh}</div>
-                <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>часов всего</div>
-                {tot.wh>0 && <div style={{ fontSize:11, color:T.txt2, marginTop:5 }}>
+                <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>часов всего</div>
+                {tot.wh>0 && <div style={{ fontSize:12, color:T.txt2, marginTop:5 }}>
                   от раб.времени: <b style={{ color:"#ef4444" }}>{Math.round(tot.dh/(tot.wh+tot.dh)*100)}%</b>
                 </div>}
               </div>
 
               {/* ГСМ */}
               <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${T.violet}`, borderRadius:7, padding:"14px 16px" }}>
-                <div style={{ fontSize:10, fontWeight:700, color:T.violet, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>⛽ ГСМ</div>
+                <div style={{ fontSize:12, fontWeight:700, color:T.violet, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>⛽ ГСМ</div>
                 <div style={{ fontSize:22, fontWeight:700, color:T.violet, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{tot.fuel.toLocaleString()}</div>
-                <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>л дизель</div>
-                <div style={{ marginTop:6, fontSize:11, color:T.txt2 }}>
+                <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>л дизель</div>
+                <div style={{ marginTop:6, fontSize:12, color:T.txt2 }}>
                   уд: <b style={{ color:T.violet }}>{tot.bf>0?(tot.fuel/tot.bf).toFixed(1):"—"}</b> л/м³
                 </div>
-                {tot.fuelKg>0 && <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>
+                {tot.fuelKg>0 && <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>
                   ВВ: <b style={{ color:T.cyan }}>{tot.fuelKg.toLocaleString()} кг</b>
                 </div>}
               </div>
@@ -7105,9 +7105,9 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
 
             {/* ══ Тренд бурения 30 дней ══ */}
             <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderRadius:7, padding:"14px 18px", marginBottom:16 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:10, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:10, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <span>📊 Бурение — 30 дней</span>
-                {allMonth.length>0 && <span style={{ fontSize:11, color:T.txt0 }}>
+                {allMonth.length>0 && <span style={{ fontSize:12, color:T.txt0 }}>
                   <b style={{ color:ac }}>{mon.df.toLocaleString()} п.м</b> за месяц · {allMonth.length} смен
                 </span>}
               </div>
@@ -7124,7 +7124,7 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
                           borderRadius:"2px 2px 0 0", border:isToday?`1px solid ${ac}`:undefined }}>
                       </div>
                       {(d.day===1||d.day===10||d.day===20||isToday) && (
-                        <div style={{ fontSize:8, color:isToday?ac:T.txt2, fontWeight:isToday?700:400, whiteSpace:"nowrap" }}>{d.day}</div>
+                        <div style={{ fontSize:12, color:isToday?ac:T.txt2, fontWeight:isToday?700:400, whiteSpace:"nowrap" }}>{d.day}</div>
                       )}
                     </div>
                   );
@@ -7134,7 +7134,7 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
 
             {/* ══ Техника ══ */}
             <div style={{ marginBottom:16 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:8 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:8 }}>
                 🚜 Техника · {drillRigs.length} буровых станков
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))", gap:8 }}>
@@ -7154,28 +7154,28 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
                         <div style={{ fontSize:14, fontWeight:900, color:T.txt0, letterSpacing:"1.5px" }}>{rg.n}</div>
                         <div style={{ textAlign:"right" }}>
                           <div style={{ fontSize:13, fontWeight:700, color:kc }}>{rgKv!==null?rgKv+"%":"—"}</div>
-                          <div style={{ fontSize:9, color:T.txt2 }}>КТГ</div>
+                          <div style={{ fontSize:12, color:T.txt2 }}>КТГ</div>
                         </div>
                       </div>
                       <div style={{ padding:"8px 12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
                         <div>
-                          <div style={{ fontSize:9, color:T.txt2, textTransform:"uppercase" }}>Бурение</div>
-                          <div style={{ fontSize:14, fontWeight:700, color:ac }}>{rgDf.toLocaleString()}<span style={{ fontSize:9, color:T.txt2 }}> п.м</span></div>
+                          <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase" }}>Бурение</div>
+                          <div style={{ fontSize:14, fontWeight:700, color:ac }}>{rgDf.toLocaleString()}<span style={{ fontSize:12, color:T.txt2 }}> п.м</span></div>
                         </div>
                         <div>
-                          <div style={{ fontSize:9, color:T.txt2, textTransform:"uppercase" }}>Работа</div>
-                          <div style={{ fontSize:14, fontWeight:700, color:T.blue }}>{rgWh.toFixed(0)}<span style={{ fontSize:9, color:T.txt2 }}> ч</span></div>
+                          <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase" }}>Работа</div>
+                          <div style={{ fontSize:14, fontWeight:700, color:T.blue }}>{rgWh.toFixed(0)}<span style={{ fontSize:12, color:T.txt2 }}> ч</span></div>
                         </div>
                         <div>
-                          <div style={{ fontSize:9, color:T.txt2, textTransform:"uppercase" }}>ГСМ</div>
-                          <div style={{ fontSize:14, fontWeight:700, color:T.violet }}>{rgFuel}<span style={{ fontSize:9, color:T.txt2 }}> т</span></div>
+                          <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase" }}>ГСМ</div>
+                          <div style={{ fontSize:14, fontWeight:700, color:T.violet }}>{rgFuel}<span style={{ fontSize:12, color:T.txt2 }}> т</span></div>
                         </div>
                         <div>
-                          <div style={{ fontSize:9, color:T.txt2, textTransform:"uppercase" }}>Простои</div>
-                          <div style={{ fontSize:14, fontWeight:700, color:rgDh>0?"#ef4444":T.txt2 }}>{rgDh}<span style={{ fontSize:9, color:T.txt2 }}> ч</span></div>
+                          <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase" }}>Простои</div>
+                          <div style={{ fontSize:14, fontWeight:700, color:rgDh>0?"#ef4444":T.txt2 }}>{rgDh}<span style={{ fontSize:12, color:T.txt2 }}> ч</span></div>
                         </div>
                       </div>
-                      {lastRep && <div style={{ padding:"4px 12px 7px", fontSize:10, color:T.txt2 }}>
+                      {lastRep && <div style={{ padding:"4px 12px 7px", fontSize:12, color:T.txt2 }}>
                         Посл. смена: <b style={{ color:T.txt1 }}>{lastRep.date}</b>
                       </div>}
                     </div>
@@ -7322,7 +7322,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           <button onClick={()=>setMoveModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
         </div>
         <div style={{padding:16,display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:11,color:T.txt2,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Выберите объект назначения</div>
+          <div style={{fontSize:12,color:T.txt2,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Выберите объект назначения</div>
           <div onClick={()=>doMoveAsset(null)}
             style={{padding:"10px 14px",borderRadius:6,cursor:"pointer",border:`1.5px solid ${moveModal.currentOid===null?T.amber:T.border}`,
               background:moveModal.currentOid===null?`${T.amber}12`:"transparent",
@@ -7330,7 +7330,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
             onMouseEnter={e=>e.currentTarget.style.borderColor=T.amber}
             onMouseLeave={e=>e.currentTarget.style.borderColor=moveModal.currentOid===null?T.amber:T.border}>
             <span style={{fontSize:13,color:moveModal.currentOid===null?T.amber:T.txt2,fontStyle:"italic"}}>— Не назначен (на склад)</span>
-            {moveModal.currentOid===null && <span style={{fontSize:11,color:T.amber,fontWeight:700}}>текущий</span>}
+            {moveModal.currentOid===null && <span style={{fontSize:12,color:T.amber,fontWeight:700}}>текущий</span>}
           </div>
           {objs.map(obj=>{
             const isCurrent = Number(moveModal.currentOid) === obj.id;
@@ -7345,7 +7345,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
                 onMouseEnter={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.cyan;}}
                 onMouseLeave={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.border;}}>
                 <span style={{fontSize:13,fontWeight:isCurrent?700:400,color:isCurrent?T.cyan:T.txt0}}>📍 {obj.name}</span>
-                {isCurrent && <span style={{fontSize:11,color:T.cyan,fontWeight:700}}>текущий</span>}
+                {isCurrent && <span style={{fontSize:12,color:T.cyan,fontWeight:700}}>текущий</span>}
               </div>
             );
           })}
@@ -7525,7 +7525,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
                     {lbl:"Дислокация",          val:pp.location||"—",                                    icon:"🗺"},
                   ].map(({lbl,val,icon})=>(
                     <div key={lbl} style={{padding:"8px 10px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-                      <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",marginBottom:3}}>{icon} {lbl}</div>
+                      <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:3}}>{icon} {lbl}</div>
                       <div style={{fontSize:13,fontWeight:700,color:T.txt0}}>{val}</div>
                     </div>
                   ))}
@@ -7538,7 +7538,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             {/* Hours gauge card */}
             <Card accent={hs.color} T={T} style={{padding:"16px 20px"}}>
-              <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>⏱ Наработка</div>
+              <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>⏱ Наработка</div>
               <div style={{display:"flex",alignItems:"flex-end",gap:12,marginBottom:12}}>
                 <div style={{fontSize:48,fontWeight:700,color:hs.color,fontFamily:"'Inter',sans-serif",lineHeight:1}}>
                   {mh.toLocaleString()}
@@ -7549,24 +7549,24 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
               {nearest && (
                 <div style={{marginBottom:10}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                    <div style={{fontSize:11,color:T.txt2}}>
+                    <div style={{fontSize:12,color:T.txt2}}>
                       До {nearest.name} ({nearest.nextAt.toLocaleString()} мч)
                       {nearest.duration_hrs ? <span style={{marginLeft:6,color:T.violet}}>· {nearest.duration_hrs} ч простоя</span> : ""}
                     </div>
-                    <div style={{fontSize:11,fontWeight:700,color:nearest.color}}>
+                    <div style={{fontSize:12,fontWeight:700,color:nearest.color}}>
                       {nearest.overdue ? "ПРОСРОЧЕНО" : `${nearest.rem.toLocaleString()} мч`}
                     </div>
                   </div>
                   <div style={{height:8,background:T.border,borderRadius:4,overflow:"hidden"}}>
                     <div style={{height:"100%",width:`${nearest.pct}%`,background:nearest.color,borderRadius:4,transition:"width 0.6s"}}/>
                   </div>
-                  <div style={{fontSize:10,color:T.txt2,marginTop:4}}>{nearest.pct}% до {nearest.name}</div>
+                  <div style={{fontSize:12,color:T.txt2,marginTop:4}}>{nearest.pct}% до {nearest.name}</div>
                 </div>
               )}
               {/* All schedule items as chips */}
               <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
                 {schedStatus.map(s=>(
-                  <div key={s.name} style={{fontSize:10,padding:"2px 8px",borderRadius:3,
+                  <div key={s.name} style={{fontSize:12,padding:"2px 8px",borderRadius:3,
                     background:s.overdue?`#ef444420`:`${s.color}15`,
                     border:`1px solid ${s.overdue?"#ef444450":s.color+"50"}`,
                     color:s.overdue?"#ef4444":s.color,fontWeight:700,
@@ -7582,12 +7582,12 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
             <Card T={T}>
               <div style={{padding:"10px 14px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div style={{fontSize:12,fontWeight:700,color:T.txt0,textTransform:"uppercase"}}>📒 История наработки</div>
-                <div style={{fontSize:11,color:T.txt2}}>{log.length} записей</div>
+                <div style={{fontSize:12,color:T.txt2}}>{log.length} записей</div>
               </div>
               {log.length === 0 ? (
                 <div style={{padding:"20px 14px",textAlign:"center",fontSize:12,color:T.txt2}}>
                   Наработка пока не накапливалась<br/>
-                  <span style={{fontSize:11,opacity:0.7}}>Увеличивается при утверждении отчётов нач. участка</span>
+                  <span style={{fontSize:12,opacity:0.7}}>Увеличивается при утверждении отчётов нач. участка</span>
                 </div>
               ) : (
                 <div style={{maxHeight:240,overflowY:"auto"}}>
@@ -7600,7 +7600,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
                     }}>
                       <div>
                         <div style={{fontSize:12,fontWeight:700,color:T.txt0}}>{entry.date}</div>
-                        <div style={{fontSize:11,color:T.txt2}}>{entry.by}</div>
+                        <div style={{fontSize:12,color:T.txt2}}>{entry.by}</div>
                       </div>
                       <div style={{fontSize:16,fontWeight:700,color:T.green,fontFamily:"'Inter',sans-serif"}}>
                         +{entry.wh} мч
@@ -7729,11 +7729,11 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div style={{fontSize:22}}>{cat.icon}</div>
                 <div style={{display:"flex",gap:2}}>
-                  <button onClick={e=>{e.stopPropagation();openEditCat(cat);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:T.txt2,padding:"2px 3px"}}>✏</button>
-                  <button onClick={e=>{e.stopPropagation();deleteCat(cat.key);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:"#ef4444",padding:"2px 3px"}}>🗑</button>
+                  <button onClick={e=>{e.stopPropagation();openEditCat(cat);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:T.txt2,padding:"2px 3px"}}>✏</button>
+                  <button onClick={e=>{e.stopPropagation();deleteCat(cat.key);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#ef4444",padding:"2px 3px"}}>🗑</button>
                 </div>
               </div>
-              <div style={{fontSize:11,fontWeight:700,color:isActive?cat.color:T.txt0,marginTop:4,lineHeight:1.3}}>{cat.label}</div>
+              <div style={{fontSize:12,fontWeight:700,color:isActive?cat.color:T.txt0,marginTop:4,lineHeight:1.3}}>{cat.label}</div>
               <div style={{fontSize:24,fontWeight:900,color:cat.color,fontFamily:"'Inter',sans-serif",lineHeight:1,marginTop:4}}>{cnt}</div>
             </div>
           );
@@ -7746,7 +7746,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           {activeCat?<span>{activeCat.icon} {activeCat.label}</span>:"Все активы"}
           <span style={{fontSize:12,color:T.txt2,fontFamily:"'Inter',sans-serif",fontWeight:400,marginLeft:8}}>({catAssets.length})</span>
         </div>
-        <div style={{fontSize:11,color:T.txt2}}>Нажмите на карточку для просмотра паспорта</div>
+        <div style={{fontSize:12,color:T.txt2}}>Нажмите на карточку для просмотра паспорта</div>
       </div>
 
       {catAssets.length === 0 ? (
@@ -7780,20 +7780,20 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
                         display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{cat.icon}</div>
                       <div>
                         <div style={{fontSize:14,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>{a.name}</div>
-                        <div style={{fontSize:11,color:cat.color,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}}>{cat.label}</div>
+                        <div style={{fontSize:12,color:cat.color,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}}>{cat.label}</div>
                       </div>
                     </div>
                     <div style={{display:"flex",gap:2}} onClick={e=>e.stopPropagation()}>
                       <button onClick={e=>openMoveAsset(a,e)} title="Переместить на другой объект"
-                        style={{background:`${T.cyan}12`,border:`1px solid ${T.cyan}40`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.cyan,padding:"3px 7px",fontWeight:700}}>↔</button>
-                      <button onClick={()=>openEditAsset(a)} style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.txt2,padding:"3px 7px"}}>✏</button>
-                      <button onClick={()=>setDeleteConfId(a.id)} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:11,color:"#f87171",padding:"3px 7px"}}>🗑</button>
+                        style={{background:`${T.cyan}12`,border:`1px solid ${T.cyan}40`,borderRadius:4,cursor:"pointer",fontSize:12,color:T.cyan,padding:"3px 7px",fontWeight:700}}>↔</button>
+                      <button onClick={()=>openEditAsset(a)} style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:4,cursor:"pointer",fontSize:12,color:T.txt2,padding:"3px 7px"}}>✏</button>
+                      <button onClick={()=>setDeleteConfId(a.id)} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:12,color:"#f87171",padding:"3px 7px"}}>🗑</button>
                     </div>
                   </div>
 
                   {/* Specs row */}
                   {(pp.manufacturer||pp.model||pp.year) && (
-                    <div style={{fontSize:11,color:T.txt2,marginBottom:8}}>
+                    <div style={{fontSize:12,color:T.txt2,marginBottom:8}}>
                       {[pp.manufacturer,pp.model,pp.year&&`${pp.year}г`].filter(Boolean).join(" · ")}
                     </div>
                   )}
@@ -7807,7 +7807,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
                       <div style={{fontSize:12,fontWeight:700,color:hs.c,fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>
                         {mh.toLocaleString()} мч
                       </div>
-                      <div style={{fontSize:10,padding:"2px 6px",borderRadius:3,background:`${hs.c}18`,border:`1px solid ${hs.c}40`,color:hs.c,fontWeight:700}}>{hs.l}</div>
+                      <div style={{fontSize:12,padding:"2px 6px",borderRadius:3,background:`${hs.c}18`,border:`1px solid ${hs.c}40`,color:hs.c,fontWeight:700}}>{hs.l}</div>
                     </div>
                   )}
 
@@ -8149,7 +8149,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
                 {[["Объект",objs.find(o=>o.id===selObjId)?.name||"—"],["Период",monthLabel],["Техника",`${objAssets.length} ед.`],["Ср. КТГ план",`${planKtg}%`],["Заполнено дней",`${setDays} / ${daysInMonth}`],["ТО по расписанию",toCount?`${toCount} ячеек`:"—"]].map(([l,v])=>(
                   <div key={l} style={{padding:"8px 12px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-                    <div style={{fontSize:11,color:T.txt2,marginBottom:2}}>{l}</div>
+                    <div style={{fontSize:12,color:T.txt2,marginBottom:2}}>{l}</div>
                     <div style={{fontSize:13,fontWeight:700,color:T.txt0}}>{v}</div>
                   </div>
                 ))}
@@ -8173,7 +8173,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
       <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:18,padding:"8px 14px",background:T.bg2,borderRadius:6,border:`1px solid ${T.border}`,flexWrap:"wrap"}}>
         {["DRAFT","SUBMITTED","ACCEPTED","RETURNED"].map((s,i)=>{
           const isCur=planStatus===s; const cfg=KTG_PLAN_STATUS[s];
-          return(<div key={s} style={{display:"flex",alignItems:"center",gap:4}}>{i>0&&<span style={{color:T.txt2,fontSize:11}}>→</span>}<span style={{padding:"3px 10px",borderRadius:3,fontSize:12,fontWeight:700,background:isCur?cfg.bg:"transparent",border:`1px solid ${isCur?cfg.border:T.border}`,color:isCur?cfg.color:T.txt2}}>{stepLabels[s]}</span></div>);
+          return(<div key={s} style={{display:"flex",alignItems:"center",gap:4}}>{i>0&&<span style={{color:T.txt2,fontSize:12}}>→</span>}<span style={{padding:"3px 10px",borderRadius:3,fontSize:12,fontWeight:700,background:isCur?cfg.bg:"transparent",border:`1px solid ${isCur?cfg.border:T.border}`,color:isCur?cfg.color:T.txt2}}>{stepLabels[s]}</span></div>);
         })}
         <div style={{marginLeft:"auto"}}>{plan&&<KTGPlanBadge status={planStatus}/>}</div>
       </div>
@@ -8202,20 +8202,20 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
 
       <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <Card accent={T.green} style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⚙ КТГ план</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⚙ КТГ план</div>
           <div style={{fontSize:28,fontWeight:700,color:avgKtg===null?"#5a7499":avgKtg>=85?T.green:avgKtg>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif",lineHeight:1}}>{avgKtg!==null?`${avgKtg}%`:"—"}</div>
-          <div style={{fontSize:10,color:T.txt2,marginTop:2}}>по заполненным дням</div>
+          <div style={{fontSize:12,color:T.txt2,marginTop:2}}>по заполненным дням</div>
         </Card>
         <Card style={{padding:"12px 16px",minWidth:100}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>🏗 Техника</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>🏗 Техника</div>
           <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{objAssets.length}</div>
         </Card>
         <Card style={{padding:"12px 16px",minWidth:100}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⏱ Часов/день</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⏱ Часов/день</div>
           <div style={{fontSize:28,fontWeight:700,color:T.cyan,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{DAY_CAPACITY}</div>
         </Card>
         <Card style={{padding:"12px 16px",minWidth:110}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📅 Период</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📅 Период</div>
           <div style={{fontSize:18,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1.2}}>{monthLabel}</div>
         </Card>
       </div>
@@ -8228,7 +8228,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
             <div style={{fontSize:12,color:T.txt2,marginBottom:18}}>Задайте пресеты — метки и количество рабочих часов (0–22)</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 60px 36px 36px 32px",gap:8,marginBottom:6}}>
               {["Название","Часы","Иконка","Цвет",""].map(h=>(
-                <div key={h} style={{fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>{h}</div>
+                <div key={h} style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>{h}</div>
               ))}
             </div>
             {editPresets.map(p=>{
@@ -8263,7 +8263,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
         <div style={{marginBottom:14,padding:"14px 16px",background:T.bg2,borderRadius:6,border:`1px solid ${T.border}`}}>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
             <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>⚡ Кисть</div>
-            <div style={{fontSize:11,color:T.txt2}}>— нажмите ячейку или заголовок строки/столбца</div>
+            <div style={{fontSize:12,color:T.txt2}}>— нажмите ячейку или заголовок строки/столбца</div>
             <div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap"}}>
               <button onClick={openBrushEdit} style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"transparent",border:`1px solid ${T.cyan}`,color:T.cyan,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>🎨 Настроить</button>
               <button onClick={fillAll} style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"rgba(99,120,160,0.12)",border:`1px solid rgba(99,120,160,0.4)`,color:"#8899bb",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>▦ Заполнить всё</button>
@@ -8279,16 +8279,16 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
                     background:active?`${p.color}25`:"transparent",border:`2px solid ${active?p.color:T.border}`,
                     color:active?p.color:T.txt1,fontFamily:"'Inter',sans-serif",transition:"all 0.1s",display:"flex",alignItems:"center",gap:5}}>
                   <span>{p.icon}</span><span>{p.label}</span>
-                  <span style={{fontSize:10,opacity:.7,fontWeight:400}}>{p.hours}ч</span>
+                  <span style={{fontSize:12,opacity:.7,fontWeight:400}}>{p.hours}ч</span>
                 </button>
               );
             })}
             <div style={{display:"flex",alignItems:"center",gap:5,marginLeft:4,padding:"4px 10px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-              <span style={{fontSize:11,color:T.txt2}}>Custom:</span>
+              <span style={{fontSize:12,color:T.txt2}}>Custom:</span>
               <input type="number" min="0" max="22" value={paintHours}
                 onChange={e=>setPaintHours(Math.max(0,Math.min(22,Number(e.target.value))))}
                 style={{width:44,padding:"3px 6px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",textAlign:"center"}}/>
-              <span style={{fontSize:11,color:T.txt2}}>ч</span>
+              <span style={{fontSize:12,color:T.txt2}}>ч</span>
             </div>
           </div>
         </div>
@@ -8304,7 +8304,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
         <Card T={T} style={{padding:0}}>
           <div style={{padding:"10px 14px",borderBottom:`1px solid ${T.border}`,display:"flex",gap:14,flexWrap:"wrap",alignItems:"center"}}>
             {[{h:22,label:"Полный день (22ч)",color:"#10b981"},{h:18,label:"ТО лёгкое (−4ч)",color:"#34d399"},{h:14,label:"ТО среднее (−8ч)",color:"#fbbf24"},{h:0,label:"Простой",color:"#ef4444"},{h:null,label:"Не задан",color:"#5a7499"}].map(({h,label,color})=>(
-              <span key={label} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
+              <span key={label} style={{display:"flex",alignItems:"center",gap:5,fontSize:12}}>
                 <span style={{width:14,height:14,borderRadius:3,background:cellCfg(h).bg,border:`1px solid ${color}60`,display:"inline-block"}}/>
                 <span style={{color:T.txt2}}>{label}</span>
               </span>
@@ -8314,22 +8314,22 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:Math.max(700,daysInMonth*36+220)}}>
               <thead>
                 <tr style={{background:T.bg3}}>
-                  <th style={{padding:"8px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,minWidth:160,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
+                  <th style={{padding:"8px 12px",textAlign:"left",fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,minWidth:160,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
                   {days.map(d=>{
                     const dayNum=parseInt(d.slice(8),10);
                     const dow=new Date(d).getDay();
                     const isWe=dow===0||dow===6;
                     const ktgV=ktgForDay(d);
                     return(
-                      <th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:10,borderBottom:`1px solid ${T.border}`,minWidth:34,background:T.bg3}}>
-                        <div style={{color:isWe?T.amber:T.txt2,fontWeight:700,fontSize:11,cursor:isLocked?"default":"pointer",padding:"2px 0",borderRadius:3}}
+                      <th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:12,borderBottom:`1px solid ${T.border}`,minWidth:34,background:T.bg3}}>
+                        <div style={{color:isWe?T.amber:T.txt2,fontWeight:700,fontSize:12,cursor:isLocked?"default":"pointer",padding:"2px 0",borderRadius:3}}
                           onClick={()=>fillCol(d)} title={isLocked?"":"Заполнить весь столбец"}>{dayNum}</div>
-                        {ktgV!==null&&<div style={{fontSize:9,fontWeight:700,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
+                        {ktgV!==null&&<div style={{fontSize:12,fontWeight:700,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
                       </th>
                     );
                   })}
-                  <th style={{padding:"8px 6px",textAlign:"center",fontSize:11,fontWeight:700,color:T.green,borderBottom:`1px solid ${T.border}`,minWidth:52,whiteSpace:"nowrap"}}>КТГ</th>
-                  <th style={{padding:"8px 4px",textAlign:"center",fontSize:10,fontWeight:700,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:36,whiteSpace:"nowrap"}}>ч/д</th>
+                  <th style={{padding:"8px 6px",textAlign:"center",fontSize:12,fontWeight:700,color:T.green,borderBottom:`1px solid ${T.border}`,minWidth:52,whiteSpace:"nowrap"}}>КТГ</th>
+                  <th style={{padding:"8px 4px",textAlign:"center",fontSize:12,fontWeight:700,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:36,whiteSpace:"nowrap"}}>ч/д</th>
                 </tr>
               </thead>
               <tbody>
@@ -8345,7 +8345,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <div style={{width:4,height:28,borderRadius:2,background:cat.color||T.red,flexShrink:0}}/>
                           {asset.name}
-                          {!isLocked&&<span style={{fontSize:9,color:T.txt2,marginLeft:"auto"}}>→</span>}
+                          {!isLocked&&<span style={{fontSize:12,color:T.txt2,marginLeft:"auto"}}>→</span>}
                         </div>
                       </td>
                       {days.map(d=>{
@@ -8360,11 +8360,11 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
                               title={toName?`${toName}: ${h}ч работы`:cfg.label}
                               style={{width:30,height:28,borderRadius:4,margin:"0 auto",background:cfg.bg,border:`1px solid ${cfg.color}60`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:isLocked?"default":"pointer",transition:"background 0.08s",gap:0}}>
                               {h===null?(
-                                <span style={{fontSize:8,color:"#5a7499"}}>·</span>
+                                <span style={{fontSize:12,color:"#5a7499"}}>·</span>
                               ):(
                                 <>
-                                  {cfg.icon&&<span style={{fontSize:8,lineHeight:1}}>{cfg.icon}</span>}
-                                  <span style={{fontSize:9,fontWeight:700,color:cfg.textColor,lineHeight:1}}>{toName||h}</span>
+                                  {cfg.icon&&<span style={{fontSize:12,lineHeight:1}}>{cfg.icon}</span>}
+                                  <span style={{fontSize:12,fontWeight:700,color:cfg.textColor,lineHeight:1}}>{toName||h}</span>
                                 </>
                               )}
                             </div>
@@ -8372,7 +8372,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
                         );
                       })}
                       <td style={{padding:"5px 6px",textAlign:"center",fontWeight:700,fontSize:13,color:assetK===null?"#5a7499":assetK>=85?"#8899bb":assetK>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif"}}>{assetK!==null?`${assetK}%`:"—"}</td>
-                      <td style={{padding:"5px 4px",textAlign:"center",fontSize:11,color:T.txt2,fontFamily:"'Inter',sans-serif"}}>{avgH!==null?avgH:"—"}</td>
+                      <td style={{padding:"5px 4px",textAlign:"center",fontSize:12,color:T.txt2,fontFamily:"'Inter',sans-serif"}}>{avgH!==null?avgH:"—"}</td>
                     </tr>
                   );
                 })}
@@ -8474,21 +8474,21 @@ function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
       {/* Summary */}
       <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
         <Card accent={T.cyan} style={{padding:"12px 16px",minWidth:140}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⚙ КТГ факт (мес)</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⚙ КТГ факт (мес)</div>
           <div style={{fontSize:28,fontWeight:700,fontFamily:"'Inter',sans-serif",lineHeight:1,color:ktgColor(monthAvg)}}>
             {monthAvg !== null ? `${monthAvg}%` : "—"}
           </div>
         </Card>
         <Card style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📋 Отчётов</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📋 Отчётов</div>
           <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{monthReps.length}</div>
         </Card>
         <Card style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>🏗 Буровых</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>🏗 Буровых</div>
           <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{objRigs.length}</div>
         </Card>
         <Card style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📅 Дней с данными</div>
+          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📅 Дней с данными</div>
           <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{monthVals.length}</div>
         </Card>
       </div>
@@ -8520,7 +8520,7 @@ function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
             <table style={{width:"100%",borderCollapse:"collapse",minWidth:Math.max(700,daysInMonth*36+200)}}>
               <thead>
                 <tr style={{background:T.bg3}}>
-                  <th style={{padding:"8px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:T.txt2,
+                  <th style={{padding:"8px 12px",textAlign:"left",fontSize:12,fontWeight:700,color:T.txt2,
                     textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,minWidth:160,
                     position:"sticky",left:0,background:T.bg3,zIndex:2}}>
                     Станок
@@ -8531,19 +8531,19 @@ function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
                     const isWe   = dow===0||dow===6;
                     const objV   = getObjDayKtg(d);
                     return (
-                      <th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:10,borderBottom:`1px solid ${T.border}`,minWidth:34,background:T.bg3}}>
-                        <div style={{color:isWe?T.amber:T.txt2,fontWeight:700,fontSize:11,padding:"2px 0"}}>
+                      <th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:12,borderBottom:`1px solid ${T.border}`,minWidth:34,background:T.bg3}}>
+                        <div style={{color:isWe?T.amber:T.txt2,fontWeight:700,fontSize:12,padding:"2px 0"}}>
                           {dayNum}
                         </div>
                         {objV !== null && (
-                          <div style={{fontSize:9,fontWeight:700,color:ktgColor(objV)}}>
+                          <div style={{fontSize:12,fontWeight:700,color:ktgColor(objV)}}>
                             {objV}%
                           </div>
                         )}
                       </th>
                     );
                   })}
-                  <th style={{padding:"8px 8px",textAlign:"center",fontSize:11,fontWeight:700,color:T.cyan,
+                  <th style={{padding:"8px 8px",textAlign:"center",fontSize:12,fontWeight:700,color:T.cyan,
                     borderBottom:`1px solid ${T.border}`,minWidth:60,whiteSpace:"nowrap"}}>Ср. КТГ</th>
                 </tr>
               </thead>
@@ -8573,7 +8573,7 @@ function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
                               fontSize:v!==null?10:8,fontWeight:700,
                               color:v!==null?ktgColor(v):T.txt2,
                             }}>
-                              {v !== null ? `${v}%` : <span style={{fontSize:8}}>·</span>}
+                              {v !== null ? `${v}%` : <span style={{fontSize:12}}>·</span>}
                             </div>
                           </td>
                         );
@@ -8603,7 +8603,7 @@ function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
                           display:"flex",alignItems:"center",justifyContent:"center",
                           fontSize:v!==null?9:8,fontWeight:700,color:v!==null?ktgColor(v):T.txt2,
                         }}>
-                          {v !== null ? `${v}%` : <span style={{fontSize:8}}>·</span>}
+                          {v !== null ? `${v}%` : <span style={{fontSize:12}}>·</span>}
                         </div>
                       </td>
                     );
@@ -8670,18 +8670,18 @@ function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
         <table style={{borderCollapse:"collapse",width:"100%"}}>
           <thead>
             <tr style={{background:T.bg3}}>
-              <th style={{padding:"6px 12px",fontSize:11,color:T.txt2,textAlign:"left",borderBottom:`1px solid ${T.border}`,minWidth:90,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
+              <th style={{padding:"6px 12px",fontSize:12,color:T.txt2,textAlign:"left",borderBottom:`1px solid ${T.border}`,minWidth:90,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
               {days.map(d=>{
                 const dayNum=parseInt(d.slice(8),10);
                 const ktgV=assetIds.length?Math.round(assetIds.filter(aid=>((plan.items[aid]||{})[d]??-1)>0).length/assetIds.length*100):null;
                 return(
-                  <th key={d} style={{padding:"2px 1px",fontSize:9,color:T.txt2,textAlign:"center",borderBottom:`1px solid ${T.border}`,minWidth:28,background:T.bg3}}>
+                  <th key={d} style={{padding:"2px 1px",fontSize:12,color:T.txt2,textAlign:"center",borderBottom:`1px solid ${T.border}`,minWidth:28,background:T.bg3}}>
                     <div style={{fontWeight:700}}>{dayNum}</div>
-                    {ktgV!==null&&<div style={{fontSize:8,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
+                    {ktgV!==null&&<div style={{fontSize:12,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
                   </th>
                 );
               })}
-              <th style={{padding:"6px 8px",fontSize:11,color:T.green,textAlign:"center",borderBottom:`1px solid ${T.border}`,minWidth:50}}>КТГ</th>
+              <th style={{padding:"6px 8px",fontSize:12,color:T.green,textAlign:"center",borderBottom:`1px solid ${T.border}`,minWidth:50}}>КТГ</th>
             </tr>
           </thead>
           <tbody>
@@ -8691,7 +8691,7 @@ function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
               const ktg=Math.round(readyDays/dim*100);
               return(
                 <tr key={aid} style={{background:ai%2?T.rowAlt:"transparent"}}>
-                  <td style={{padding:"4px 12px",fontSize:11,fontWeight:700,color:T.txt0,position:"sticky",left:0,background:ai%2?T.rowAlt:T.bg2,zIndex:1}}>{assetNode?.name||aid}</td>
+                  <td style={{padding:"4px 12px",fontSize:12,fontWeight:700,color:T.txt0,position:"sticky",left:0,background:ai%2?T.rowAlt:T.bg2,zIndex:1}}>{assetNode?.name||aid}</td>
                   {days.map(d=>{
                     const st=(plan.items[aid]||{})[d]||"NONE";
                     const cfg=KTG_DAY_STATUS[st]||KTG_DAY_STATUS.NONE;
@@ -8699,7 +8699,7 @@ function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
                       <td key={d} style={{padding:"1px",textAlign:"center"}}>
                         <div style={{width:24,height:22,borderRadius:3,margin:"0 auto",background:cfg.bg,
                           border:`1px solid ${st==="NONE"?T.border:cfg.color+"50"}`,
-                          display:"flex",alignItems:"center",justifyContent:"center",fontSize:11}}>
+                          display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
                           {st!=="NONE"?cfg.icon:"·"}
                         </div>
                       </td>
@@ -8798,7 +8798,7 @@ function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
                   {avg!==null&&(
                     <div style={{textAlign:"center",padding:"8px 14px",background:`${avg>=85?T.green:"#f59e0b"}12`,borderRadius:5,border:`1px solid ${avg>=85?T.green+"30":"rgba(245,158,11,0.3)"}`}}>
                       <div style={{fontSize:22,fontWeight:700,color:avg>=85?T.green:T.amber,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{avg}%</div>
-                      <div style={{fontSize:10,color:T.txt2,marginTop:2}}>КТГ план</div>
+                      <div style={{fontSize:12,color:T.txt2,marginTop:2}}>КТГ план</div>
                     </div>
                   )}
                   <KTGPlanBadge status={plan.status}/>
@@ -8824,7 +8824,7 @@ function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
                   <div style={{flex:1}}>
                     <span style={{fontSize:13,fontWeight:700,color:T.txt0}}>{obj?.name||"—"}</span>
                     <span style={{fontSize:12,color:T.txt2,marginLeft:8}}>{monthLabel(plan.year_month)}</span>
-                    {plan.engineer_comment&&<div style={{fontSize:11,color:"#f87171",marginTop:2}}>↩ {plan.engineer_comment}</div>}
+                    {plan.engineer_comment&&<div style={{fontSize:12,color:"#f87171",marginTop:2}}>↩ {plan.engineer_comment}</div>}
                   </div>
                   {avg!==null&&<span style={{fontSize:14,fontWeight:700,color:T.txt2,fontFamily:"'Inter',sans-serif"}}>{avg}% КТГ</span>}
                   <KTGPlanBadge status={plan.status}/>
@@ -8891,7 +8891,7 @@ function DowntimeModal({ rigName, onSave, onClose, T }) {
         <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:12 }}>
           {/* Category */}
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Категория</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Категория</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
               {Object.entries(DOWNTIME_CATS).map(([k,v]) => (
                 <button key={k} onClick={() => { setCat(k); setSub(""); }}
@@ -8905,13 +8905,13 @@ function DowntimeModal({ rigName, onSave, onClose, T }) {
           </div>
           {/* Subcategory */}
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Причина</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Причина</div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
               {catObj.subs.map(s => (
                 <button key={s} onClick={() => setSub(s)}
                   style={{ padding:"5px 10px", borderRadius:4, border:`1px solid ${sub===s ? catObj.color : T.border}`,
                     background: sub===s ? `${catObj.color}18` : T.bg3,
-                    color: sub===s ? catObj.color : T.txt1, fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                    color: sub===s ? catObj.color : T.txt1, fontSize:12, fontWeight:600, cursor:"pointer" }}>
                   {s}
                 </button>
               ))}
@@ -8921,7 +8921,7 @@ function DowntimeModal({ rigName, onSave, onClose, T }) {
           <FieldInput label="Часов простоя" type="text" value={hrs} onChange={e=>setHrs(e.target.value)} placeholder="0.5" T={T} />
           {/* Description */}
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Описание (необязательно)</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Описание (необязательно)</div>
             <textarea value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Дополнительные детали..."
               style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt1, fontSize:12, resize:"vertical", minHeight:56, fontFamily:"'Inter',sans-serif", outline:"none" }} />
           </div>
@@ -8951,7 +8951,7 @@ function DowntimeList({ events, onDelete, T }) {
             <div style={{ width:3, height:28, borderRadius:2, background:catObj.color, flexShrink:0 }} />
             <div style={{ flex:1 }}>
               <div style={{ fontSize:12, fontWeight:700, color:T.txt0 }}>{ev.sub}</div>
-              <div style={{ fontSize:11, color:T.txt2 }}>{catObj.label}{ev.desc ? ` · ${ev.desc}` : ""}</div>
+              <div style={{ fontSize:12, color:T.txt2 }}>{catObj.label}{ev.desc ? ` · ${ev.desc}` : ""}</div>
             </div>
             <div style={{ fontSize:13, fontWeight:700, color:catObj.color, fontFamily:"'Inter',sans-serif", minWidth:36, textAlign:"right" }}>{ev.hrs}ч</div>
             <button onClick={() => onDelete(i)} style={{ background:"none", border:"none", color:T.txt2, fontSize:14, cursor:"pointer", padding:"0 4px" }}>×</button>
@@ -9119,7 +9119,7 @@ function BlastPassportPage({ passports_bvr, setPassportsBvr, objs, reps, T }) {
                       <div style={{ fontSize:15, fontWeight:700, color:T.txt0, fontFamily:"'Inter',sans-serif" }}>
                         {p.block_name || `Блок #${p.id}`}
                       </div>
-                      <span style={{ padding:"2px 8px", borderRadius:3, background:`${statusColors[p.status]}18`, color:statusColors[p.status], fontSize:11, fontWeight:700, border:`1px solid ${statusColors[p.status]}40` }}>
+                      <span style={{ padding:"2px 8px", borderRadius:3, background:`${statusColors[p.status]}18`, color:statusColors[p.status], fontSize:12, fontWeight:700, border:`1px solid ${statusColors[p.status]}40` }}>
                         {statusLabels[p.status]}
                       </span>
                     </div>
@@ -9149,9 +9149,9 @@ function BlastPassportPage({ passports_bvr, setPassportsBvr, objs, reps, T }) {
                     eff !== null ? ["Эффективность", eff, "%", eff >= 90 ? T.green : eff >= 70 ? T.amber : "#ef4444"] : null,
                   ].filter(Boolean).map(([lbl, val, unit, color]) => (
                     <div key={lbl}>
-                      <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em" }}>{lbl}</div>
+                      <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em" }}>{lbl}</div>
                       <div style={{ fontSize:16, fontWeight:700, color, fontFamily:"'Inter',sans-serif" }}>
-                        {val} <span style={{ fontSize:11, fontWeight:400, color:T.txt2 }}>{unit}</span>
+                        {val} <span style={{ fontSize:12, fontWeight:400, color:T.txt2 }}>{unit}</span>
                       </div>
                     </div>
                   ))}
@@ -9201,7 +9201,7 @@ function BlastPassportForm({ initial, objs, onSave, onClose, T }) {
 
   const F = ({ label, children }) => (
     <div>
-      <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>{label}</div>
+      <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>{label}</div>
       {children}
     </div>
   );
@@ -9228,7 +9228,7 @@ function BlastPassportForm({ initial, objs, onSave, onClose, T }) {
         <div style={{ padding:"18px 20px", display:"flex", flexDirection:"column", gap:14 }}>
 
           {/* Section: Общее */}
-          <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6 }}>Общие данные</div>
+          <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6 }}>Общие данные</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <F label="Участок">{sel(oid, setOid, objs.map(o=>[String(o.id),o.name]))}</F>
             <F label="Дата">{inp(date, setDate, "2025-06-01")}</F>
@@ -9237,7 +9237,7 @@ function BlastPassportForm({ initial, objs, onSave, onClose, T }) {
           </div>
 
           {/* Section: Скважины */}
-          <div style={{ fontSize:11, fontWeight:700, color:T.blue, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Скважины</div>
+          <div style={{ fontSize:12, fontWeight:700, color:T.blue, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Скважины</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
             <F label="Кол-во скважин">{inp(holes, setHoles, "48")}</F>
             <F label="Средняя глубина, м">{inp(avgDepth, setAvgDepth, "12.5")}</F>
@@ -9245,7 +9245,7 @@ function BlastPassportForm({ initial, objs, onSave, onClose, T }) {
           </div>
 
           {/* Section: ВВ */}
-          <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Взрывчатые вещества</div>
+          <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Взрывчатые вещества</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
             <F label="Тип ВВ">{sel(expType, setExpType, EXPLOSIVE_TYPES.map(e=>[e,e]))}</F>
             <F label="Общий заряд, кг">{inp(charge, setCharge, "14400")}</F>
@@ -9253,20 +9253,20 @@ function BlastPassportForm({ initial, objs, onSave, onClose, T }) {
           </div>
 
           {/* Section: Объёмы */}
-          <div style={{ fontSize:11, fontWeight:700, color:T.violet, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Объёмы горной массы</div>
+          <div style={{ fontSize:12, fontWeight:700, color:T.violet, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Объёмы горной массы</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <F label="Проектный объём, м³">{inp(designedVol, setDesignedVol, "120000")}</F>
             <F label="Фактический объём, м³">{inp(actualVol, setActualVol, "0 — заполнить после взрыва")}</F>
           </div>
 
           {/* Section: Статус */}
-          <div style={{ fontSize:11, fontWeight:700, color:T.green, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Статус и итог взрыва</div>
+          <div style={{ fontSize:12, fontWeight:700, color:T.green, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Статус и итог взрыва</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <F label="Статус паспорта">{sel(status, setStatus, [["draft","Черновик"],["approved","Утверждён"],["executed","Выполнен"]])}</F>
             <F label="Результат взрыва">{sel(postStatus, setPostStatus, [["ok","Успешно"],["misfires","Отказы"],["reblast","↺ Перебур требуется"],["pending","— Ожидание"]])}</F>
           </div>
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Примечания</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Примечания</div>
             <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Особые условия, отклонения, наблюдения..."
               style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt1, fontSize:12, resize:"vertical", minHeight:64, fontFamily:"'Inter',sans-serif", outline:"none" }} />
           </div>
@@ -9374,12 +9374,12 @@ function MaintenancePage({ nodes, passports, maintLogs, setMaintLogs, user, T })
               <div style={{ padding:"12px 16px", borderBottom:`1px solid ${T.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
                   <div style={{ fontSize:14, fontWeight:700, color:T.txt0, fontFamily:"'Inter',sans-serif" }}>{rig.name}</div>
-                  <div style={{ fontSize:11, color:T.txt2, marginTop:1 }}>
+                  <div style={{ fontSize:12, color:T.txt2, marginTop:1 }}>
                     Моточасов: <b style={{ color:T.txt0, fontFamily:"'JetBrains Mono',monospace" }}>{curHrs.toLocaleString()}</b>
                   </div>
                 </div>
                 {alerts.length > 0 && (
-                  <div style={{ padding:"3px 8px", borderRadius:4, background:"#ef444420", border:"1px solid #ef444440", fontSize:11, color:"#ef4444", fontWeight:700 }}>
+                  <div style={{ padding:"3px 8px", borderRadius:4, background:"#ef444420", border:"1px solid #ef444440", fontSize:12, color:"#ef4444", fontWeight:700 }}>
                     ⚠ {alerts.length} к ТО
                   </div>
                 )}
@@ -9393,16 +9393,16 @@ function MaintenancePage({ nodes, passports, maintLogs, setMaintLogs, user, T })
                   const pctLeft = left !== null ? Math.min(100, Math.round(left / mt.interval_hrs * 100)) : 100;
                   return (
                     <div key={t} style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ fontSize:11, fontWeight:700, color:mt.color, minWidth:32 }}>{t}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:mt.color, minWidth:32 }}>{t}</div>
                       <div style={{ flex:1 }}>
                         <div style={{ height:5, background:T.bg0, borderRadius:3, overflow:"hidden" }}>
                           <div style={{ height:"100%", width:`${pctLeft}%`, background:uc, borderRadius:3, transition:"width .4s" }} />
                         </div>
                       </div>
-                      <div style={{ fontSize:11, color:uc, fontFamily:"'JetBrains Mono',monospace", minWidth:55, textAlign:"right" }}>
+                      <div style={{ fontSize:12, color:uc, fontFamily:"'JetBrains Mono',monospace", minWidth:55, textAlign:"right" }}>
                         {left !== null ? `${left}ч` : "—"}
                       </div>
-                      <div style={{ fontSize:10, color:T.txt2, minWidth:70, textAlign:"right" }}>
+                      <div style={{ fontSize:12, color:T.txt2, minWidth:70, textAlign:"right" }}>
                         {last ? last.date : "не было"}
                       </div>
                     </div>
@@ -9424,7 +9424,7 @@ function MaintenancePage({ nodes, passports, maintLogs, setMaintLogs, user, T })
             <thead>
               <tr style={{ background:T.rowHdr }}>
                 {["Станок","Тип ТО","Дата","Моточасов","Работы","Запчасти","Выполнил",""].map(h => (
-                  <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
+                  <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -9436,7 +9436,7 @@ function MaintenancePage({ nodes, passports, maintLogs, setMaintLogs, user, T })
                   <tr key={l.id} style={{ background: i%2 ? T.rowAlt : "transparent" }}>
                     <td style={{ padding:"8px 12px", fontSize:13, fontWeight:700, color:T.txt0 }}>{rig?.name || "—"}</td>
                     <td style={{ padding:"8px 12px" }}>
-                      <span style={{ padding:"2px 7px", borderRadius:3, background:`${mt?.color||T.border}18`, color:mt?.color||T.txt2, fontSize:11, fontWeight:700 }}>{l.type}</span>
+                      <span style={{ padding:"2px 7px", borderRadius:3, background:`${mt?.color||T.border}18`, color:mt?.color||T.txt2, fontSize:12, fontWeight:700 }}>{l.type}</span>
                     </td>
                     <td style={{ padding:"8px 12px", fontSize:12, color:T.txt1 }}>{l.date}</td>
                     <td style={{ padding:"8px 12px", fontSize:12, color:T.txt1, fontFamily:"'JetBrains Mono',monospace" }}>{l.moto_hours_at?.toLocaleString()}</td>
@@ -9489,14 +9489,14 @@ function MaintenanceFormModal({ initial, rigs, passports, onSave, onClose, T }) 
         <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:12 }}>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <div>
-              <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Станок</div>
+              <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Станок</div>
               <select value={nodeId} onChange={e=>setNodeId(e.target.value)}
                 style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:13, outline:"none" }}>
                 {rigs.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
             <div>
-              <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Тип ТО</div>
+              <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Тип ТО</div>
               <select value={type} onChange={e=>setType(e.target.value)}
                 style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:13, outline:"none" }}>
                 {Object.keys(MAINT_TYPES).map(t => <option key={t} value={t}>{t}</option>)}
@@ -9509,7 +9509,7 @@ function MaintenanceFormModal({ initial, rigs, passports, onSave, onClose, T }) 
           </div>
           <FieldInput label="Дата ТО" type="date" value={date} onChange={e=>setDate(e.target.value)} T={T} />
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Выполненные работы</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Выполненные работы</div>
             <textarea value={workDone} onChange={e=>setWorkDone(e.target.value)} placeholder="Замена масла 15W-40, фильтр масляный, воздушный фильтр..."
               style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt1, fontSize:12, resize:"vertical", minHeight:64, fontFamily:"'Inter',sans-serif", outline:"none" }} />
           </div>
@@ -9595,9 +9595,9 @@ function ExplosivesPage({ explosives, setExplosives, objs, reps, user, T }) {
           ["Факт взрывов", autoConsumed.toLocaleString()+" кг", T.violet, "из утверждённых отчётов"],
         ].map(([lbl, val, color, sub]) => (
           <div key={lbl} style={{ background:T.bg2, border:`1px solid ${T.border}`, borderRadius:6, padding:"12px 16px" }}>
-            <div style={{ fontSize:11, fontWeight:700, color, textTransform:"uppercase", letterSpacing:".1em", marginBottom:4 }}>{lbl}</div>
+            <div style={{ fontSize:12, fontWeight:700, color, textTransform:"uppercase", letterSpacing:".1em", marginBottom:4 }}>{lbl}</div>
             <div style={{ fontSize:22, fontWeight:700, color, fontFamily:"'Inter',sans-serif", lineHeight:1, marginBottom:2 }}>{val}</div>
-            <div style={{ fontSize:11, color:T.txt2 }}>{sub}</div>
+            <div style={{ fontSize:12, color:T.txt2 }}>{sub}</div>
           </div>
         ))}
       </div>
@@ -9611,7 +9611,7 @@ function ExplosivesPage({ explosives, setExplosives, objs, reps, user, T }) {
             if (!objBals.length) return null;
             return (
               <div key={obj.id} style={{ marginBottom:12 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:6 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:6 }}>
                   📍 {obj.name}
                 </div>
                 {/* Группируем по категориям внутри участка */}
@@ -9620,21 +9620,21 @@ function ExplosivesPage({ explosives, setExplosives, objs, reps, user, T }) {
                   if (!catBals.length) return null;
                   return (
                     <div key={cat.category} style={{ marginBottom:8 }}>
-                      <div style={{ fontSize:10, fontWeight:700, color:cat.color, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4, paddingLeft:4, borderLeft:`2px solid ${cat.color}` }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:cat.color, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4, paddingLeft:4, borderLeft:`2px solid ${cat.color}` }}>
                         {cat.category}
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))", gap:6 }}>
                         {catBals.map(b => (
                           <div key={`${b.oid}_${b.exp_type}`}
                             style={{ background:T.bg2, border:`1px solid ${b.qty < 0 ? "#ef444440" : T.border}`, borderRadius:6, padding:"8px 12px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                            <div style={{ fontSize:11, color:T.txt1, flex:1, paddingRight:8 }}>{b.exp_type}</div>
+                            <div style={{ fontSize:12, color:T.txt1, flex:1, paddingRight:8 }}>{b.exp_type}</div>
                             <div style={{ textAlign:"right" }}>
                               <div style={{ fontSize:16, fontWeight:700, color: b.qty < 0 ? "#ef4444" : b.qty < 10 ? T.amber : T.green, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>
                                 {b.qty.toLocaleString()}
                               </div>
-                              <div style={{ fontSize:10, color:T.txt2 }}>{cat.unit}</div>
+                              <div style={{ fontSize:12, color:T.txt2 }}>{cat.unit}</div>
                             </div>
-                            {b.qty < 0 && <div style={{ fontSize:10, color:"#ef4444", marginTop:2 }}>⚠</div>}
+                            {b.qty < 0 && <div style={{ fontSize:12, color:"#ef4444", marginTop:2 }}>⚠</div>}
                           </div>
                         ))}
                       </div>
@@ -9655,7 +9655,7 @@ function ExplosivesPage({ explosives, setExplosives, objs, reps, user, T }) {
             <button key={v} onClick={() => setFilterOid(v)}
               style={{ padding:"4px 12px", borderRadius:4, border:`1px solid ${filterOid===v ? T.amber : T.border}`,
                 background: filterOid===v ? `${T.amber}18` : "transparent",
-                color: filterOid===v ? T.amber : T.txt2, fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                color: filterOid===v ? T.amber : T.txt2, fontSize:12, fontWeight:600, cursor:"pointer" }}>
               {lbl}
             </button>
           ))}
@@ -9672,7 +9672,7 @@ function ExplosivesPage({ explosives, setExplosives, objs, reps, user, T }) {
               <thead>
                 <tr style={{ background:T.rowHdr }}>
                   {["Тип","Участок","Категория","ВВ / СВ","Кол-во","Сертификат","Паспорт БВР","Дата","Кто"].map(h => (
-                    <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".05em", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
+                    <th key={h} style={{ padding:"9px 12px", textAlign:"left", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".05em", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -9686,20 +9686,20 @@ function ExplosivesPage({ explosives, setExplosives, objs, reps, user, T }) {
                     <tr key={t.id} style={{ background:i%2 ? T.rowAlt : "transparent" }}>
                       <td style={{ padding:"8px 12px" }}>
                         <span style={{ fontSize:12, fontWeight:700, color:txnColors[t.txn_type] }}>{txnLabels[t.txn_type]}</span>
-                        {t.auto && <span style={{ marginLeft:5, fontSize:10, color:T.txt2, fontStyle:"italic" }}>авто</span>}
+                        {t.auto && <span style={{ marginLeft:5, fontSize:12, color:T.txt2, fontStyle:"italic" }}>авто</span>}
                       </td>
                       <td style={{ padding:"8px 12px", fontSize:12, color:T.txt1 }}>{obj?.name||"—"}</td>
                       <td style={{ padding:"8px 12px" }}>
-                        <span style={{ fontSize:10, fontWeight:700, color:catInfo.color, background:`${catInfo.color}15`, padding:"2px 6px", borderRadius:3, whiteSpace:"nowrap" }}>
+                        <span style={{ fontSize:12, fontWeight:700, color:catInfo.color, background:`${catInfo.color}15`, padding:"2px 6px", borderRadius:3, whiteSpace:"nowrap" }}>
                           {catInfo.category.split("—")[0].trim().substring(0,18)}
                         </span>
                       </td>
                       <td style={{ padding:"8px 12px", fontSize:12, color:T.txt0, fontWeight:600, maxWidth:200 }}>{t.exp_type}</td>
                       <td style={{ padding:"8px 12px", fontSize:13, fontWeight:700, color:txnColors[t.txn_type], fontFamily:"'Inter',sans-serif", whiteSpace:"nowrap" }}>
-                        {t.txn_type==="receipt" ? "+" : "−"}{t.qty.toLocaleString()} <span style={{ fontSize:10, color:T.txt2, fontWeight:400 }}>{catInfo.unit}</span>
+                        {t.txn_type==="receipt" ? "+" : "−"}{t.qty.toLocaleString()} <span style={{ fontSize:12, color:T.txt2, fontWeight:400 }}>{catInfo.unit}</span>
                       </td>
-                      <td style={{ padding:"8px 12px", fontSize:11, color:T.txt2 }}>{t.cert_no||"—"}</td>
-                      <td style={{ padding:"8px 12px", fontSize:11, color:T.txt2 }}>{t.passport_ref||"—"}</td>
+                      <td style={{ padding:"8px 12px", fontSize:12, color:T.txt2 }}>{t.cert_no||"—"}</td>
+                      <td style={{ padding:"8px 12px", fontSize:12, color:T.txt2 }}>{t.passport_ref||"—"}</td>
                       <td style={{ padding:"8px 12px", fontSize:12, color:T.txt2 }}>{t.date}</td>
                       <td style={{ padding:"8px 12px", fontSize:12, color:T.txt2 }}>{t.recorded_by||"—"}</td>
                     </tr>
@@ -9755,7 +9755,7 @@ function ExplosiveTxnModal({ objs, defaultOid, onSave, onClose, T }) {
         <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:12 }}>
           {/* Тип операции */}
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Тип операции</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Тип операции</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
               {Object.entries(txnLabels).map(([k,v]) => (
                 <button key={k} onClick={() => setTxnType(k)}
@@ -9770,7 +9770,7 @@ function ExplosiveTxnModal({ objs, defaultOid, onSave, onClose, T }) {
 
           {/* Участок */}
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Участок</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Участок</div>
             <select value={oid} onChange={e=>setOid(Number(e.target.value))}
               style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:13, outline:"none" }}>
               {objs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
@@ -9779,14 +9779,14 @@ function ExplosiveTxnModal({ objs, defaultOid, onSave, onClose, T }) {
 
           {/* Категория ВВ/СВ — горизонтальный скролл */}
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Категория</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Категория</div>
             <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
               {EXP_CATALOG.map(cat => (
                 <button key={cat.category} onClick={() => changeCat(cat)}
                   style={{ padding:"5px 10px", borderRadius:4, border:`1.5px solid ${expCat===cat.category ? cat.color : T.border}`,
                     background: expCat===cat.category ? `${cat.color}18` : T.bg3,
                     color: expCat===cat.category ? cat.color : T.txt2,
-                    fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+                    fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
                   {cat.category.split("—")[0].trim().substring(0, 22)}
                 </button>
               ))}
@@ -9795,7 +9795,7 @@ function ExplosiveTxnModal({ objs, defaultOid, onSave, onClose, T }) {
 
           {/* Наименование ВВ/СВ */}
           <div>
-            <div style={{ fontSize:11, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>
               Наименование · <span style={{ color:activeCat.color }}>{activeCat.category}</span>
             </div>
             <select value={expType} onChange={e=>setExpType(e.target.value)}
@@ -9886,7 +9886,7 @@ function ForemanMaintenancePage({ user, objs, rigs, maintRecords, setMaintRecord
 
         {/* Список буровых */}
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
-          <div style={{fontSize:11,fontWeight:700,color:T.txt2,textTransform:"uppercase",marginBottom:4,padding:"0 2px"}}>
+          <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",marginBottom:4,padding:"0 2px"}}>
             Буровые · {objRigs.length}
           </div>
           {objRigs.length === 0 ? (
@@ -9908,8 +9908,8 @@ function ForemanMaintenancePage({ user, objs, rigs, maintRecords, setMaintRecord
                   background:isSelected?`${T.amber}12`:T.bg2,cursor:"pointer",transition:"all 0.15s"}}>
                 <div style={{fontSize:13,fontWeight:700,color:T.txt0,marginBottom:4}}>{r.n}</div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div style={{fontSize:11,color:T.txt2}}>{recs.length} записей</div>
-                  <div style={{fontSize:11,fontWeight:700,color:urgColor}}>
+                  <div style={{fontSize:12,color:T.txt2}}>{recs.length} записей</div>
+                  <div style={{fontSize:12,fontWeight:700,color:urgColor}}>
                     {rem > 0 ? `−${rem} мч` : "⚠ ТО"}
                   </div>
                 </div>
@@ -9933,7 +9933,7 @@ function ForemanMaintenancePage({ user, objs, rigs, maintRecords, setMaintRecord
             <Card T={T} style={{padding:0,overflow:"hidden"}}>
               <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,background:T.bg3,display:"flex",alignItems:"center",gap:10}}>
                 <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>{selRig.n}</div>
-                <div style={{fontSize:11,color:T.txt2,padding:"2px 8px",borderRadius:3,background:`${T.amber}15`,border:`1px solid ${T.amber}40`,color:T.amber,fontWeight:600}}>
+                <div style={{fontSize:12,color:T.txt2,padding:"2px 8px",borderRadius:3,background:`${T.amber}15`,border:`1px solid ${T.amber}40`,color:T.amber,fontWeight:600}}>
                   {objs.find(o=>o.id===Number(selObjId))?.name}
                 </div>
               </div>
