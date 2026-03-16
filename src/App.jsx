@@ -2104,7 +2104,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
           id: genId(), rigId: r.id, rigName: r.n,
           workingHours: String(r.wh||""), drillingMeters: String(r.df||""),
           overDrill: String(r.overDrill||""), fuelLiters: String(r.fuel||""),
-          notes: r.dt||"", downtimes: [],
+          notes: r.dt||"", downtimes: r.downtimes || [],
         }));
     setEntries(loadedEntries.length > 0 ? loadedEntries : rigs.filter(r=>r.o===rep.oid).map(makeEntry));
     setEditRepId(rep.id);
@@ -2931,7 +2931,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
     const baseRigs = rigs.filter(rg=>rg.o===r.oid);
     setEditRows(baseRigs.map(rg=>{
       const f=r.rigs?.find(x=>x.id===rg.id)||{};
-      return {id:rg.id,nm:rg.n,df:f.df||"",wh:f.wh||"",dh:f.dh||"",fuel:f.fuel||"",dt:f.dt||""};
+      return {id:rg.id,nm:rg.n,df:f.df||"",wh:f.wh||"",dh:f.dh||"",fuel:f.fuel||"",dt:f.dt||"",overDrill:f.overDrill||""};
     }));
   }
   function setCell(id,key,val){setEditRows(prev=>prev.map(r=>r.id===id?{...r,[key]:val}:r));}
@@ -2939,12 +2939,15 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
     df:editRows.reduce((s,r)=>s+toNum(r.df),0), bf:editRows.reduce((s,r)=>s+toNum(r.bf),0),
     wh:editRows.reduce((s,r)=>s+toNum(r.wh),0), dh:editRows.reduce((s,r)=>s+toNum(r.dh),0),
     fuel:editRows.reduce((s,r)=>s+toNum(r.fuel),0),
+    overDrill:editRows.reduce((s,r)=>s+toNum(r.overDrill),0),
   };
   function doApprove(){
     const approved = {
       ...sel, date:editMeta.date, sh:editMeta.sh,
-      df:totals.df, bf:sel?.bf||0, wh:totals.wh, dh:totals.dh, fuel:totals.fuel, fuel_kg:sel?.fuel_kg||0,
-      rigs:editRows.map(r=>({id:r.id,n:r.nm,df:toNum(r.df),bf:toNum(r.bf),wh:toNum(r.wh),dh:toNum(r.dh),fuel:toNum(r.fuel),dt:r.dt||"—"})),
+      df:totals.df, bf:totals.bf||sel?.bf||0, wh:totals.wh, dh:totals.dh, fuel:totals.fuel, fuel_kg:toNum(editMeta.fuel_kg??sel?.fuel_kg)??0,
+      rigs:editRows.map(r=>({id:r.id,n:r.nm,df:toNum(r.df),bf:toNum(r.bf),wh:toNum(r.wh),dh:toNum(r.dh),fuel:toNum(r.fuel),dt:r.dt||"—",overDrill:toNum(r.overDrill)})),
+      rigEntries: sel?.rigEntries || [],
+      downtime_events: sel?.downtime_events || [],
       status:"approved",
     };
     onApprove(sel.id, approved);
