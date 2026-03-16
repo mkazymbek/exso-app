@@ -2071,6 +2071,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
   const [done,      setDone]      = useState(false);
   const [step,      setStep]      = useState("form");   // "form" | "preview"
   const [editRepId, setEditRepId] = useState(null);     // id редактируемого отчёта
+  const [editingStatus, setEditingStatus] = useState(null); // статус редактируемого отчёта
 
   // При смене участка — пересобрать список станков
   function changeSite(newOid) {
@@ -2108,6 +2109,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
         }));
     setEntries(loadedEntries.length > 0 ? loadedEntries : rigs.filter(r=>r.o===rep.oid).map(makeEntry));
     setEditRepId(rep.id);
+    setEditingStatus(rep.status || null);
     setStep("form");
     setErrors([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2191,6 +2193,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
 
     setDone(true);
     setEditRepId(null);
+    setEditingStatus(null);
     setStep("form");
     setEntries(rigs.filter(r => r.o === Number(siteId)).map(makeEntry));
     setDate(new Date().toISOString().slice(0, 10)); setComment(""); setBf(""); setFuelKg("");
@@ -2482,7 +2485,12 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
         {/* Кнопки */}
         <div style={{ padding:"14px 18px", borderTop:`1px solid ${T.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
           {done && <div style={{ fontSize:12, color:T.green, fontWeight:700 }}>✓ {editRepId ? "Отчёт обновлён!" : "Отчёт отправлен инженеру!"}</div>}
-          {!done && <div style={{ fontSize:12, color:T.txt2 }}>
+          {!done && editRepId && editingStatus==="approved" && (
+            <div style={{ fontSize:12, color:T.blue, fontWeight:600 }}>
+              ⚠ Утверждённый отчёт — после сохранения вернётся на проверку инженеру
+            </div>
+          )}
+          {!done && (!editRepId || editingStatus!=="approved") && <div style={{ fontSize:12, color:T.txt2 }}>
             Станков: <b style={{ color:T.txt0 }}>{entries.length}</b> ·
             Бурение: <b style={{ color:T.red }}>{totals.df.toLocaleString()} п.м</b> ·
             Простои: <b style={{ color:"#ef4444" }}>{totals.dh.toFixed(1)} ч</b>
@@ -2490,7 +2498,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
           <div style={{ display:"flex", gap:8 }}>
             <Btn variant="secondary" onClick={() => {
               setEntries(rigs.filter(r => r.o === Number(siteId)).map(makeEntry));
-              setDate(new Date().toISOString().slice(0,10)); setBf(""); setFuelKg(""); setComment(""); setErrors([]); setEditRepId(null);
+              setDate(new Date().toISOString().slice(0,10)); setBf(""); setFuelKg(""); setComment(""); setErrors([]); setEditRepId(null); setEditingStatus(null);
             }} T={T}>Очистить</Btn>
             <Btn variant="primary" onClick={() => {
               const report = { siteId, date, shiftType, shiftDurationHours: shiftDur, rigEntries: entries };
@@ -2517,7 +2525,9 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                 <div style={{ fontSize:16, fontWeight:700, color:T.txt0 }}>
                   {myObjs.find(o=>o.id===Number(siteId))?.name} · {date} · {shiftType==="day"?"☀ Дневная":"☾ Ночная"} смена
                 </div>
-                {editRepId && <div style={{ fontSize:11, color:T.amber, marginTop:2 }}>✏ Редактирование отчёта</div>}
+                {editRepId && <div style={{ fontSize:11, color: editingStatus==="approved" ? T.blue : T.amber, marginTop:2 }}>
+                  {editingStatus==="approved" ? "⚠ Исправление утверждённого отчёта — после сохранения вернётся на проверку инженеру" : "✏ Редактирование отчёта"}
+                </div>}
               </div>
               <button onClick={() => setStep("form")} style={{ background:"none", border:"none", fontSize:22, color:T.txt2, cursor:"pointer" }}>×</button>
             </div>
@@ -2697,7 +2707,10 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                 const kv   = ktgCalc(r.wh||0, r.dh||0);
                 const dtAll = (r.rigEntries||[]).flatMap(e=>e.downtimes||[]);
                 const dtH   = dtAll.reduce((s,d)=>s+toNum(d.durationHours),0);
-                const canEdit = r.status === "submitted";
+                const EDIT_WINDOW_H = 24;
+                const approvedRecently = r.status === "approved" && r.approvedAt &&
+                  (Date.now() - new Date(r.approvedAt).getTime()) < EDIT_WINDOW_H * 3600000;
+                const canEdit = r.status === "submitted" || approvedRecently;
 
                 return (
                   <div key={r.id} style={{
@@ -2749,13 +2762,23 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                     </div>
 
                     {/* Кнопки */}
-                    <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                    <div style={{ display:"flex", gap:6, flexShrink:0, alignItems:"center" }}>
                       {canEdit && (
                         <button onClick={() => onEdit(r)}
-                          style={{ padding:"6px 14px", borderRadius:5, border:`1.5px solid ${T.amber}`, background:`${T.amber}10`,
-                            color:T.amber, fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
-                          ✏ Редактировать
+                          style={{ padding:"6px 14px", borderRadius:5,
+                            border:`1.5px solid ${r.status==="approved" ? T.blue : T.amber}`,
+                            background:`${r.status==="approved" ? T.blue : T.amber}10`,
+                            color: r.status==="approved" ? T.blue : T.amber,
+                            fontSize:12, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}
+                          title={r.status==="approved" ? "Отчёт вернётся на проверку инженеру" : ""}>
+                          ✏ {r.status==="approved" ? "Исправить" : "Редактировать"}
                         </button>
+                      )}
+                      {!canEdit && r.status==="approved" && (
+                        <span style={{ fontSize:11, color:T.txt2, padding:"4px 8px", border:`1px solid ${T.border}`, borderRadius:5 }}
+                          title="Редактирование доступно только в течение 24 ч после утверждения">
+                          🔒 Заблокировано
+                        </span>
                       )}
                       <button onClick={() => setOpenRep(r)}
                         style={{ padding:"6px 14px", borderRadius:5, border:`1px solid ${T.border}`, background:T.bg3,
@@ -2791,11 +2814,15 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                 </div>
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                {openRep.status==="submitted" && (
+                {(openRep.status==="submitted" || (openRep.status==="approved" && openRep.approvedAt && (Date.now()-new Date(openRep.approvedAt).getTime())<24*3600000)) && (
                   <button onClick={() => { setOpenRep(null); onEdit(openRep); }}
-                    style={{ padding:"7px 16px", borderRadius:5, border:`1.5px solid ${T.amber}`, background:`${T.amber}12`,
-                      color:T.amber, fontSize:12, fontWeight:700, cursor:"pointer" }}>
-                    ✏ Редактировать
+                    style={{ padding:"7px 16px", borderRadius:5,
+                      border:`1.5px solid ${openRep.status==="approved" ? T.blue : T.amber}`,
+                      background:`${openRep.status==="approved" ? T.blue : T.amber}12`,
+                      color: openRep.status==="approved" ? T.blue : T.amber,
+                      fontSize:12, fontWeight:700, cursor:"pointer" }}
+                    title={openRep.status==="approved" ? "Отчёт вернётся на проверку инженеру" : ""}>
+                    ✏ {openRep.status==="approved" ? "Исправить" : "Редактировать"}
                   </button>
                 )}
                 <button onClick={()=>setOpenRep(null)} style={{ background:"none", border:"none", fontSize:22, color:T.txt2, cursor:"pointer" }}>×</button>
@@ -2949,6 +2976,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
       rigEntries: sel?.rigEntries || [],
       downtime_events: sel?.downtime_events || [],
       status:"approved",
+      approvedAt: new Date().toISOString(),
     };
     onApprove(sel.id, approved);
 
