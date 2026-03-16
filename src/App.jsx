@@ -958,14 +958,50 @@ function Login({ users, onLogin, T }) {
   const [login, setLogin] = useState("");
   const [pw, setPw]       = useState("");
   const [err, setErr]     = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
+  async function handleLogin() {
+    setErr(""); setLoading(true);
+    try {
+      // Пробуем Supabase Auth
+      const email = login.trim() + "@exso.internal";
+      const { createClient } = await import("@supabase/supabase-js");
+      const sb = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+      if (error) throw error;
+
+      // Загружаем профиль
+      const { data: profile } = await sb
+        .from("users")
+        .select("*, user_objects(object_id)")
+        .eq("auth_id", data.user.id)
+        .single();
+
+      if (profile) {
+        const u = {
+          ...profile,
+          pw: "", // не храним пароль
+          oids: profile.role === "foreman"
+            ? profile.user_objects.map(r => r.object_id)
+            : "all",
+        };
+        onLogin(u);
+        return;
+      }
+    } catch(e) {
+      // Fallback на локальный логин
+    }
+    // Fallback: старый логин из INIT_USERS
     const u = users.find((u) => u.login === login.trim() && u.pw === pw);
     if (u) {
       onLogin(u);
     } else {
       setErr("Неверный логин или пароль");
     }
+    setLoading(false);
   }
 
   return (
@@ -1005,7 +1041,7 @@ function Login({ users, onLogin, T }) {
             </div>
           )}
           <Btn variant="primary" fullWidth style={{ marginTop: 18 }} onClick={handleLogin} T={T}>
-            ВОЙТИ →
+            {loading ? "Входим..." : "ВОЙТИ →"}
           </Btn>
           <div style={{ marginTop: 16, padding: "10px 12px", background: T.bg1, borderRadius: 4, border: `1px solid ${T.border}`, fontSize: 12, color: T.txt2, lineHeight: 2.2, fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>
             ceo/ceo123 · engineer/eng123 · mechanic/mech123<br />
