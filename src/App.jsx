@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import supabase, { getObjects, getRigs, getReports, getPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK = {
@@ -233,16 +234,16 @@ const INIT_PASSPORTS = {
   a9:  { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2202561",  year:"2023", inventory:"№109", commissioned:"2024-08",   location:"Коскудук",                 avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
   a10: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590",      serial:"JK2302253L", year:"2023", inventory:"№110", commissioned:"2024-08",   location:"Коскудук",                 avg_monthly:null, total_hours:0,   fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
   a11: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502202L", year:"2025", inventory:"№111", commissioned:"2025-08-13",location:"Борлы, Коскудук, Шыганак", avg_monthly:null, total_hours:0,    fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
-  a12: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502083L", year:"2025", inventory:"№112", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
-  a13: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502197L", year:"2025", inventory:"№113", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
-  a14: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502208L", year:"2025", inventory:"№114", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a12: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502083L", year:"2025", inventory:"№112", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:2834,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a13: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502197L", year:"2025", inventory:"№113", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:3099,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a14: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502208L", year:"2025", inventory:"№114", commissioned:"2025-08-22",location:"Бактай",                   avg_monthly:null, total_hours:3017,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
   a15: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502207L", year:"2025", inventory:"№115", commissioned:"2025-09-10",location:"Бактай, Коскудук",          avg_monthly:null, total_hours:null,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
   a16: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502200L", year:"2025", inventory:"№116", commissioned:"2025-09-10",location:"Бактай",                   avg_monthly:null, total_hours:0,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
-  a17: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"ZEGA",     model:"D545H",      serial:"",           year:"2025", inventory:"№117", commissioned:"",          location:"Бактай",                   avg_monthly:null, total_hours:0,   fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a17: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"ZEGA",     model:"D545H",      serial:"",           year:"2025", inventory:"№117", commissioned:"",          location:"Бактай",                   avg_monthly:null, total_hours:1462,   fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
   a18: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"JK2502198L", year:"2025", inventory:"№118", commissioned:"2025-12-18",location:"Коскудук",                 avg_monthly:null, total_hours:null,  fuel_rate:16.7 , toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
-  a19: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250403",   year:"2026", inventory:"№119", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:609,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
-  a20: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250404",   year:"2026", inventory:"№120", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:638,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
-  a21: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250401",   year:"2026", inventory:"№121", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:597,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a19: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250403",   year:"2026", inventory:"№119", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:798,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a20: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250404",   year:"2026", inventory:"№120", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:820,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
+  a21: { assetClass:"DRILL_RIG", purpose:"Бурение", manufacturer:"JK Boart", model:"JK590BC-2A", serial:"AY250401",   year:"2026", inventory:"№121", commissioned:"2026-01",   location:"Жолымбет",                 avg_monthly:250,  total_hours:800,   fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], },
 
   // ── Компрессоры ───────────────────────────────────────────────────────────
   comp1:  { assetClass:"COMPRESSOR", purpose:"Вспомогательные работы", manufacturer:"Sanrock", model:"SR550-17",        serial:"",              year:"",   inventory:"№201", commissioned:"",          location:"Борлы, Коскудук",           avg_monthly:null, total_hours:0,  fuel_rate:null , toSchedule:[], },
@@ -303,13 +304,21 @@ const INIT_PASSPORTS = {
 };
 
 const INIT_METERS = {
-  // Жолымбет — наработка на начало марта 2026 (из графика ТО)
-  a19:   { type:"ENGINE_HOURS", current:609, history:[{date:"2026-03-01",value:609,note:"Начало месяца"}] },
-  a20:   { type:"ENGINE_HOURS", current:638, history:[{date:"2026-03-01",value:638,note:"Начало месяца"}] },
-  a21:   { type:"ENGINE_HOURS", current:597, history:[{date:"2026-03-01",value:597,note:"Начало месяца"}] },
-  comp17:{ type:"ENGINE_HOURS", current:400, history:[{date:"2026-03-01",value:400,note:"Начало месяца"}] },
-  comp18:{ type:"ENGINE_HOURS", current:387, history:[{date:"2026-03-01",value:387,note:"Начало месяца"}] },
-  comp19:{ type:"ENGINE_HOURS", current:398, history:[{date:"2026-03-01",value:398,note:"Начало месяца"}] },
+  // Жолымбет — наработка на 12.03.2026 (из сообщения ОМТС)
+  a19:   { type:"ENGINE_HOURS", current:798, history:[{date:"2026-03-01",value:609,note:"Начало месяца"},{date:"2026-03-12",value:798,note:"Снятие показаний ОМТС"}] },
+  a20:   { type:"ENGINE_HOURS", current:820, history:[{date:"2026-03-01",value:638,note:"Начало месяца"},{date:"2026-03-12",value:820,note:"Снятие показаний ОМТС"}] },
+  a21:   { type:"ENGINE_HOURS", current:800, history:[{date:"2026-03-01",value:597,note:"Начало месяца"},{date:"2026-03-12",value:800,note:"Снятие показаний ОМТС"}] },
+  comp17:{ type:"ENGINE_HOURS", current:466, history:[{date:"2026-03-01",value:400,note:"Начало месяца"},{date:"2026-03-04",value:466,note:"Снятие показаний ОМТС"}] },
+  comp18:{ type:"ENGINE_HOURS", current:450, history:[{date:"2026-03-01",value:387,note:"Начало месяца"},{date:"2026-03-04",value:450,note:"Снятие показаний ОМТС"}] },
+  comp19:{ type:"ENGINE_HOURS", current:452, history:[{date:"2026-03-01",value:398,note:"Начало месяца"},{date:"2026-03-03",value:452,note:"Снятие показаний ОМТС"}] },
+  // Бактай — наработка из сообщения ОМТС
+  a12:   { type:"ENGINE_HOURS", current:2834, history:[{date:"2026-03-04",value:2834,note:"Снятие показаний ОМТС"}] },
+  a13:   { type:"ENGINE_HOURS", current:3099, history:[{date:"2026-03-05",value:3099,note:"Снятие показаний ОМТС"}] },
+  a14:   { type:"ENGINE_HOURS", current:3017, history:[{date:"2026-03-04",value:3017,note:"Снятие показаний ОМТС"}] },
+  a17:   { type:"ENGINE_HOURS", current:1462, history:[{date:"2026-02-24",value:1462,note:"Снятие показаний ОМТС (не записан ранее)"}] },
+  comp10:{ type:"ENGINE_HOURS", current:4215, history:[{date:"2026-03-12",value:4215,note:"Снятие показаний ОМТС"}] },
+  comp11:{ type:"ENGINE_HOURS", current:3887, history:[{date:"2026-03-12",value:3887,note:"Снятие показаний ОМТС"}] },
+  comp14:{ type:"ENGINE_HOURS", current:2155, history:[{date:"2026-03-04",value:2155,note:"Снятие показаний ОМТС"}] },
   // Остальные — не заданы
   a1:    { type:"ENGINE_HOURS", current:0, history:[] },
   a3:    { type:"ENGINE_HOURS", current:0, history:[] },
@@ -770,7 +779,7 @@ const TABLE_COLS = [
   { field: "df",   label: "Бурение п.м" },
   { field: "wh",   label: "Работа ч" },
   { field: "dh",   label: "Простой ч" },
-  { field: "fuel", label: "ГСМ т" },
+  { field: "fuel", label: "ГСМ л" },
 ];
 
 function DataTable({ rows, onCell, totals, T }) {
@@ -1220,10 +1229,16 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
 
   const filteredReps = useMemo(() => {
     const todayIso = new Date().toISOString().slice(0, 10);
+    const curMonthStart = getMonthStart(todayIso);
+    const isCurrentMonth = mode === "month" && rangeStart === curMonthStart;
+    // Для текущего месяца факт — только до completedDays (как и план)
+    const effectiveEnd = isCurrentMonth
+      ? (() => { const d = new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); })()
+      : rangeEnd;
     return reps.filter((r) => {
       if (r.status === "draft") return false;
       const iso = repDateToIsoLocal(r.date);
-      return iso >= rangeStart && iso <= rangeEnd;
+      return iso >= rangeStart && iso <= effectiveEnd;
     });
   }, [reps, rangeStart, rangeEnd, anchor, mode]);
 
@@ -1298,8 +1313,11 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
 
   // ── Totals ────────────────────────────────────────────────────────────────
   const totals = useMemo(() => {
-    const t = { df: 0, bf: 0, fuel: 0, wh: 0, dh: 0 };
-    filteredReps.forEach((r) => { t.df += r.df; t.bf += r.bf; t.fuel += r.fuel; t.wh += r.wh; t.dh += r.dh; });
+    const t = { df: 0, bf: 0, fuel: 0, wh: 0, dh: 0, overDrill: 0 };
+    filteredReps.forEach((r) => {
+      t.df += r.df; t.bf += r.bf; t.fuel += r.fuel; t.wh += r.wh; t.dh += r.dh;
+      t.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
+    });
     return t;
   }, [filteredReps]);
 
@@ -1436,10 +1454,10 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
             <Card accent={T.violet} style={{ padding: "16px 18px" }} T={T}>
               <div style={{ fontSize: 12, fontWeight: 700, color: T.violet, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>⛽ ГСМ удельный</div>
               <div style={{ fontSize: 34, fontWeight: 700, color: T.txt0, lineHeight: 1, fontFamily: "'Inter',sans-serif" }}>
-                {totals.df > 0 ? (totals.fuel / totals.df).toFixed(3) : "—"}
+                {totals.bf > 0 ? (totals.fuel / totals.bf).toFixed(1) : "—"}
               </div>
               <div style={{ fontSize: 12, color: T.txt2, marginTop: 5, textTransform: "uppercase" }}>
-                т/м · итого <b style={{ color: T.txt0 }}>{totals.fuel.toLocaleString()} т</b>
+                л/м³ · итого <b style={{ color: T.txt0 }}>{totals.fuel.toLocaleString()} л</b>
               </div>
             </Card>
           </div>
@@ -1452,13 +1470,14 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
           const rr  = filteredReps.filter((r) => r.oid === obj.id);
           const df  = rr.reduce((s,r)=>s+r.df,0), bf = rr.reduce((s,r)=>s+r.bf,0);
           const wh  = rr.reduce((s,r)=>s+r.wh,0), dh = rr.reduce((s,r)=>s+r.dh,0), fuel = rr.reduce((s,r)=>s+r.fuel,0);
+          const overDrill = rr.reduce((s,r)=>s+(r.rigs||[]).reduce((ss,rig)=>ss+(toNum(rig.overDrill)||0),0), 0);
           const kv  = ktgCalc(wh, dh);
           const ac  = colors[i % colors.length];
           const pp  = getPlanForPeriod(obj.id);
           const dp  = pp.df || obj.dp, bp = pp.bf || obj.bp;
           const pDf = pct(df, dp), pBf = pct(bf, bp);
           const chartData = getChartData(obj.id);
-          const fuelPer = df > 0 ? (fuel / df).toFixed(3) : null;
+          const fuelPer = bf > 0 ? (fuel / bf).toFixed(1) : null;
           const planLabel = completedDays ? `по ${completedDays} число` : "за период";
           return (
             <div key={obj.id} onClick={() => onDrillObj(obj.id)}
@@ -1538,10 +1557,16 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                     <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ ГСМ уд.</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: fuelPer ? T.violet : T.txt2, fontFamily: "'Inter',sans-serif" }}>
                       {fuelPer || "—"}
-                      {fuelPer && <span style={{ fontSize: 10, color: T.txt2, fontWeight: 400 }}> т/м</span>}
+                      {fuelPer && <span style={{ fontSize: 10, color: T.txt2, fontWeight: 400 }}> л/м³</span>}
                     </div>
-                    {fuel > 0 && <div style={{ fontSize: 10, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} т всего</div>}
+                    {fuel > 0 && <div style={{ fontSize: 10, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} л всего</div>}
                   </div>
+                  {overDrill > 0 && (
+                    <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
+                      <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>📏 Перебур</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif" }}>{overDrill.toLocaleString()} <span style={{ fontSize: 10, fontWeight: 400 }}>м</span></div>
+                    </div>
+                  )}
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
                     <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⏸ Простои</div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: dh > 0 ? "#ef4444" : T.txt2, fontFamily: "'Inter',sans-serif" }}>{dh} ч</div>
@@ -1563,9 +1588,13 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   if (!obj) return null;
   const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
 
-  const tot = { df: 0, bf: 0, wh: 0, dh: 0, fuel: 0 };
-  approved.forEach((r) => { tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel; });
+  const tot = { df: 0, bf: 0, wh: 0, dh: 0, fuel: 0, overDrill: 0 };
+  approved.forEach((r) => {
+    tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel;
+    tot.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
+  });
   const kv = ktgCalc(tot.wh, tot.dh);
+  const fuelPerM3 = tot.bf > 0 ? (tot.fuel / tot.bf).toFixed(1) : null;
   const colors = OBJ_COLORS(T);
   const ac = colors[objs.findIndex((o) => o.id === objId) % colors.length];
   const objRigs = rigs.filter((rg) => rg.o === objId);
@@ -1583,7 +1612,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
           [T.red,    "Бурение", tot.df,   obj.dp, "п.м"],
           [T.amber,  "Взрывы",  tot.bf,   obj.bp, "м³"],
           [T.green,  "КТГ",        kv !== null ? `${kv}%` : "—", null, null],
-          [T.violet, "ГСМ",        tot.fuel, null,   "т"],
+          [T.violet, "ГСМ",        tot.fuel, null,   "л"],
           ["#ef4444","Простои",    tot.dh,   null,   "ч"],
         ].map(([color, lbl, fact, plan, unit]) => (
           <Card key={lbl} accent={color} style={{ padding: "14px 16px" }} T={T}>
@@ -1597,6 +1626,22 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
             }
           </Card>
         ))}
+        {/* Удельный ГСМ */}
+        <Card accent={T.violet} style={{ padding: "14px 16px" }} T={T}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.violet, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>⛽ ГСМ уд.</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: fuelPerM3 ? T.violet : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
+            {fuelPerM3 || "—"}
+          </div>
+          <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginTop: 3 }}>л/м³</div>
+        </Card>
+        {/* Перебур (если есть) */}
+        {tot.overDrill > 0 && (
+          <Card accent={T.cyan} style={{ padding: "14px 16px" }} T={T}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.cyan, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>📏 Перебур</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{tot.overDrill.toLocaleString()}</div>
+            <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginTop: 3 }}>м</div>
+          </Card>
+        )}
       </div>
 
       {/* Rig cards */}
@@ -1606,10 +1651,11 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12, marginBottom: 28 }}>
         {objRigs.map((rg) => {
-          const df   = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.df   || 0), 0);
-          const wh   = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.wh   || 0), 0);
-          const dh   = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.dh   || 0), 0);
-          const fuel = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.fuel || 0), 0);
+          const df        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.df        || 0), 0);
+          const wh        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.wh        || 0), 0);
+          const dh        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.dh        || 0), 0);
+          const fuel      = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.fuel      || 0), 0);
+          const overDrill = approved.reduce((s,r) => s + (toNum(r.rigs?.find(x=>x.id===rg.id)?.overDrill) || 0), 0);
           const kv2  = ktgCalc(wh, dh);
           const kc   = scoreColor(kv2, obj.kp, obj.kp - 12, T);
           const repCount = approved.filter((r) => r.rigs?.find((x) => x.id === rg.id)).length;
@@ -1636,8 +1682,9 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
                   </div>
                 ))}
               </div>
-              <div style={{ padding: "0 14px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: 12, color: T.txt2 }}>ГСМ: <b style={{ color: T.violet }}>{fuel.toLocaleString()} т</b></div>
+              <div style={{ padding: "0 14px 10px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
+                <div style={{ fontSize: 12, color: T.txt2 }}>ГСМ: <b style={{ color: T.violet }}>{fuel.toLocaleString()} л</b></div>
+                {overDrill > 0 && <div style={{ fontSize: 12, color: T.cyan, fontWeight: 700 }}>📏 Перебур: {overDrill.toLocaleString()} м</div>}
                 {dh > 0 && <div style={{ fontSize: 12, color: "#ef4444", fontWeight: 700 }}>⚠ {dh} ч простоя</div>}
               </div>
             </div>
@@ -1688,7 +1735,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
 
       {/* Rig totals */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 24 }}>
-        {[[T.red,"Бурение",tot.df,"п.м"],[T.blue,"Работа",tot.wh,"ч"],["#ef4444","⏸ Простой",tot.dh,"ч"],[T.violet,"⛽ ГСМ",tot.fuel,"т"]].map(([color,lbl,val,unit]) => (
+        {[[T.red,"Бурение",tot.df,"п.м"],[T.blue,"Работа",tot.wh,"ч"],["#ef4444","⏸ Простой",tot.dh,"ч"],[T.violet,"⛽ ГСМ",tot.fuel,"л"]].map(([color,lbl,val,unit]) => (
           <Card key={lbl} accent={color} style={{ padding: "14px 16px" }} T={T}>
             <div style={{ fontSize: 12, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 6 }}>{lbl}</div>
             <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{val.toLocaleString()}</div>
@@ -1724,7 +1771,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
                     </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6 }}>
-                    {[[T.red,"Бурение",rd.df,"п.м"],[T.blue,"Работа",rd.wh,"ч"],["#ef4444","Простой",rd.dh,"ч"],[T.violet,"ГСМ",rd.fuel,"т"]].map(([color,lbl,val,unit]) => (
+                    {[[T.red,"Бурение",rd.df,"п.м"],[T.blue,"Работа",rd.wh,"ч"],["#ef4444","Простой",rd.dh,"ч"],[T.violet,"ГСМ",rd.fuel,"л"]].map(([color,lbl,val,unit]) => (
                       <div key={lbl} style={{ background: T.bg3, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}`, textAlign: "center" }}>
                         <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>{lbl}</div>
                         <div style={{ fontSize: 17, fontWeight: 700, color, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{val}</div>
@@ -2065,7 +2112,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
     wh:        entries.reduce((s,e) => s + Math.max(0, shiftDur - getDowntimeTotal(e.downtimes)), 0),
     df:        entries.reduce((s,e) => s + toNum(e.drillingMeters), 0),
     overDrill: entries.reduce((s,e) => s + toNum(e.overDrill),    0),
-    fuel:      entries.reduce((s,e) => s + toNum(e.fuelLiters) * 0.00083, 0), // л → т (ρ≈0.830 кг/л)
+    fuel:      entries.reduce((s,e) => s + toNum(e.fuelLiters), 0), // литры
     dh:        entries.reduce((s,e) => s + getDowntimeTotal(e.downtimes), 0),
     bf:        toNum(bf),
     fuelKg:    toNum(fuelKg),
@@ -2076,6 +2123,22 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
     const report = { siteId, date, shiftType, shiftDurationHours: shiftDur, rigEntries: entries };
     const errs = validateShiftReport(report);
     if (errs.length) { setErrors(errs); setStep("form"); return; }
+
+    // Проверка дубликата: тот же объект + дата + смена
+    if (!editRepId) {
+      const dup = reps.find(r =>
+        r.status !== "draft" &&
+        Number(r.oid) === Number(siteId) &&
+        r.date === date &&
+        r.sh === shiftType
+      );
+      if (dup) {
+        setErrors([`Рапорт за ${date} (${shiftType === "day" ? "дневная" : "ночная"} смена) уже отправлен. Чтобы исправить — найдите его в истории и нажмите «Редактировать».`]);
+        setStep("form");
+        return;
+      }
+    }
+
     setErrors([]);
 
     const repObj = {
@@ -2098,7 +2161,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
         overDrill: toNum(e.overDrill),
         wh:        Math.max(0, shiftDur - getDowntimeTotal(e.downtimes)),
         dh:        getDowntimeTotal(e.downtimes),
-        fuel:      toNum(e.fuelLiters) * 0.00083, // л → т
+        fuel:      toNum(e.fuelLiters), // литры
         dt:        e.notes || "—",
       })),
       rigEntries:      entries,
@@ -2219,6 +2282,27 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
         </div>
 
         {/* Взрывные работы — уровень участка */}
+        {/* Предупреждение о дубликате */}
+        {!editRepId && (() => {
+          const dup = reps.find(r =>
+            r.status !== "draft" &&
+            Number(r.oid) === Number(siteId) &&
+            r.date === date &&
+            r.sh === shiftType
+          );
+          if (!dup) return null;
+          const statusLabel = dup.status === "approved" ? "утверждён" : "отправлен на проверку";
+          return (
+            <div style={{ margin:"0 18px 4px", padding:"10px 14px", background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.35)", borderRadius:5 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"#f87171", marginBottom:2 }}>
+                ⚠ Рапорт за этот день и смену уже {statusLabel}
+              </div>
+              <div style={{ fontSize:12, color:T.txt1 }}>
+                Чтобы исправить данные — найдите его ниже в «История отчётов» и нажмите <b>Редактировать</b>.
+              </div>
+            </div>
+          );
+        })()}
         <div style={{ padding:"12px 18px", borderBottom:`1px solid ${T.border}`, background:`${T.amber}08` }}>
           <div style={{ fontSize:11, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".04em", marginBottom:8 }}>
             💥 Взрывные работы — данные по участку в целом
@@ -2261,7 +2345,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                   ["Работа ч (авто)", T.blue,    "center", 120],
                   ["Бурение п.м",     T.red,     "center", 110],
                   ["Перебур м",       T.cyan,    "center", 100],
-                  ["ГСМ л (→т)",      T.violet,  "center", 90],
+                  ["ГСМ л",           T.violet,  "center", 90],
                   ["Простои",         "#ef4444", "center", 130],
                   ["Итого ч",         T.txt2,    "center", 80],
                   ["Заметки",         T.txt2,    "left",   130],
@@ -2440,7 +2524,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                   [T.amber,   "💥 Взрывы",     totals.bf,      "м³"],
                   [T.blue,    "⏱ Работа",     totals.wh,      "ч"],
                   ["#ef4444", "⏸ Простои",    totals.dh,      "ч"],
-                  [T.violet,  "⛽ ГСМ",        totals.fuel,    "т"],
+                  [T.violet,  "⛽ ГСМ",        totals.fuel,    "л"],
                   [T.cyan,    "💣 ВВ",         totals.fuelKg,  "кг"],
                 ].filter(([,,v])=>v>0).map(([c,lbl,val,unit])=>(
                   <div key={lbl} style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${c}`, borderRadius:6, padding:"10px 12px", textAlign:"center" }}>
@@ -2458,7 +2542,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                   <table style={{ width:"100%", borderCollapse:"collapse", minWidth:480 }}>
                     <thead>
                       <tr style={{ background:T.rowHdr }}>
-                        {["Станок","Работа ч","Бурение п.м","Перебур м","ГСМ т","Простои"].map(h=>(
+                        {["Станок","Работа ч","Бурение п.м","Перебур м","ГСМ л","Простои"].map(h=>(
                           <th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
                         ))}
                       </tr>
@@ -2473,7 +2557,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                             <td style={{ padding:"8px 12px", fontSize:12, color:T.blue, textAlign:"right", fontFamily:"'JetBrains Mono',monospace" }}>{toNum(e.workingHours)||"—"}</td>
                             <td style={{ padding:"8px 12px", fontSize:12, color:T.red, textAlign:"right", fontFamily:"'JetBrains Mono',monospace" }}>{toNum(e.drillingMeters)||"—"}</td>
                             <td style={{ padding:"8px 12px", fontSize:12, color:T.cyan, textAlign:"right", fontFamily:"'JetBrains Mono',monospace" }}>{toNum(e.overDrill)||"—"}</td>
-                            <td style={{ padding:"8px 12px", fontSize:12, color:T.violet, textAlign:"right", fontFamily:"'JetBrains Mono',monospace" }}>{toNum(e.fuelLiters) ? (toNum(e.fuelLiters)*0.00083).toFixed(4) : "—"}</td>
+                            <td style={{ padding:"8px 12px", fontSize:12, color:T.violet, textAlign:"right", fontFamily:"'JetBrains Mono',monospace" }}>{toNum(e.fuelLiters) || "—"}</td>
                             <td style={{ padding:"8px 12px" }}>
                               {dtItems.length>0
                                 ? <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
@@ -2721,7 +2805,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                   [T.amber,   "💥 Взрывы",   openRep.bf||0,      "м³"],
                   [T.blue,    "⏱ Работа",   openRep.wh||0,      "ч"],
                   ["#ef4444", "⏸ Простои",  openRep.dh||0,      "ч"],
-                  [T.violet,  "⛽ ГСМ",      openRep.fuel||0,    "т"],
+                  [T.violet,  "⛽ ГСМ",      openRep.fuel||0,    "л"],
                   [T.cyan,    "💣 ВВ",       openRep.fuel_kg||0, "кг"],
                 ].filter(([,,v])=>v>0).map(([c,lbl,val,unit])=>(
                   <div key={lbl} style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`2px solid ${c}`, borderRadius:5, padding:"10px 12px", textAlign:"center" }}>
@@ -2740,7 +2824,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                     <table style={{ width:"100%", borderCollapse:"collapse", minWidth:480 }}>
                       <thead>
                         <tr style={{ background:T.rowHdr }}>
-                          {["Станок","Работа ч","Бурение п.м","Перебур м","ГСМ т","Простои ч"].map(h=>(
+                          {["Станок","Работа ч","Бурение п.м","Перебур м","ГСМ л","Простои ч"].map(h=>(
                             <th key={h} style={{ padding:"7px 10px", textAlign:"left", fontSize:10, fontWeight:700, color:T.txt2, textTransform:"uppercase", borderBottom:`1px solid ${T.border}`, whiteSpace:"nowrap" }}>{h}</th>
                           ))}
                         </tr>
@@ -3213,7 +3297,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
                       </div>
                       <div style={{fontSize:12,color:T.txt2,marginBottom:6}}>{r.by} · {r.submittedAt}</div>
                       <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-                        {[["⛏",r.df,"п.м",T.red],["💥",r.bf,"м³",T.amber],["⛽",r.fuel,"т",T.violet]].map(([ic,val,unit,c])=>(
+                        {[["⛏",r.df,"п.м",T.red],["💥",r.bf,"м³",T.amber],["⛽",r.fuel,"л",T.violet]].map(([ic,val,unit,c])=>(
                           <span key={ic} style={{fontSize:12}}><span style={{color:T.txt2}}>{ic} </span><b style={{color:c,fontFamily:"'Inter',sans-serif"}}>{val}</b><span style={{color:T.txt2,fontSize:10}}> {unit}</span></span>
                         ))}
                       </div>
@@ -6870,9 +6954,9 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
               <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderTop:`3px solid ${T.violet}`, borderRadius:7, padding:"14px 16px" }}>
                 <div style={{ fontSize:10, fontWeight:700, color:T.violet, textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>⛽ ГСМ</div>
                 <div style={{ fontSize:22, fontWeight:700, color:T.violet, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{tot.fuel.toLocaleString()}</div>
-                <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>т дизель</div>
+                <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>л дизель</div>
                 <div style={{ marginTop:6, fontSize:11, color:T.txt2 }}>
-                  уд: <b style={{ color:T.violet }}>{tot.df>0?(tot.fuel/tot.df).toFixed(3):"—"}</b> т/м
+                  уд: <b style={{ color:T.violet }}>{tot.bf>0?(tot.fuel/tot.bf).toFixed(1):"—"}</b> л/м³
                 </div>
                 {tot.fuelKg>0 && <div style={{ fontSize:11, color:T.txt2, marginTop:3 }}>
                   ВВ: <b style={{ color:T.cyan }}>{tot.fuelKg.toLocaleString()} кг</b>
@@ -9670,6 +9754,30 @@ export default function App() {
   const [users,      setUsers]      = useState(INIT_USERS);
   const [reps,       setReps]       = useState(INIT_REPS);
   const [plans,      setPlans]      = useState(INIT_PLANS);
+  const [dbLoading,  setDbLoading]  = useState(true);
+
+  // ── Загрузка данных из Supabase при старте ──────────────────
+  useEffect(() => {
+    async function loadFromDB() {
+      try {
+        const [dbObjs, dbRigs, dbReps, dbPlans] = await Promise.all([
+          getObjects(),
+          getRigs(),
+          getReports(),
+          getPlans(),
+        ]);
+        if (dbObjs?.length)  setObjs(dbObjs);
+        if (dbRigs?.length)  setRigs(dbRigs);
+        if (dbReps?.length)  setReps(dbReps);
+        if (dbPlans?.length) setPlans(dbPlans);
+      } catch (e) {
+        console.warn("Supabase недоступен, работаем локально:", e.message);
+      } finally {
+        setDbLoading(false);
+      }
+    }
+    loadFromDB();
+  }, []);
   const [nodes,        setNodes]        = useState(INIT_NODES);
   const [assetClasses,  setAssetClasses]  = useState(ASSET_CLASS_CFG_DEFAULT);
   const [locations,     setLocations]     = useState(INIT_LOCATIONS);
@@ -9699,7 +9807,34 @@ export default function App() {
 
   function handleLogin(u) { setUser(u); setSubPage("dash"); setView({ type: "dash" }); }
   function handleLogout()  { setUser(null); setSubPage("dash"); setView({ type: "dash" }); }
+
+  // ── Отправка отчёта в Supabase ──────────────────────────────
+  async function handleSubmitReport(rep) {
+    try {
+      const saved = await apiSubmitReport(rep, user?.id);
+      setReps(prev => [...prev, saved]);
+    } catch (e) {
+      // Fallback: сохраняем локально если БД недоступна
+      console.warn("DB error, saving locally:", e.message);
+      setReps(prev => [...prev, rep]);
+    }
+  }
+
+  async function handleUpdateReport(rep) {
+    try {
+      const saved = await apiSubmitReport(rep, user?.id);
+      setReps(prev => prev.map(x => x.id === rep.id ? saved : x));
+    } catch (e) {
+      setReps(prev => prev.map(x => x.id === rep.id ? rep : x));
+    }
+  }
+
   function handleApprove(id, edited) {
+    // Сохраняем в Supabase
+    apiApproveReport(id, {
+      df: edited.df, bf: edited.bf, wh: edited.wh,
+      dh: edited.dh, fuel: edited.fuel, fuel_kg: edited.fuel_kg,
+    }, user?.id).catch(e => console.warn("Approve DB error:", e.message));
     setReps((prev) => prev.map((r) => r.id === id ? { ...edited, id, status: "approved" } : r));
     // Increment moto_hours for each rig that has wh > 0
     if (edited.rigs && edited.rigs.length > 0) {
@@ -9782,7 +9917,7 @@ export default function App() {
       ? <ForemanDash user={user} objs={vObjs} rigs={rigs} reps={vReps} plans={plans} T={T} />
       : <Dashboard objs={objs} rigs={rigs} reps={reps} plans={plans} ktgPlans={ktgPlans} nodes={nodes} onDrillObj={(id) => setView({ type: "obj", objId: id })} T={T} />;
   } else if (subPage === "enter") {
-    content = <ForemanForm user={user} objs={vObjs} rigs={rigs} reps={vReps} onSubmit={(r) => setReps((p) => [...p, r])} onUpdate={(r) => setReps((p) => p.map(x => x.id === r.id ? r : x))} setExplosives={setExplosives} downtimeLog={downtimeLog} setDowntimeLog={setDowntimeLog} T={T} />;
+    content = <ForemanForm user={user} objs={vObjs} rigs={rigs} reps={vReps} onSubmit={handleSubmitReport} onUpdate={handleUpdateReport} setExplosives={setExplosives} downtimeLog={downtimeLog} setDowntimeLog={setDowntimeLog} T={T} />;
   } else if (subPage === "planning") {
     content = <PlanningPage objs={objs} plans={plans} setPlans={setPlans} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} nodes={nodes} T={T} />;
   } else if (subPage === "inbox") {
