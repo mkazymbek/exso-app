@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import supabase, { getObjects, getRigs, getReports, getPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport } from "./api.js";
+import supabase, { getObjects, getRigs, getReports, getPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, login as supabaseLogin } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK = {
@@ -963,42 +963,12 @@ function Login({ users, onLogin, T }) {
   async function handleLogin() {
     setErr(""); setLoading(true);
     try {
-      // Пробуем Supabase Auth
-      const email = login.trim() + "@exso.internal";
-      const { createClient } = await import("@supabase/supabase-js");
-      const sb = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      );
-      const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
-      if (error) throw error;
-
-      // Загружаем профиль
-      const { data: profile } = await sb
-        .from("users")
-        .select("*, user_objects(object_id)")
-        .eq("auth_id", data.user.id)
-        .single();
-
-      if (profile) {
-        const u = {
-          ...profile,
-          pw: "", // не храним пароль
-          oids: profile.role === "foreman"
-            ? profile.user_objects.map(r => r.object_id)
-            : "all",
-        };
-        onLogin(u);
-        return;
-      }
-    } catch(e) {
-      // Fallback на локальный логин
-    }
-    // Fallback: старый логин из INIT_USERS
-    const u = users.find((u) => u.login === login.trim() && u.pw === pw);
-    if (u) {
+      const u = await supabaseLogin(login.trim(), pw);
       onLogin(u);
-    } else {
+      return;
+    } catch(e) {
+      const u = users.find((u) => u.login === login.trim() && u.pw === pw);
+      if (u) { onLogin(u); setLoading(false); return; }
       setErr("Неверный логин или пароль");
     }
     setLoading(false);
