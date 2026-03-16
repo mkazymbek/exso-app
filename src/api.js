@@ -300,3 +300,64 @@ function mapReportFromDB(r) {
     rigEntries: r.rig_entries || [],
   };
 }
+
+// ──────────────────────────────────────────────────────────────
+// PLANS
+// ──────────────────────────────────────────────────────────────
+
+export async function savePlanToDB(plan) {
+  const { data, error } = await supabase
+    .from('plans')
+    .upsert({
+      object_id:   plan.oid,
+      field:       plan.field,
+      mode:        plan.mode || 'month',
+      period_key:  plan.periodKey,
+      month_total: plan.monthTotal ?? null,
+      dates:       plan.dates || [],
+    }, { onConflict: 'object_id,field,mode,period_key' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ──────────────────────────────────────────────────────────────
+// KTG PLANS
+// ──────────────────────────────────────────────────────────────
+
+export async function saveKtgPlanToDB(plan) {
+  const { data, error } = await supabase
+    .from('ktg_plans')
+    .upsert({
+      object_id:   plan.object_id,
+      year_month:  plan.year_month,
+      status:      plan.status,
+      items:       plan.items || {},
+    }, { onConflict: 'object_id,year_month' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateKtgPlanStatus(objectId, yearMonth, status, extra = {}) {
+  const { data, error } = await supabase
+    .from('ktg_plans')
+    .update({ status, ...extra })
+    .eq('object_id', objectId)
+    .eq('year_month', yearMonth)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getKtgPlans() {
+  const { data, error } = await supabase
+    .from('ktg_plans')
+    .select('*')
+    .order('year_month', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
