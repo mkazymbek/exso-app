@@ -816,7 +816,7 @@ function DataTable({ rows, onCell, totals, T }) {
                   <input
                     type="text"
                     inputMode="numeric"
-                    value={row[col.field] === 0 || row[col.field] === "" ? "" : row[col.field]}
+                    value={row[col.field] === 0 || row[col.field] === "" || row[col.field] == null ? "" : String(row[col.field])}
                     onChange={(e) => onCell(row.id, col.field, e.target.value)}
                     placeholder="0"
                     style={{
@@ -2957,10 +2957,13 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
     const baseRigs = rigs.filter(rg=>rg.o===r.oid);
     setEditRows(baseRigs.map(rg=>{
       const f=r.rigs?.find(x=>x.id===rg.id)||{};
-      return {id:rg.id,nm:rg.n,df:f.df||"",wh:f.wh||"",dh:f.dh||"",fuel:f.fuel||"",dt:f.dt||"",overDrill:f.overDrill||""};
+      return {id:rg.id,nm:rg.n,df:f.df??0,wh:f.wh??0,dh:f.dh??0,fuel:f.fuel??0,dt:f.dt||"",overDrill:f.overDrill??0};
     }));
   }
-  function setCell(id,key,val){setEditRows(prev=>prev.map(r=>r.id===id?{...r,[key]:val}:r));}
+  function setCell(id,key,val){
+    const num = val === "" ? 0 : key === "dt" ? val : (isNaN(Number(val)) ? 0 : Number(val));
+    setEditRows(prev=>prev.map(r=>r.id===id?{...r,[key]: key==="dt" ? val : num}:r));
+  }
   const totals={
     df:editRows.reduce((s,r)=>s+toNum(r.df),0), bf:editRows.reduce((s,r)=>s+toNum(r.bf),0),
     wh:editRows.reduce((s,r)=>s+toNum(r.wh),0), dh:editRows.reduce((s,r)=>s+toNum(r.dh),0),
@@ -3359,7 +3362,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                   </div>
                   <DataTable
                     rows={editingRep._editRows||[]}
-                    onCell={(id,key,val)=>setEditingRep(p=>({...p,_editRows:p._editRows.map(r=>r.id===id?{...r,[key]:val}:r)}))}
+                    onCell={(id,key,val)=>setEditingRep(p=>({...p,_editRows:p._editRows.map(r=>r.id===id?{...r,[key]: key==="dt" ? val : (val===""?0:(isNaN(Number(val))?0:Number(val)))}:r)}))}
                     totals={(editingRep._editRows||[]).reduce((t,r)=>({
                       df:t.df+toNum(r.df),bf:t.bf+toNum(r.bf),wh:t.wh+toNum(r.wh),dh:t.dh+toNum(r.dh),fuel:t.fuel+toNum(r.fuel),overDrill:t.overDrill+toNum(r.overDrill)
                     }),{df:0,bf:0,wh:0,dh:0,fuel:0,overDrill:0})}
@@ -3412,7 +3415,7 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                       {isPending&&<Btn variant="primary" onClick={()=>openReview(r)} T={T} style={{fontSize:12,padding:"7px 16px"}}>ПРОВЕРИТЬ →</Btn>}
                       <button onClick={()=>{
                         const baseRigs = rigs.filter(rg=>rg.o===r.oid);
-                        const rows = baseRigs.map(rg=>{const f=r.rigs?.find(x=>x.id===rg.id)||{};return{id:rg.id,nm:rg.n,df:f.df||"",bf:f.bf||"",wh:f.wh||"",dh:f.dh||"",fuel:f.fuel||"",dt:f.dt||"",overDrill:f.overDrill||""};});
+                        const rows = baseRigs.map(rg=>{const f=r.rigs?.find(x=>x.id===rg.id)||{};return{id:rg.id,nm:rg.n,df:f.df??0,bf:f.bf??0,wh:f.wh??0,dh:f.dh??0,fuel:f.fuel??0,dt:f.dt||"",overDrill:f.overDrill??0};});
                         setEditingRep({...r, _editRows: rows});
                       }} style={{padding:"6px 14px",borderRadius:5,border:`1.5px solid ${T.amber}`,background:`${T.amber}10`,color:T.amber,fontSize:12,fontWeight:700,cursor:"pointer"}}>
                         ✏ Редактировать
