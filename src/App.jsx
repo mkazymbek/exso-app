@@ -2707,10 +2707,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                 const kv   = ktgCalc(r.wh||0, r.dh||0);
                 const dtAll = (r.rigEntries||[]).flatMap(e=>e.downtimes||[]);
                 const dtH   = dtAll.reduce((s,d)=>s+toNum(d.durationHours),0);
-                const EDIT_WINDOW_H = 24;
-                const approvedRecently = r.status === "approved" && r.approvedAt &&
-                  (Date.now() - new Date(r.approvedAt).getTime()) < EDIT_WINDOW_H * 3600000;
-                const canEdit = r.status === "submitted" || approvedRecently;
+                const canEdit = r.status === "submitted" || r.status === "approved";
 
                 return (
                   <div key={r.id} style={{
@@ -2814,7 +2811,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
                 </div>
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                {(openRep.status==="submitted" || (openRep.status==="approved" && openRep.approvedAt && (Date.now()-new Date(openRep.approvedAt).getTime())<24*3600000)) && (
+                {(openRep.status==="submitted" || openRep.status==="approved") && (
                   <button onClick={() => { setOpenRep(null); onEdit(openRep); }}
                     style={{ padding:"7px 16px", borderRadius:5,
                       border:`1.5px solid ${openRep.status==="approved" ? T.blue : T.amber}`,
@@ -2934,13 +2931,15 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
 }
 
 // ─── ENGINEER INBOX ───────────────────────────────────────────────────────────
-function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nodes, setExplosives=()=>{}, T }) {
+function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=()=>{}, ktgPlans, setKtgPlans, nodes, setExplosives=()=>{}, T }) {
   const [selObjId, setSelObjId] = useState(null);
-  const [tab,      setTab]      = useState("reports"); // "reports" | "ktg"
+  const [tab,      setTab]      = useState("reports");
   const [sel,      setSel]      = useState(null);
   const [confirmed,setConfirmed]= useState(false);
   const [editRows, setEditRows] = useState([]);
   const [editMeta, setEditMeta] = useState({ date:"", sh:"day" });
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [editingRep, setEditingRep] = useState(null);
   const colors = OBJ_COLORS(T);
 
   const pendingReps = reps.filter(r=>r.status==="submitted");
@@ -3322,6 +3321,74 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
       {/* REPORTS TAB */}
       {tab==="reports"&&(
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
+
+          {/* Модалка подтверждения удаления */}
+          {deleteConfirmId&&(
+            <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+              <div style={{background:T.bg2,border:`1px solid ${T.red}`,borderRadius:8,maxWidth:420,width:"100%",padding:24}}>
+                <div style={{fontSize:15,fontWeight:700,color:T.txt0,marginBottom:8}}>Удалить отчёт?</div>
+                <div style={{fontSize:13,color:T.txt2,marginBottom:20}}>
+                  Это действие необратимо. Отчёт будет удалён из системы.
+                </div>
+                <div style={{display:"flex",gap:10}}>
+                  <Btn variant="danger" style={{flex:1}} onClick={()=>{onDelete(deleteConfirmId);setDeleteConfirmId(null);}} T={T}>🗑 Удалить</Btn>
+                  <Btn variant="ghost" style={{flex:1}} onClick={()=>setDeleteConfirmId(null)} T={T}>Отмена</Btn>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Модалка редактирования отчёта инженером */}
+          {editingRep&&(
+            <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:600,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:20,overflowY:"auto"}}>
+              <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`3px solid ${T.amber}`,borderRadius:8,width:"100%",maxWidth:820,marginTop:10,marginBottom:40}}>
+                <div style={{padding:"14px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,background:T.bg2,zIndex:10}}>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>✏ РЕДАКТИРОВАНИЕ · {objs.find(o=>o.id===editingRep.oid)?.name?.toUpperCase()}</div>
+                    <div style={{fontSize:12,color:T.amber,marginTop:2}}>Изменения сохраняются без смены статуса</div>
+                  </div>
+                  <button onClick={()=>setEditingRep(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.txt2,lineHeight:1}}>×</button>
+                </div>
+                <div style={{padding:20,display:"flex",flexDirection:"column",gap:14}}>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap",padding:"12px 0",borderBottom:`1px solid ${T.border}`}}>
+                    <FieldInput label="Дата" type="date" value={editingRep.date} onChange={e=>setEditingRep(p=>({...p,date:e.target.value}))} T={T} style={{flex:"1 1 140px"}}/>
+                    <FieldSelect label="Смена" value={editingRep.sh} onChange={e=>setEditingRep(p=>({...p,sh:e.target.value}))} T={T} style={{flex:"1 1 160px"}}>
+                      <option value="day">☀ Дневная</option>
+                      <option value="night">☾ Ночная</option>
+                    </FieldSelect>
+                  </div>
+                  <DataTable
+                    rows={editingRep._editRows||[]}
+                    onCell={(id,key,val)=>setEditingRep(p=>({...p,_editRows:p._editRows.map(r=>r.id===id?{...r,[key]:val}:r)}))}
+                    totals={(editingRep._editRows||[]).reduce((t,r)=>({
+                      df:t.df+toNum(r.df),bf:t.bf+toNum(r.bf),wh:t.wh+toNum(r.wh),dh:t.dh+toNum(r.dh),fuel:t.fuel+toNum(r.fuel),overDrill:t.overDrill+toNum(r.overDrill)
+                    }),{df:0,bf:0,wh:0,dh:0,fuel:0,overDrill:0})}
+                    T={T}
+                  />
+                  <div style={{display:"flex",gap:10,paddingTop:8}}>
+                    <Btn variant="primary" style={{flex:1,padding:"11px"}} onClick={()=>{
+                      const rows = editingRep._editRows||[];
+                      const updated = {
+                        ...editingRep,
+                        date: editingRep.date, sh: editingRep.sh,
+                        df: rows.reduce((s,r)=>s+toNum(r.df),0),
+                        bf: rows.reduce((s,r)=>s+toNum(r.bf),0),
+                        wh: rows.reduce((s,r)=>s+toNum(r.wh),0),
+                        dh: rows.reduce((s,r)=>s+toNum(r.dh),0),
+                        fuel: rows.reduce((s,r)=>s+toNum(r.fuel),0),
+                        rigs: rows.map(r=>({id:r.id,n:r.nm,df:toNum(r.df),bf:toNum(r.bf),wh:toNum(r.wh),dh:toNum(r.dh),fuel:toNum(r.fuel),dt:r.dt||"—",overDrill:toNum(r.overDrill)})),
+                      };
+                      delete updated._editRows;
+                      onUpdate(updated);
+                      setEditingRep(null);
+                    }} T={T}>✓ Сохранить изменения</Btn>
+                    <Btn variant="ghost" style={{padding:"11px 16px"}} onClick={()=>setEditingRep(null)} T={T}>Отмена</Btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {objReps.length===0
             ?<Card style={{padding:24,textAlign:"center"}} T={T}><div style={{fontSize:12,color:T.txt2}}>Нет отчётов по этому объекту</div></Card>
             :objReps.map(r=>{
@@ -3341,7 +3408,20 @@ function EngineerInbox({ reps, objs, rigs, onApprove, ktgPlans, setKtgPlans, nod
                         ))}
                       </div>
                     </div>
-                    {isPending&&<Btn variant="primary" onClick={()=>openReview(r)} T={T} style={{fontSize:12,padding:"7px 16px"}}>ПРОВЕРИТЬ →</Btn>}
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                      {isPending&&<Btn variant="primary" onClick={()=>openReview(r)} T={T} style={{fontSize:12,padding:"7px 16px"}}>ПРОВЕРИТЬ →</Btn>}
+                      <button onClick={()=>{
+                        const baseRigs = rigs.filter(rg=>rg.o===r.oid);
+                        const rows = baseRigs.map(rg=>{const f=r.rigs?.find(x=>x.id===rg.id)||{};return{id:rg.id,nm:rg.n,df:f.df||"",bf:f.bf||"",wh:f.wh||"",dh:f.dh||"",fuel:f.fuel||"",dt:f.dt||"",overDrill:f.overDrill||""};});
+                        setEditingRep({...r, _editRows: rows});
+                      }} style={{padding:"6px 14px",borderRadius:5,border:`1.5px solid ${T.amber}`,background:`${T.amber}10`,color:T.amber,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                        ✏ Редактировать
+                      </button>
+                      <button onClick={()=>setDeleteConfirmId(r.id)}
+                        style={{padding:"6px 14px",borderRadius:5,border:`1.5px solid ${T.red}`,background:`${T.red}10`,color:T.red,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                        🗑 Удалить
+                      </button>
+                    </div>
                   </div>
                 </Card>
               );
@@ -9882,6 +9962,10 @@ export default function App() {
     }
   }
 
+  function handleDeleteReport(id) {
+    setReps(prev => prev.filter(r => r.id !== id));
+  }
+
   function handleApprove(id, edited) {
     // Сохраняем в Supabase
     apiApproveReport(id, {
@@ -9974,7 +10058,7 @@ export default function App() {
   } else if (subPage === "planning") {
     content = <PlanningPage objs={objs} plans={plans} setPlans={setPlans} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} nodes={nodes} T={T} />;
   } else if (subPage === "inbox") {
-    content = <EngineerInbox reps={reps} objs={objs} rigs={rigs} onApprove={handleApprove} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} nodes={nodes} setExplosives={setExplosives} T={T} />;
+    content = <EngineerInbox reps={reps} objs={objs} rigs={rigs} onApprove={handleApprove} onDelete={handleDeleteReport} onUpdate={handleUpdateReport} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} nodes={nodes} setExplosives={setExplosives} T={T} />;
   } else if (subPage === "objects") {
     content = <ObjectsEditor objs={objs} setObjs={setObjs} rigs={rigs} setRigs={setRigs} T={T} />;
   } else if (subPage === "users") {
