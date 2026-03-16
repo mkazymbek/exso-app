@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus } from "./api.js";
+import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK = {
@@ -9955,24 +9955,35 @@ export default function App() {
 
   async function handleUpdateReport(rep) {
     try {
-      const saved = await apiSubmitReport(rep, user?.id);
+      const saved = await apiUpdateReport(rep, user?.id);
       setReps(prev => prev.map(x => x.id === rep.id ? saved : x));
     } catch (e) {
+      console.warn("Update DB error:", e.message);
       setReps(prev => prev.map(x => x.id === rep.id ? rep : x));
     }
   }
 
-  function handleDeleteReport(id) {
+  async function handleDeleteReport(id) {
     setReps(prev => prev.filter(r => r.id !== id));
+    try {
+      await apiDeleteReport(id);
+    } catch (e) {
+      console.warn("Delete DB error:", e.message);
+    }
   }
 
   function handleApprove(id, edited) {
-    // Сохраняем в Supabase
+    // Оптимистично обновляем UI
+    setReps((prev) => prev.map((r) => r.id === id ? { ...edited, id, status: "approved", approvedAt: new Date().toISOString() } : r));
+
+    // Сохраняем в Supabase и обновляем состояние актуальными данными из БД
     apiApproveReport(id, {
       df: edited.df, bf: edited.bf, wh: edited.wh,
       dh: edited.dh, fuel: edited.fuel, fuel_kg: edited.fuel_kg,
-    }, user?.id).catch(e => console.warn("Approve DB error:", e.message));
-    setReps((prev) => prev.map((r) => r.id === id ? { ...edited, id, status: "approved" } : r));
+      over_drill: (edited.rigs || []).reduce((s, r) => s + (r.overDrill || 0), 0),
+    }, user?.id)
+      .then(saved => setReps(prev => prev.map(r => r.id === id ? saved : r)))
+      .catch(e => console.warn("Approve DB error:", e.message));
     // Increment moto_hours for each rig that has wh > 0
     if (edited.rigs && edited.rigs.length > 0) {
       setPassports(prev => {

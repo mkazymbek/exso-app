@@ -5,6 +5,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// Генератор временных фронтенд-ID для rigEntries (не хранятся в БД)
+let _idCounter = Date.now();
+function genFrontendId() { return `fe_${++_idCounter}`; }
+
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -208,8 +212,85 @@ export async function submitReport(repObj, userId) {
   return mapReportFromDB(report);
 }
 
+export async function deleteReport(reportId) {
+  // Удаляем связанные записи (если нет CASCADE в БД — удаляем вручную)
+  await supabase.from('downtime_events').delete().eq('report_id', reportId);
+  await supabase.from('rig_entries').delete().eq('report_id', reportId);
+
+  const { error } = await supabase
+    .from('shift_reports')
+    .delete()
+    .eq('id', reportId);
+  if (error) throw error;
+}
+
+export async function updateReport(repObj, userId) {
+  // 1. Обновляем основную строку отчёта
+  const { error: repError } = await supabase
+    .from('shift_reports')
+    .update({
+      date:               repObj.date,
+      shift_type:         repObj.sh,
+      df:                 repObj.df,
+      bf:                 repObj.bf,
+      wh:                 repObj.wh,
+      dh:                 repObj.dh,
+      fuel:               repObj.fuel,
+      fuel_kg:            repObj.fuel_kg || 0,
+      over_drill:         repObj.rigs?.reduce((s, r) => s + (r.overDrill || 0), 0) || 0,
+      status:             repObj.status,
+      comment:            repObj.comment || null,
+      submitted_at:       new Date().toISOString(),
+    })
+    .eq('id', repObj.id);
+  if (repError) throw repError;
+
+  // 2. Перезаписываем rig_entries
+  await supabase.from('rig_entries').delete().eq('report_id', repObj.id);
+  if (repObj.rigs?.length) {
+    const entries = repObj.rigs.map(r => ({
+      report_id:       repObj.id,
+      rig_id:          r.id,
+      rig_name:        r.n,
+      drilling_meters: r.df || 0,
+      over_drill:      r.overDrill || 0,
+      working_hours:   r.wh || 0,
+      downtime_hours:  r.dh || 0,
+      fuel_liters:     r.fuel || 0,
+      notes:           r.dt || null,
+    }));
+    const { error: entryError } = await supabase.from('rig_entries').insert(entries);
+    if (entryError) throw entryError;
+  }
+
+  // 3. Перезаписываем downtime_events
+  await supabase.from('downtime_events').delete().eq('report_id', repObj.id);
+  if (repObj.downtime_events?.length) {
+    const downtimes = repObj.downtime_events.map(d => ({
+      report_id:      repObj.id,
+      rig_id:         d.rig_id,
+      rig_name:       d.rig_name,
+      category:       d.category || d.cat,
+      reason:         d.reason || d.sub,
+      duration_hours: d.durationHours || d.hrs,
+      comment:        d.comment || null,
+    }));
+    const { error: dtError } = await supabase.from('downtime_events').insert(downtimes);
+    if (dtError) throw dtError;
+  }
+
+  // 4. Перечитываем с полным join чтобы вернуть актуальные данные
+  const { data: full, error: fetchError } = await supabase
+    .from('shift_reports')
+    .select('*, rig_entries(*), downtime_events(*)')
+    .eq('id', repObj.id)
+    .single();
+  if (fetchError) throw fetchError;
+  return mapReportFromDB(full);
+}
+
 export async function approveReport(reportId, updates, userId) {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('shift_reports')
     .update({
       ...updates,
@@ -217,10 +298,15 @@ export async function approveReport(reportId, updates, userId) {
       approved_by: null,
       approved_at: new Date().toISOString(),
     })
-    .eq('id', reportId)
-    .select()
-    .single();
+    .eq('id', reportId);
   if (error) throw error;
+
+  const { data, error: fetchError } = await supabase
+    .from('shift_reports')
+    .select('*, rig_entries(*), downtime_events(*)')
+    .eq('id', reportId)
+    .single();
+  if (fetchError) throw fetchError;
   return mapReportFromDB(data);
 }
 
@@ -264,20 +350,22 @@ export async function upsertPlan(plan) {
 
 function mapReportFromDB(r) {
   return {
-    id:     r.id,
-    oid:    r.object_id,
-    date:   r.date,
-    sh:     r.shift_type,
-    df:     r.df,
-    bf:     r.bf,
-    wh:     r.wh,
-    dh:     r.dh,
-    fuel:   r.fuel,
-    fuel_kg: r.fuel_kg,
-    status: r.status,
-    comment: r.comment,
-    by:     r.submitted_by,
+    id:          r.id,
+    oid:         r.object_id,
+    date:        r.date,
+    sh:          r.shift_type,
+    df:          r.df,
+    bf:          r.bf,
+    wh:          r.wh,
+    dh:          r.dh,
+    fuel:        r.fuel,
+    fuel_kg:     r.fuel_kg,
+    overDrill:   r.over_drill || 0,
+    status:      r.status,
+    comment:     r.comment,
+    by:          r.submitted_by,
     submittedAt: r.submitted_at,
+    approvedAt:  r.approved_at || null,
     rigs: (r.rig_entries || []).map(e => ({
       id:        e.rig_id,
       n:         e.rig_name,
@@ -297,7 +385,17 @@ function mapReportFromDB(r) {
       durationHours: d.duration_hours,
       comment:       d.comment,
     })),
-    rigEntries: r.rig_entries || [],
+    rigEntries: (r.rig_entries || []).map(e => ({
+      id:             genFrontendId(),
+      rigId:          e.rig_id,
+      rigName:        e.rig_name,
+      workingHours:   String(e.working_hours  || ''),
+      drillingMeters: String(e.drilling_meters || ''),
+      overDrill:      String(e.over_drill      || ''),
+      fuelLiters:     String(e.fuel_liters     || ''),
+      notes:          e.notes || '',
+      downtimes:      [],
+    })),
   };
 }
 
