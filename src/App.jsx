@@ -818,6 +818,11 @@ function DataTable({ rows, onCell, totals, T }) {
                     inputMode="numeric"
                     value={row[col.field] === 0 || row[col.field] === "" || row[col.field] == null ? "" : String(row[col.field])}
                     onChange={(e) => onCell(row.id, col.field, e.target.value)}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pasted = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g, "");
+                      if (pasted) onCell(row.id, col.field, pasted);
+                    }}
                     placeholder="0"
                     style={{
                       width: "100%", padding: "7px 6px",
@@ -2103,8 +2108,10 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
       ? rep.rigEntries
       : (rep.rigs || []).map(r => ({
           id: genId(), rigId: r.id, rigName: r.n,
-          workingHours: String(r.wh||""), drillingMeters: String(r.df||""),
-          overDrill: String(r.overDrill||""), fuelLiters: String(r.fuel||""),
+          workingHours:   r.wh   ?? 0,
+          drillingMeters: r.df   ?? 0,
+          overDrill:      r.overDrill ?? 0,
+          fuelLiters:     r.fuel ?? 0,
           notes: r.dt||"", downtimes: r.downtimes || [],
         }));
     setEntries(loadedEntries.length > 0 ? loadedEntries : rigs.filter(r=>r.o===rep.oid).map(makeEntry));
@@ -2396,24 +2403,27 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                     {/* Бурение */}
                     <td style={{ padding:"6px 6px", textAlign:"center" }}>
                       <input type="text" inputMode="numeric"
-                        value={entry.drillingMeters === "" ? "" : entry.drillingMeters}
+                        value={entry.drillingMeters === 0 || entry.drillingMeters === "" || entry.drillingMeters == null ? "" : String(entry.drillingMeters)}
                         onChange={e => updateEntry(entry.id, "drillingMeters", e.target.value)}
+                        onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) updateEntry(entry.id, "drillingMeters", v); }}
                         placeholder="0"
                         style={{ width:"100%", padding:"7px 6px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.red}70`, borderRadius:3, fontSize:13, fontWeight:600, color:T.red, textAlign:"center", outline:"none", fontFamily:"'JetBrains Mono',monospace" }} />
                     </td>
                     {/* Перебур */}
                     <td style={{ padding:"6px 6px", textAlign:"center" }}>
                       <input type="text" inputMode="numeric"
-                        value={entry.overDrill === "" ? "" : entry.overDrill}
+                        value={entry.overDrill === 0 || entry.overDrill === "" || entry.overDrill == null ? "" : String(entry.overDrill)}
                         onChange={e => updateEntry(entry.id, "overDrill", e.target.value)}
+                        onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) updateEntry(entry.id, "overDrill", v); }}
                         placeholder="0"
                         style={{ width:"100%", padding:"7px 6px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.cyan}70`, borderRadius:3, fontSize:13, fontWeight:600, color:T.cyan, textAlign:"center", outline:"none", fontFamily:"'JetBrains Mono',monospace" }} />
                     </td>
                     {/* ГСМ */}
                     <td style={{ padding:"6px 6px", textAlign:"center" }}>
                       <input type="text" inputMode="numeric"
-                        value={entry.fuelLiters === "" ? "" : entry.fuelLiters}
+                        value={entry.fuelLiters === 0 || entry.fuelLiters === "" || entry.fuelLiters == null ? "" : String(entry.fuelLiters)}
                         onChange={e => updateEntry(entry.id, "fuelLiters", e.target.value)}
+                        onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) updateEntry(entry.id, "fuelLiters", v); }}
                         placeholder="0"
                         style={{ width:"100%", padding:"7px 6px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.violet}70`, borderRadius:3, fontSize:13, fontWeight:600, color:T.violet, textAlign:"center", outline:"none", fontFamily:"'JetBrains Mono',monospace" }} />
                     </td>
