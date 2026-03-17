@@ -3514,95 +3514,240 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
 }
 
 // ─── ENGINEER: OBJECTS EDITOR ─────────────────────────────────────────────────
-function ObjectsEditor({ objs, setObjs, rigs, setRigs, T }) {
-  const [editing, setEditing] = useState(null);
-  const [addRig,  setAddRig]  = useState({ oid: "", name: "" });
+function ObjectsEditor({ objs, setObjs, rigs, setRigs, nodes, setNodes, T }) {
+  const [moveModal,   setMoveModal]   = useState(null); // { nodeId, nodeName, currentOid }
+  const [selObjId,    setSelObjId]    = useState(null); // drill into object
+  const [filterCat,   setFilterCat]   = useState("all");
   const colors = OBJ_COLORS(T);
 
-  function saveObj(edited) {
-    setObjs((prev) => prev.map((o) => o.id === edited.id ? edited : o));
-    setEditing(null);
+  const assets = nodes.filter(n => n.type === "ASSET");
+
+  // Category list from assets
+  const catTypes = [...new Set(assets.map(a => a.parentId))].map(pid => {
+    const catNode = nodes.find(n => n.id === pid);
+    return catNode ? { id: pid, name: catNode.name } : null;
+  }).filter(Boolean);
+
+  function doMove(newOid) {
+    setNodes(prev => prev.map(n =>
+      n.id === moveModal.nodeId ? { ...n, assigned_object_id: newOid } : n
+    ));
+    setMoveModal(null);
   }
 
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        <div style={{ background: T.violet, color: "#fff", padding: "4px 12px", borderRadius: 3, fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>ИНЖЕНЕР</div>
-        <div style={{ fontSize: 12, color: T.txt2 }}>Редактирование участков и станков</div>
-      </div>
-      <SectionTitle label="Управление" sub="УЧАСТКИ И СТАНКИ" T={T} />
-
-      {editing && (
-        <div style={{ position: "fixed", inset: 0, background: T.modalBg, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 8, width: "100%", maxWidth: 500, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>РЕДАКТИРОВАТЬ УЧАСТОК</div>
-              <button onClick={() => setEditing(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: T.txt2 }}>×</button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <FieldInput label="Название" value={editing.name} onChange={(e) => setEditing((p) => ({ ...p, name: e.target.value }))} T={T} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <FieldInput label="План бурения (п.м)" value={editing.dp} onChange={(e) => setEditing((p) => ({ ...p, dp: toNum(e.target.value) }))} T={T} />
-                <FieldInput label="План взрыва (м³)"  value={editing.bp} onChange={(e) => setEditing((p) => ({ ...p, bp: toNum(e.target.value) }))} T={T} />
-              </div>
-              <FieldInput label="КТГ план (%)" value={editing.kp} onChange={(e) => setEditing((p) => ({ ...p, kp: toNum(e.target.value) }))} T={T} />
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
-              <Btn variant="success" style={{ flex: 1 }} onClick={() => saveObj(editing)} T={T}>Сохранить</Btn>
-              <Btn variant="ghost" onClick={() => setEditing(null)} T={T}>Отмена</Btn>
-            </div>
+  // ── Move modal ────────────────────────────────────────────
+  const MoveModal = moveModal ? (
+    <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.cyan}`,borderRadius:8,width:"100%",maxWidth:400}}>
+        <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>Переместить актив</div>
+            <div style={{fontSize:12,color:T.cyan,marginTop:2}}>{moveModal.nodeName}</div>
           </div>
+          <button onClick={()=>setMoveModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
         </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {objs.map((obj, i) => {
-          const ac       = colors[i % colors.length];
-          const objRigs  = rigs.filter((r) => r.o === obj.id);
-          return (
-            <Card key={obj.id} accent={ac} T={T}>
-              <div style={{ background: `${ac}10`, padding: "12px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>{obj.name.toUpperCase()}</div>
-                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 2, textTransform: "uppercase" }}>
-                    Бурение: <b style={{ color: T.txt0 }}>{obj.dp.toLocaleString()}</b> · Взрыв: <b style={{ color: T.txt0 }}>{obj.bp.toLocaleString()}</b> · КТГ: <b style={{ color: T.txt0 }}>{obj.kp}%</b>
-                  </div>
-                </div>
-                <Btn variant="secondary" onClick={() => setEditing({ ...obj })} style={{ fontSize: 12, padding: "6px 14px" }} T={T}>✏ Редактировать</Btn>
+        <div style={{padding:16,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Выберите объект</div>
+          <div onClick={()=>doMove(null)}
+            style={{padding:"10px 14px",borderRadius:6,cursor:"pointer",border:`1.5px solid ${moveModal.currentOid===null?T.amber:T.border}`,
+              background:moveModal.currentOid===null?`${T.amber}12`:"transparent",display:"flex",alignItems:"center",justifyContent:"space-between"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=T.amber}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=moveModal.currentOid===null?T.amber:T.border}>
+            <span style={{fontSize:13,color:moveModal.currentOid===null?T.amber:T.txt2,fontStyle:"italic"}}>— Не назначен (резерв)</span>
+            {moveModal.currentOid===null&&<span style={{fontSize:12,color:T.amber,fontWeight:700}}>текущий</span>}
+          </div>
+          {objs.map(obj=>{
+            const isCurrent = Number(moveModal.currentOid) === obj.id;
+            return (
+              <div key={obj.id} onClick={()=>!isCurrent&&doMove(obj.id)}
+                style={{padding:"10px 14px",borderRadius:6,cursor:isCurrent?"default":"pointer",
+                  border:`1.5px solid ${isCurrent?T.cyan:T.border}`,background:isCurrent?`${T.cyan}12`:"transparent",
+                  display:"flex",alignItems:"center",justifyContent:"space-between"}}
+                onMouseEnter={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.cyan;}}
+                onMouseLeave={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.border;}}>
+                <span style={{fontSize:13,fontWeight:isCurrent?700:400,color:isCurrent?T.cyan:T.txt0}}>📍 {obj.name}</span>
+                {isCurrent&&<span style={{fontSize:12,color:T.cyan,fontWeight:700}}>текущий</span>}
               </div>
-              <div style={{ padding: "12px 16px" }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase", marginBottom: 8 }}>Станки ({objRigs.length})</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
-                  {objRigs.map((rg) => (
-                    <div key={rg.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 3, fontSize: 12, fontWeight: 600, color: T.txt1 }}>
-                      <div style={{ width: 3, height: 3, borderRadius: "50%", background: ac }} />
-                      {rg.n}
-                      <button onClick={() => setRigs((prev) => prev.filter((r) => r.id !== rg.id))} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: 13, lineHeight: 1, marginLeft: 3, padding: 0 }}>×</button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  // ── Object detail view ────────────────────────────────────
+  if (selObjId !== null) {
+    const obj = objs.find(o=>o.id===selObjId);
+    const objAssets = assets.filter(a=>Number(a.assigned_object_id)===selObjId);
+    const unassigned = assets.filter(a=>!a.assigned_object_id);
+    const ac = colors[objs.findIndex(o=>o.id===selObjId) % colors.length];
+
+    // Group by parent category
+    const grouped = catTypes.map(cat => ({
+      ...cat,
+      items: objAssets.filter(a => a.parentId === cat.id)
+    })).filter(g => g.items.length > 0);
+
+    return (
+      <div>
+        {MoveModal}
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+          <button onClick={()=>setSelObjId(null)} style={{padding:"6px 14px",borderRadius:5,border:`1px solid ${T.border}`,background:T.bg2,color:T.txt2,cursor:"pointer",fontSize:12,fontWeight:600}}>← Все объекты</button>
+          <span style={{color:T.txt2}}>›</span>
+          <div style={{padding:"5px 14px",borderRadius:5,background:`${ac}15`,border:`1px solid ${ac}40`,fontSize:13,fontWeight:700,color:ac}}>{obj?.name}</div>
+          <div style={{marginLeft:"auto",fontSize:12,color:T.txt2}}>{objAssets.length} активов</div>
+        </div>
+
+        {grouped.length === 0 ? (
+          <Card style={{padding:32,textAlign:"center"}} T={T}>
+            <div style={{fontSize:32,marginBottom:12}}>🏗</div>
+            <div style={{fontSize:13,color:T.txt2,marginBottom:16}}>На объекте нет активов</div>
+            <div style={{fontSize:12,color:T.txt2}}>Переместите активы из резерва или других объектов через раздел «Активы» или кнопку ↔ на карточке</div>
+          </Card>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+            {grouped.map(cat=>(
+              <div key={cat.id}>
+                <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8,paddingLeft:4,borderLeft:`2px solid ${ac}`}}>{cat.name} ({cat.items.length})</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:8}}>
+                  {cat.items.map(a=>(
+                    <div key={a.id} style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:7,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:T.txt0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
+                        {a.serialNo && <div style={{fontSize:12,color:T.txt2,marginTop:2}}>{a.serialNo}</div>}
+                      </div>
+                      <button onClick={()=>setMoveModal({nodeId:a.id,nodeName:a.name,currentOid:a.assigned_object_id})}
+                        title="Переместить на другой объект"
+                        style={{padding:"5px 10px",borderRadius:4,border:`1px solid ${T.cyan}40`,background:`${T.cyan}10`,color:T.cyan,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>
+                        ↔
+                      </button>
                     </div>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-                  <FieldInput
-                    label="Добавить станок"
-                    value={addRig.oid === String(obj.id) ? addRig.name : ""}
-                    onChange={(e) => setAddRig({ oid: String(obj.id), name: e.target.value })}
-                    placeholder="Название станка"
-                    T={T}
-                    style={{ flex: 1 }}
-                  />
-                  <Btn variant="secondary" onClick={() => {
-                    if (addRig.name.trim() && addRig.oid === String(obj.id)) {
-                      setRigs((prev) => [...prev, { id: genId(), n: addRig.name.trim(), o: obj.id }]);
-                      setAddRig({ oid: "", name: "" });
-                    }
-                  }} T={T} style={{ fontSize: 12, padding: "9px 14px" }}>
-                    + Добавить
-                  </Btn>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Unassigned assets panel */}
+        {unassigned.length > 0 && (
+          <div style={{marginTop:24,padding:"14px 16px",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>
+              📦 Резерв (не назначены) — {unassigned.length} активов
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {unassigned.map(a=>(
+                <div key={a.id} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:4}}>
+                  <span style={{fontSize:12,color:T.txt1,fontWeight:600}}>{a.name}</span>
+                  <button onClick={()=>setMoveModal({nodeId:a.id,nodeName:a.name,currentOid:null})}
+                    style={{background:"none",border:"none",cursor:"pointer",color:T.cyan,fontSize:13,fontWeight:700,padding:0}}>↔</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Main list view ────────────────────────────────────────
+  const allCatTypes = [
+    {id:"all", name:"Все категории"},
+    ...catTypes
+  ];
+
+  return (
+    <div>
+      {MoveModal}
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:T.cyan,textTransform:"uppercase",letterSpacing:".18em",marginBottom:4}}>▌ УЧАСТКИ</div>
+          <div style={{fontSize:22,fontWeight:700,color:T.txt0}}>Распределение активов</div>
+        </div>
+        <div style={{marginLeft:"auto",fontSize:12,color:T.txt2}}>{assets.length} активов · {objs.length} объектов</div>
+      </div>
+
+      {/* Category filter */}
+      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+        {allCatTypes.map(c=>(
+          <button key={c.id} onClick={()=>setFilterCat(c.id)}
+            style={{padding:"5px 12px",borderRadius:4,border:`1px solid ${filterCat===c.id?T.cyan:T.border}`,
+              background:filterCat===c.id?`${T.cyan}15`:"transparent",color:filterCat===c.id?T.cyan:T.txt2,
+              fontSize:12,fontWeight:600,cursor:"pointer"}}>
+            {c.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Object cards */}
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {objs.map((obj, i) => {
+          const ac = colors[i % colors.length];
+          const objAssets = assets.filter(a =>
+            Number(a.assigned_object_id) === obj.id &&
+            (filterCat === "all" || a.parentId === filterCat)
+          );
+          const totalForObj = assets.filter(a => Number(a.assigned_object_id) === obj.id).length;
+          return (
+            <div key={obj.id} style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`3px solid ${ac}`,borderRadius:8,overflow:"hidden"}}>
+              <div onClick={()=>setSelObjId(obj.id)}
+                style={{padding:"12px 16px",background:`${ac}08`,borderBottom:`1px solid ${T.border}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between"}}
+                onMouseEnter={e=>e.currentTarget.style.background=`${ac}15`}
+                onMouseLeave={e=>e.currentTarget.style.background=`${ac}08`}>
+                <div>
+                  <div style={{fontSize:15,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>{obj.name.toUpperCase()}</div>
+                  <div style={{fontSize:12,color:T.txt2,marginTop:2}}>{totalForObj} активов всего</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  {objAssets.length > 0 && <span style={{fontSize:12,color:T.txt2}}>{filterCat!=="all"?`${objAssets.length} в категории`:""}</span>}
+                  <span style={{fontSize:13,color:ac,fontWeight:700}}>→</span>
                 </div>
               </div>
-            </Card>
+
+              {objAssets.length > 0 && (
+                <div style={{padding:"10px 16px",display:"flex",flexWrap:"wrap",gap:6}}>
+                  {objAssets.slice(0,12).map(a=>(
+                    <div key={a.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:3}}>
+                      <div style={{width:4,height:4,borderRadius:"50%",background:ac,flexShrink:0}}/>
+                      <span style={{fontSize:12,fontWeight:600,color:T.txt1}}>{a.name}</span>
+                      <button onClick={e=>{e.stopPropagation();setMoveModal({nodeId:a.id,nodeName:a.name,currentOid:a.assigned_object_id});}}
+                        title="Переместить" style={{background:"none",border:"none",cursor:"pointer",color:T.cyan,fontSize:13,fontWeight:700,padding:0,lineHeight:1}}>↔</button>
+                    </div>
+                  ))}
+                  {objAssets.length > 12 && <span style={{fontSize:12,color:T.txt2,padding:"4px 8px"}}>+{objAssets.length-12} ещё</span>}
+                </div>
+              )}
+            </div>
           );
         })}
+
+        {/* Unassigned */}
+        {(()=>{
+          const unassigned = assets.filter(a =>
+            !a.assigned_object_id &&
+            (filterCat === "all" || a.parentId === filterCat)
+          );
+          if (!unassigned.length) return null;
+          return (
+            <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,overflow:"hidden",opacity:0.85}}>
+              <div style={{padding:"12px 16px",background:T.bg3,borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:T.txt2}}>📦 Резерв</div>
+                  <div style={{fontSize:12,color:T.txt2,marginTop:2}}>Не назначены на объект · {unassigned.length} активов</div>
+                </div>
+              </div>
+              <div style={{padding:"10px 16px",display:"flex",flexWrap:"wrap",gap:6}}>
+                {unassigned.map(a=>(
+                  <div key={a.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:3}}>
+                    <span style={{fontSize:12,fontWeight:600,color:T.txt2,fontStyle:"italic"}}>{a.name}</span>
+                    <button onClick={()=>setMoveModal({nodeId:a.id,nodeName:a.name,currentOid:null})}
+                      title="Назначить на объект" style={{background:"none",border:"none",cursor:"pointer",color:T.cyan,fontSize:13,fontWeight:700,padding:0,lineHeight:1}}>↔</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -10703,7 +10848,7 @@ export default function App() {
   } else if (subPage === "inbox") {
     content = <EngineerInbox reps={reps} objs={objs} rigs={rigs} onApprove={handleApprove} onDelete={handleDeleteReport} onUpdate={handleUpdateReport} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} nodes={nodes} setExplosives={setExplosives} T={T} />;
   } else if (subPage === "objects") {
-    content = <ObjectsEditor objs={objs} setObjs={setObjs} rigs={rigs} setRigs={setRigs} T={T} />;
+    content = <ObjectsEditor objs={objs} setObjs={setObjs} rigs={rigs} setRigs={setRigs} nodes={nodes} setNodes={setNodes} T={T} />;
   } else if (subPage === "users") {
     content = <UsersEditor users={users} setUsers={setUsers} objs={objs} T={T} />;
   } else if (subPage === "engineers") {
