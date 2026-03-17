@@ -1468,12 +1468,25 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
             </Card>
             <Card accent={T.violet} style={{ padding: "16px 18px" }} T={T}>
               <div style={{ fontSize: 12, fontWeight: 700, color: T.violet, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>⛽ ГСМ удельный</div>
-              <div style={{ fontSize: 34, fontWeight: 700, color: T.txt0, lineHeight: 1, fontFamily: "'Inter',sans-serif" }}>
-                {totals.bf > 0 ? (totals.fuel / totals.bf).toFixed(1) : "—"}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div style={{ background: T.bg1, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}` }}>
+                  <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>Бурение</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: totals.fuel > 0 && totals.df > 0 ? T.red : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
+                    {totals.fuel > 0 && totals.df > 0 ? (totals.df / totals.fuel).toFixed(2) : "—"}
+                  </div>
+                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>п.м. / л</div>
+                </div>
+                <div style={{ background: T.bg1, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}` }}>
+                  <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>Взрывы</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: totals.fuel > 0 && totals.bf > 0 ? T.amber : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
+                    {totals.fuel > 0 && totals.bf > 0 ? (totals.bf / totals.fuel).toFixed(2) : "—"}
+                  </div>
+                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>м³ / л</div>
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: T.txt2, marginTop: 5, textTransform: "uppercase" }}>
-                л/м³ · итого <b style={{ color: T.txt0 }}>{totals.fuel.toLocaleString()} л</b>
-              </div>
+              {totals.fuel > 0 && <div style={{ fontSize: 12, color: T.txt2, marginTop: 8 }}>
+                Итого ГСМ: <b style={{ color: T.txt0 }}>{totals.fuel.toLocaleString()} л</b>
+              </div>}
             </Card>
           </div>
         );
@@ -1492,7 +1505,6 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
           const dp  = pp.df || obj.dp, bp = pp.bf || obj.bp;
           const pDf = pct(df, dp), pBf = pct(bf, bp);
           const chartData = getChartData(obj.id);
-          const fuelPer = bf > 0 ? (fuel / bf).toFixed(1) : null;
           const planLabel = completedDays ? `по ${completedDays} число` : "за период";
           return (
             <div key={obj.id} onClick={() => onDrillObj(obj.id)}
@@ -1569,22 +1581,29 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                 })()}
                 <div style={{ display: "flex", gap: 6, paddingTop: 8, borderTop: `1px solid ${T.border}`, marginTop: 4 }}>
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ ГСМ уд.</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: fuelPer ? T.violet : T.txt2, fontFamily: "'Inter',sans-serif" }}>
-                      {fuelPer || "—"}
-                      {fuelPer && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> л/м³</span>}
+                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Бур./ГСМ</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: fuel > 0 && df > 0 ? T.red : T.txt2, fontFamily: "'Inter',sans-serif" }}>
+                      {fuel > 0 && df > 0 ? (df / fuel).toFixed(2) : "—"}
+                      {fuel > 0 && df > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> п.м./л</span>}
                     </div>
-                    {fuel > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} л всего</div>}
+                  </div>
+                  <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
+                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Взр./ГСМ</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: fuel > 0 && bf > 0 ? T.amber : T.txt2, fontFamily: "'Inter',sans-serif" }}>
+                      {fuel > 0 && bf > 0 ? (bf / fuel).toFixed(2) : "—"}
+                      {fuel > 0 && bf > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> м³/л</span>}
+                    </div>
+                    {fuel > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} л</div>}
                   </div>
                   {overDrill > 0 && (
                     <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
                       <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>📏 Перебур</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif" }}>{overDrill.toLocaleString()} <span style={{ fontSize:12, fontWeight: 400 }}>м</span></div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif" }}>{overDrill.toLocaleString()} <span style={{ fontSize:12, fontWeight: 400 }}>м</span></div>
                     </div>
                   )}
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
                     <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⏸ Простои</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: dh > 0 ? "#ef4444" : T.txt2, fontFamily: "'Inter',sans-serif" }}>{dh} ч</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: dh > 0 ? "#ef4444" : T.txt2, fontFamily: "'Inter',sans-serif" }}>{dh} ч</div>
                     {wh > 0 && dh > 0 && <div style={{ fontSize:12, color: "#ef4444", marginTop: 1 }}>{Math.round(dh/(wh+dh)*100)}% от раб.</div>}
                   </div>
                 </div>
