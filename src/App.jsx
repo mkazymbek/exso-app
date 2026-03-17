@@ -10114,10 +10114,10 @@ export default function App() {
     }
   }
 
-  const navCEO  = [["dash","Сводка"],["objects","Участки"],["finance","Финансы"],["engineers","Команда"]];
+  const navCEO  = [["dash","Сводка"],["finance","Финансы"],["engineers","Команда"]];
   const navEng  = [["dash","Сводка"],["planning","Планирование"],["inbox","Входящие"],["users","Персонал"]];
   const navFor  = [["dash","Сводка"],["enter","Сменные отчёты"],["explosives","Склад ВВ"],["maint","ТО техники"]];
-  const navMech = [["assets","Активы"],["ktgplan","КТГ-план"],["ktgfact","Факт КТГ"]];
+  const navMech = [["assets","Активы"],["objects","Участки"],["ktgplan","КТГ-план"],["ktgfact","Факт КТГ"]];
   const nav     = !user ? [] : user.role === "ceo" ? navCEO : user.role === "engineer" ? navEng : user.role === "mechanic" ? navMech : navFor;
 
   const vObjs = !user ? objs : user.role === "foreman" ? objs.filter((o) => user.oids === "all" || user.oids.includes(o.id)) : objs;
