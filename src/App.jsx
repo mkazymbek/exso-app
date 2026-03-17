@@ -10642,9 +10642,9 @@ export default function App() {
   }
 
   const navCEO  = [["dash","Сводка"],["finance","Финансы"],["engineers","Команда"]];
-  const navEng  = [["dash","Сводка"],["planning","Планирование"],["inbox","Входящие"],["inventory","Склад"],["users","Персонал"]];
-  const navFor  = [["dash","Сводка"],["enter","Сменные отчёты"],["explosives","Склад ВВ"],["maint","ТО техники"]];
-  const navMech = [["assets","Активы"],["objects","Участки"],["inventory","Склад"],["ktgplan","КТГ-план"],["ktgfact","Факт КТГ"]];
+  const navEng  = [["dash","Сводка"],["planning","Планирование"],["inbox","Входящие"],["users","Персонал"]];
+  const navFor  = [["dash","Сводка"],["enter","Сменные отчёты"],["inventory","Склад"],["maint","ТО техники"]];
+  const navMech = [["assets","Активы"],["objects","Участки"],["ktgplan","КТГ-план"],["ktgfact","Факт КТГ"]];
   const nav     = !user ? [] : user.role === "ceo" ? navCEO : user.role === "engineer" ? navEng : user.role === "mechanic" ? navMech : navFor;
 
   const vObjs = !user ? objs : user.role === "foreman" ? objs.filter((o) => user.oids === "all" || user.oids.includes(o.id)) : objs;
@@ -10713,7 +10713,7 @@ export default function App() {
   } else if (subPage === "explosives") {
     content = <ExplosivesPage explosives={explosives} setExplosives={setExplosives} objs={objs} reps={reps} user={user} T={T} />;
   } else if (subPage === "inventory") {
-    content = <InventoryPage storageUnits={storageUnits} setStorageUnits={setStorageUnits} invTxns={invTxns} setInvTxns={setInvTxns} objs={objs} nodes={nodes} user={user} T={T} />;
+    content = <InventoryPage storageUnits={storageUnits} setStorageUnits={setStorageUnits} invTxns={invTxns} setInvTxns={setInvTxns} objs={user.role==="foreman"?vObjs:objs} nodes={nodes} user={user} T={T} />;
   } else if (subPage === "maint" && user.role === "foreman") {
     content = <ForemanMaintenancePage user={user} objs={vObjs} rigs={rigs} maintRecords={maintRecords} setMaintRecords={setMaintRecords} passports={passports} setPassports={setPassports} meters={meters} T={T} />;
   } else if (subPage === "ktgfact" && user.role === "mechanic") {
