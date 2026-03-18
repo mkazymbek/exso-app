@@ -1885,7 +1885,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
       </div>
     </div>
   );
-}─
+}
 function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   const obj = objs.find((o) => o.id === objId);
   if (!obj) return null;
