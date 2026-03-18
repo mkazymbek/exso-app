@@ -662,10 +662,14 @@ function daysInMonth(year, month) {
 // Суммирует технические простои из массива событий downtime_events
 // Технические: cat === "mechanical" | "scheduled" → снижают КТГ
 // Организационные и внешние — производственные потери, КТГ не трогают
-// Технические простои (снижают КТГ)
+// Технические простои (снижают КТГ и КИО)
+// Категория "technical" в DOWNTIME_CATS имеет affectsKtg: true
 function techDowntimeHours(events) {
   return (events || [])
-    .filter(ev => (ev.category || ev.cat) === "technical")
+    .filter(ev => {
+      const cat = ev.category || ev.cat || "";
+      return cat === "technical" || cat === "mechanical" || cat === "scheduled";
+    })
     .reduce((s, ev) => s + toNum(ev.durationHours || ev.hrs || ev.hours || 0), 0);
 }
 
@@ -2892,7 +2896,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                               {dtItems.length>0
                                 ? <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
                                     {dtItems.map((d,di)=>{
-                                      const cc = d.category==="technical"?"#ef4444":d.category==="organizational"?"#f59e0b":"#3b82f6";
+                                      const cc = (d.category||d.cat)==="technical"?"#ef4444":(d.category||d.cat)==="organizational"?"#f59e0b":"#3b82f6";
                                       return <span key={di} style={{ fontSize:12, color:cc, fontWeight:600 }}>{d.reason} {d.durationHours}ч</span>;
                                     })}
                                   </div>
@@ -9332,31 +9336,55 @@ function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
 // Added to ForemanForm: structured downtime reasons per rig per shift
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Классификация простоев:
+// technical → снижает КТГ и КИО
+// organizational / external → снижает только КИО, не влияет на КТГ
 const DOWNTIME_CATS = {
-  mechanical: {
-    label: "Механическая",
+  technical: {
+    label: "🔧 Технический",
     color: "#ef4444",
-    subs: ["Буровой стол / шпиндель", "Гидросистема", "Компрессор", "Мачта / кабель", "Ходовая часть", "Двигатель", "Электрика", "Прочее механическое"],
+    affectsKtg: true,
+    subs: [
+      "ТО станка",
+      "ТО компрессора",
+      "Ремонт (шланг/РВД)",
+      "Замена деталей",
+      "Ошибка / неисправность",
+      "Замерзание / отогрев",
+      "Прочий ремонт",
+    ],
   },
-  operational: {
-    label: "⏳ Организационная",
+  organizational: {
+    label: "⏳ ОФР / Организационный",
     color: "#f59e0b",
-    subs: ["Ожидание ВВ / СВ", "Пересменка", "Переезд на блок", "Ожидание маркшейдера", "Ожидание разрешения на взрыв", "Прочее организационное"],
+    affectsKtg: false,
+    subs: [
+      "ОФР (нет фронта работ)",
+      "Перегон станка",
+      "Ожидание ДТ",
+      "Ожидание ВВ / СВ",
+      "Зачистка забоя",
+      "Ожидание маркшейдера",
+      "Пересменка",
+      "Прочее организационное",
+    ],
   },
   external: {
-    label: "🌩 Внешняя",
+    label: "🌩 Внешний",
     color: "#3b82f6",
-    subs: ["Погодные условия", "Зона отчуждения (взрыв)", "Дорога заблокирована", "Горнотехническая остановка", "Прочее внешнее"],
-  },
-  scheduled: {
-    label: "Плановое ТО",
-    color: "#10b981",
-    subs: ["ТО-1", "ТО-2", "ТО-3", "Замена расходников", "Сезонное обслуживание"],
+    affectsKtg: false,
+    subs: [
+      "Погодные условия",
+      "Дорога заблокирована",
+      "Зона отчуждения (взрыв)",
+      "Горнотехническая остановка",
+      "Прочее внешнее",
+    ],
   },
 };
 
 function DowntimeModal({ rigName, onSave, onClose, T }) {
-  const [cat,  setCat]  = useState("mechanical");
+  const [cat,  setCat]  = useState("technical");
   const [sub,  setSub]  = useState("");
   const [desc, setDesc] = useState("");
   const [hrs,  setHrs]  = useState("");
@@ -9365,7 +9393,7 @@ function DowntimeModal({ rigName, onSave, onClose, T }) {
 
   function save() {
     if (!sub || !hrs) return;
-    onSave({ cat, sub, desc, hrs: toNum(hrs) });
+    onSave({ cat, category: cat, sub, desc, hrs: toNum(hrs), durationHours: toNum(hrs) });
   }
 
   return (
@@ -9379,13 +9407,17 @@ function DowntimeModal({ rigName, onSave, onClose, T }) {
           {/* Category */}
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>Категория</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
               {Object.entries(DOWNTIME_CATS).map(([k,v]) => (
                 <button key={k} onClick={() => { setCat(k); setSub(""); }}
                   style={{ padding:"8px 12px", borderRadius:5, border:`1.5px solid ${cat===k ? v.color : T.border}`,
                     background: cat===k ? `${v.color}18` : "transparent",
-                    color: cat===k ? v.color : T.txt2, fontSize:12, fontWeight:600, cursor:"pointer", textAlign:"left" }}>
-                  {v.label}
+                    color: cat===k ? v.color : T.txt2, fontSize:12, fontWeight:600, cursor:"pointer",
+                    textAlign:"left", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span>{v.label}</span>
+                  <span style={{ fontSize:10, fontWeight:700, color: v.affectsKtg ? "#ef4444" : "#f59e0b", background: v.affectsKtg ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)", padding:"2px 6px", borderRadius:3 }}>
+                    {v.affectsKtg ? "↓ КТГ + КИО" : "↓ КИО"}
+                  </span>
                 </button>
               ))}
             </div>
@@ -9432,16 +9464,24 @@ function DowntimeList({ events, onDelete, T }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:4, padding:"8px 14px" }}>
       {events.map((ev, i) => {
-        const catObj = DOWNTIME_CATS[ev.cat];
+        const catKey = ev.cat || ev.category || "organizational";
+        const catObj = DOWNTIME_CATS[catKey] || DOWNTIME_CATS.organizational;
+        const affectsKtg = catObj.affectsKtg;
         return (
           <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px", background:T.bg3, borderRadius:5, border:`1px solid ${T.border}` }}>
-            <div style={{ width:3, height:28, borderRadius:2, background:catObj.color, flexShrink:0 }} />
+            <div style={{ width:3, height:36, borderRadius:2, background:catObj.color, flexShrink:0 }} />
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:12, fontWeight:700, color:T.txt0 }}>{ev.sub}</div>
-              <div style={{ fontSize:12, color:T.txt2 }}>{catObj.label}{ev.desc ? ` · ${ev.desc}` : ""}</div>
+              <div style={{ fontSize:12, fontWeight:700, color:T.txt0 }}>{ev.sub || ev.reason || "Простой"}</div>
+              <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:2 }}>
+                <span style={{ fontSize:11, color:T.txt2 }}>{catObj.label}</span>
+                <span style={{ fontSize:10, fontWeight:700, color: affectsKtg ? "#ef4444" : "#f59e0b", background: affectsKtg ? "rgba(239,68,68,0.1)" : "rgba(245,158,11,0.1)", padding:"1px 5px", borderRadius:3 }}>
+                  {affectsKtg ? "↓ КТГ" : "↓ КИО"}
+                </span>
+              </div>
+              {ev.desc && <div style={{ fontSize:11, color:T.txt2, marginTop:1 }}>{ev.desc}</div>}
             </div>
-            <div style={{ fontSize:13, fontWeight:700, color:catObj.color, fontFamily:"'Inter',sans-serif", minWidth:36, textAlign:"right" }}>{ev.hrs}ч</div>
-            <button onClick={() => onDelete(i)} style={{ background:"none", border:"none", color:T.txt2, fontSize:14, cursor:"pointer", padding:"0 4px" }}>×</button>
+            <div style={{ fontSize:13, fontWeight:700, color:catObj.color, fontFamily:"'Inter',sans-serif", minWidth:36, textAlign:"right" }}>{ev.hrs || ev.durationHours}ч</div>
+            {onDelete && <button onClick={() => onDelete(i)} style={{ background:"none", border:"none", color:T.txt2, fontSize:14, cursor:"pointer", padding:"0 4px" }}>×</button>}
           </div>
         );
       })}
