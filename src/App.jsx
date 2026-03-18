@@ -7514,7 +7514,7 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
         const pDf   = plan?.dp || obj.dp || 0;
         const pBf   = plan?.bp || obj.bp || 0;
         const { ktg: kv } = repsKtgKio(approved);
-        const { ktg: kvMon } = repsKtgKio(monReps);
+        const { ktg: kvMon } = repsKtgKio(allMonth);
 
         // 30-дневный тренд бурения
         const last30 = Array.from({length:30}, (_,i)=>{
