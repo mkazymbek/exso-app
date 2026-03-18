@@ -662,34 +662,59 @@ function daysInMonth(year, month) {
 // Суммирует технические простои из массива событий downtime_events
 // Технические: cat === "mechanical" | "scheduled" → снижают КТГ
 // Организационные и внешние — производственные потери, КТГ не трогают
+// Технические простои (снижают КТГ)
 function techDowntimeHours(events) {
   return (events || [])
-    .filter(ev => ev.cat === "mechanical" || ev.cat === "scheduled")
-    .reduce((s, ev) => s + toNum(ev.hrs || ev.hours || 0), 0);
+    .filter(ev => (ev.category || ev.cat) === "technical")
+    .reduce((s, ev) => s + toNum(ev.durationHours || ev.hrs || ev.hours || 0), 0);
+}
+
+// Все простои (снижают КИО)
+function allDowntimeHours(events) {
+  return (events || [])
+    .reduce((s, ev) => s + toNum(ev.durationHours || ev.hrs || ev.hours || 0), 0);
+}
+
+// КТГ по списку отчётов (календарное время = сумма смен)
+// КТГ = (КВ - тех.простои) / КВ × 100
+// КИО = фактическая работа / КВ × 100
+function calcKtgKio(repsList) {
+  if (!repsList || !repsList.length) return { ktg: null, kio: null, calHrs: 0, techDH: 0, allDH: 0, workHrs: 0 };
+  let calHrs = 0, techDH = 0, allDH = 0, workHrs = 0;
+  repsList.forEach(rep => {
+    const shiftDur = toNum(rep.shiftDurationHours || rep.shift_duration_hrs || 11);
+    calHrs += shiftDur;
+    // Считаем простои из downtime_events
+    const events = rep.downtime_events || rep.rigEntries?.flatMap(e => e.downtimes || []) || [];
+    techDH  += techDowntimeHours(events);
+    allDH   += allDowntimeHours(events);
+    workHrs += toNum(rep.wh);
+  });
+  const ktg = calHrs > 0 ? Math.round((calHrs - techDH) / calHrs * 100) : null;
+  const kio = calHrs > 0 ? Math.round(workHrs / calHrs * 100) : null;
+  return { ktg, kio, calHrs, techDH, allDH, workHrs };
+}
+
+// Обратная совместимость — КТГ по одному отчёту (работа + все простои)
+function calcRigKtgKio(wh, techDh, allDh, shiftDur) {
+  const cal = shiftDur || (wh + allDh);
+  if (cal <= 0) return { ktg: null, kio: null };
+  return {
+    ktg: Math.round((cal - techDh) / cal * 100),
+    kio: Math.round(wh / cal * 100),
+  };
 }
 
 // Основной расчёт КТГ для списка отчётов за период year/month
 // Возвращает { ktg, calHrs, pfv, techDH } или { ktg: null } если данных нет
-function ktgCalcNew(repsList, year, month) {
-  const calHrs = daysInMonth(year, month) * 24; // КФВ = кол-во дней × 24
-
-  let techDH = 0;
-  repsList.forEach(rep => {
-    // Простои на уровне отчёта (downtime_events)
-    techDH += techDowntimeHours(rep.downtime_events);
-    // Простои на уровне станка (если есть)
-    (rep.rigs || []).forEach(rg => {
-      techDH += techDowntimeHours(rg.downtime_events);
-    });
-  });
-
-  const pfv = Math.max(0, calHrs - techDH); // ПФВ = КФВ − тех.простои
-  const ktg = calHrs > 0 ? Math.round(pfv / calHrs * 100) : null;
-  return { ktg, calHrs, pfv, techDH: Math.round(techDH * 10) / 10 };
+// Устаревшая функция — оставлена для совместимости
+function ktgCalcNew(repsList) {
+  return calcKtgKio(repsList);
 }
 
 // Обратная совместимость для мест где ещё нет downtime_events
 // (старые отчёты, сменные данные без событий)
+// Устаревшая функция — используй calcKtgKio для новых расчётов
 function ktgCalc(w, d) { return (w + d) > 0 ? Math.round(w / (w + d) * 100) : null; }
 function genId() { return Date.now() + Math.floor(Math.random() * 10000); }
 function toNum(v) { return parseFloat(v) || 0; }
@@ -1018,10 +1043,10 @@ function DataTable({ rows, onCell, totals, T }) {
                 {val.toLocaleString()}
               </td>
             ))}
-            <td style={{ padding: "9px 10px", fontSize: 12, color: T.txt2 }}>
-              КТГ: <b style={{ color: scoreColor(ktgCalc(totals.wh, totals.dh), 85, 70, T) }}>
+            <td style={{ padding: "9px 10px", fontSize: 11, color: T.txt2 }}>
+              <div>КТГ <b style={{ color: scoreColor(ktgCalc(totals.wh, totals.dh), 85, 70, T) }}>
                 {ktgCalc(totals.wh, totals.dh) !== null ? `${ktgCalc(totals.wh, totals.dh)}%` : "—"}
-              </b>
+              </b></div>
             </td>
           </tr>
         </tbody>
@@ -1485,13 +1510,22 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
 
   // ── Totals ────────────────────────────────────────────────────────────────
   const totals = useMemo(() => {
-    const t = { df: 0, bf: 0, fuel: 0, wh: 0, dh: 0, overDrill: 0 };
+    const t = { df: 0, bf: 0, fuel: 0, wh: 0, dh: 0, overDrill: 0, techDH: 0, calHrs: 0 };
     filteredReps.forEach((r) => {
       t.df += r.df; t.bf += r.bf; t.fuel += r.fuel; t.wh += r.wh; t.dh += r.dh;
       t.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
+      // Календарное время = сумма смен
+      t.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11);
+      // Технические простои
+      const events = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
+      t.techDH += techDowntimeHours(events);
     });
     return t;
   }, [filteredReps]);
+
+  // КТГ и КИО по всем отчётам периода
+  const totalKtg = totals.calHrs > 0 ? Math.round((totals.calHrs - totals.techDH) / totals.calHrs * 100) : null;
+  const totalKio = totals.calHrs > 0 ? Math.round(totals.wh / totals.calHrs * 100) : null;
 
   const planTotals = useMemo(() => {
     let df = 0, bf = 0;
@@ -1516,7 +1550,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
     return { df: Math.round(df), bf: Math.round(bf) };
   }, [plans, rangeStart, objs]);
 
-  const totalKtg   = ktgCalc(totals.wh, totals.dh);
+  // totalKtg и totalKio вычислены выше в useMemo
 
   // Плановый КТГ — из принятых КТГ-планов за текущий месяц
   // items[assetId][date] = число часов (0–22)
@@ -1636,18 +1670,30 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
               </div>}
             </Card>
             <Card accent={T.green} style={{ padding: "16px 18px" }} T={T}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.green, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>⚙ КТГ</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.green, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>⚙ КТГ / КИО</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 6 }}>
                 <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>ПЛАН</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: planAvgKtg!==null?T.txt0:"#5a7499", fontFamily: "'Inter',sans-serif" }}>
+                  <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>КТГ ПЛАН</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: planAvgKtg!==null?T.txt0:"#5a7499", fontFamily: "'Inter',sans-serif" }}>
                     {planAvgKtg!==null?`${planAvgKtg}%`:"—"}
                   </div>
                 </div>
                 <div style={{ background: `${T.green}10`, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.green}30` }}>
-                  <div style={{ fontSize: 12, color: T.green, textTransform: "uppercase", marginBottom: 1, fontWeight: 700 }}>ФАКТ</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: totalKtg!==null?scoreColor(totalKtg,85,70,T):"#5a7499", fontFamily: "'Inter',sans-serif" }}>
+                  <div style={{ fontSize: 11, color: T.green, textTransform: "uppercase", marginBottom: 1, fontWeight: 700 }}>КТГ ФАКТ</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: totalKtg!==null?scoreColor(totalKtg,85,70,T):"#5a7499", fontFamily: "'Inter',sans-serif" }}>
                     {totalKtg!==null?`${totalKtg}%`:"—"}
+                  </div>
+                </div>
+                <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
+                  <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>КИО</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: totalKio!==null?scoreColor(totalKio,75,60,T):"#5a7499", fontFamily: "'Inter',sans-serif" }}>
+                    {totalKio!==null?`${totalKio}%`:"—"}
+                  </div>
+                </div>
+                <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
+                  <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>КВ (ч)</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>
+                    {totals.calHrs > 0 ? totals.calHrs.toLocaleString() : "—"}
                   </div>
                 </div>
               </div>
@@ -1687,6 +1733,16 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
           const wh  = rr.reduce((s,r)=>s+r.wh,0), dh = rr.reduce((s,r)=>s+r.dh,0), fuel = rr.reduce((s,r)=>s+r.fuel,0);
           const overDrill = rr.reduce((s,r)=>s+(r.rigs||[]).reduce((ss,rig)=>ss+(toNum(rig.overDrill)||0),0), 0);
           const kv  = ktgCalc(wh, dh);
+          // КТГ и КИО по объекту
+          const objRepsForKtg = filteredReps.filter(r => r.oid === obj.id);
+          const objCalHrs = objRepsForKtg.reduce((s,r) => s + toNum(r.shiftDurationHours || r.shift_duration_hrs || 11), 0);
+          const objTechDH = objRepsForKtg.reduce((s,r) => {
+            const evs = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
+            return s + techDowntimeHours(evs);
+          }, 0);
+          const objWh = wh;
+          const objKtg = objCalHrs > 0 ? Math.round((objCalHrs - objTechDH) / objCalHrs * 100) : null;
+          const objKio = objCalHrs > 0 ? Math.round(objWh / objCalHrs * 100) : null;
           const ac  = colors[i % colors.length];
           const pp  = getPlanForPeriod(obj.id);
           const dp  = pp.df || obj.dp, bp = pp.bf || obj.bp;
@@ -1755,7 +1811,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                 {/* КТГ план/факт по объекту */}
                 {(()=>{
                   const ktgPlan = ktgPlanForObj(obj.id);
-                  const ktgFact = kv;
+                  const ktgFact = objKtg !== null ? objKtg : kv;
                   const ktgPerc = ktgFact !== null && ktgPlan !== null ? Math.round(ktgFact/ktgPlan*100) : null;
                   const cc = ktgFact !== null ? scoreColor(ktgFact, 85, 70, T) : T.txt2;
                   return (
@@ -1811,6 +1867,12 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                     <div style={{ fontSize: 14, fontWeight: 700, color: dh > 0 ? "#ef4444" : T.txt2, fontFamily: "'Inter',sans-serif" }}>{dh} ч</div>
                     {wh > 0 && dh > 0 && <div style={{ fontSize:12, color: "#ef4444", marginTop: 1 }}>{Math.round(dh/(wh+dh)*100)}% от раб.</div>}
                   </div>
+                  {objKio !== null && (
+                    <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
+                      <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⚙ КИО</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: scoreColor(objKio, 75, 60, T), fontFamily: "'Inter',sans-serif" }}>{objKio}%</div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1827,12 +1889,16 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   if (!obj) return null;
   const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
 
-  const tot = { df: 0, bf: 0, wh: 0, dh: 0, fuel: 0, overDrill: 0 };
+  const tot = { df: 0, bf: 0, wh: 0, dh: 0, fuel: 0, overDrill: 0, calHrs: 0, techDH: 0 };
   approved.forEach((r) => {
     tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel;
     tot.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
+    tot.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11);
+    const evs = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
+    tot.techDH += techDowntimeHours(evs);
   });
-  const kv = ktgCalc(tot.wh, tot.dh);
+  const kv    = tot.calHrs > 0 ? Math.round((tot.calHrs - tot.techDH) / tot.calHrs * 100) : ktgCalc(tot.wh, tot.dh);
+  const kvKio = tot.calHrs > 0 ? Math.round(tot.wh / tot.calHrs * 100) : null;
   const fuelPerM3 = tot.bf > 0 ? (tot.fuel / tot.bf).toFixed(1) : null;
   const colors = OBJ_COLORS(T);
   const ac = colors[objs.findIndex((o) => o.id === objId) % colors.length];
@@ -1850,9 +1916,10 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
         {[
           [T.red,    "Бурение", tot.df,   obj.dp, "п.м"],
           [T.amber,  "Взрывы",  tot.bf,   obj.bp, "м³"],
-          [T.green,  "КТГ",        kv !== null ? `${kv}%` : "—", null, null],
-          [T.violet, "ГСМ",        tot.fuel, null,   "л"],
-          ["#ef4444","Простои",    tot.dh,   null,   "ч"],
+          [T.green,  "КТГ",     kv !== null ? `${kv}%` : "—", null, null],
+          [T.cyan,   "КИО",     kvKio !== null ? `${kvKio}%` : "—", null, null],
+          [T.violet, "ГСМ",     tot.fuel, null,   "л"],
+          ["#ef4444","Простои", tot.dh,   null,   "ч"],
         ].map(([color, lbl, fact, plan, unit]) => (
           <Card key={lbl} accent={color} style={{ padding: "14px 16px" }} T={T}>
             <div style={{ fontSize: 12, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>{lbl}</div>
@@ -2355,11 +2422,17 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
     wh:        entries.reduce((s,e) => s + Math.max(0, shiftDur - getDowntimeTotal(e.downtimes)), 0),
     df:        entries.reduce((s,e) => s + toNum(e.drillingMeters), 0),
     overDrill: entries.reduce((s,e) => s + toNum(e.overDrill),    0),
-    fuel:      entries.reduce((s,e) => s + toNum(e.fuelLiters), 0), // литры
+    fuel:      entries.reduce((s,e) => s + toNum(e.fuelLiters), 0),
     dh:        entries.reduce((s,e) => s + getDowntimeTotal(e.downtimes), 0),
+    // Технические простои (для КТГ)
+    techDH:    entries.reduce((s,e) => s + (e.downtimes||[]).filter(d=>d.category==="technical").reduce((ss,d)=>ss+toNum(d.durationHours),0), 0),
     bf:        toNum(bf),
     fuelKg:    toNum(fuelKg),
   };
+  // КТГ и КИО для текущей смены
+  const calHrsShift = entries.length * shiftDur;
+  const shiftKtg = calHrsShift > 0 ? Math.round((calHrsShift - totals.techDH) / calHrsShift * 100) : null;
+  const shiftKio = calHrsShift > 0 ? Math.round(totals.wh / calHrsShift * 100) : null;
 
   // Отправка
   function handleSubmit() {
@@ -2698,10 +2771,9 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
                 <td style={{ padding:"9px 10px", textAlign:"center", fontWeight:900, fontSize:15, color:T.cyan, fontFamily:"'Inter',sans-serif" }}>{totals.overDrill > 0 ? totals.overDrill.toLocaleString() : "—"}</td>
                 <td style={{ padding:"9px 10px", textAlign:"center", fontWeight:900, fontSize:15, color:T.violet, fontFamily:"'Inter',sans-serif" }}>{totals.fuel.toLocaleString()}</td>
                 <td style={{ padding:"9px 10px", textAlign:"center", fontWeight:900, fontSize:15, color:"#ef4444", fontFamily:"'Inter',sans-serif" }}>{totals.dh.toFixed(1)} ч</td>
-                <td style={{ padding:"9px 10px", textAlign:"center", fontSize:12, color:T.txt2 }}>
-                  КТГ <b style={{ color:scoreColor(ktgCalc(totals.wh, totals.dh), 85, 70, T) }}>
-                    {ktgCalc(totals.wh, totals.dh) !== null ? `${ktgCalc(totals.wh,totals.dh)}%` : "—"}
-                  </b>
+                <td style={{ padding:"9px 10px", textAlign:"center", fontSize:11, color:T.txt2 }}>
+                  <div>КТГ <b style={{ color:scoreColor(shiftKtg, 85, 70, T) }}>{shiftKtg !== null ? `${shiftKtg}%` : "—"}</b></div>
+                  <div>КИО <b style={{ color:scoreColor(shiftKio, 75, 60, T) }}>{shiftKio !== null ? `${shiftKio}%` : "—"}</b></div>
                 </td>
                 <td />
               </tr>
