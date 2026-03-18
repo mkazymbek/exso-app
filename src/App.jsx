@@ -1507,10 +1507,14 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
         </div>
       </div>
 
-      {/* ── Object cards with bar chart ── */}
       {/* ── Top KPIs ── */}
       {(()=>{
         const planLabel = completedDays ? `по ${completedDays} число` : "за период";
+        const fraction = todayPlanFraction > 0 ? todayPlanFraction : 1;
+        const fullDf = completedDays && planTotals.df > 0 ? Math.round(planTotals.df / fraction) : 0;
+        const fullBf = completedDays && planTotals.bf > 0 ? Math.round(planTotals.bf / fraction) : 0;
+        const dfPctFull = fullDf > 0 ? Math.round(totals.df / fullDf * 100) : null;
+        const bfPctFull = fullBf > 0 && totals.bf > 0 ? Math.round(totals.bf / fullBf * 100) : null;
         return (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginBottom: 20 }}>
             <Card accent={T.red} style={{ padding: "16px 18px" }} T={T}>
@@ -1519,12 +1523,20 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
               {planTotals.df > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 6 }}>
                 План {planLabel}: <b style={{ color: T.txt0 }}>{planTotals.df.toLocaleString()}</b>
               </div>}
+              {fullDf > 0 && <div style={{ fontSize:12, color: T.blue, marginTop: 4, display:"flex", justifyContent:"space-between" }}>
+                <span>План на месяц: <b>{fullDf.toLocaleString()}</b></span>
+                {dfPctFull !== null && <b style={{color: dfPctFull>=100?T.green:dfPctFull>=70?T.amber:"#ef4444"}}>{dfPctFull}%</b>}
+              </div>}
             </Card>
             <Card accent={T.amber} style={{ padding: "16px 18px" }} T={T}>
               <div style={{ fontSize: 12, fontWeight: 700, color: T.amber, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>💥 Взрывы</div>
               <ProgressBar fact={totals.bf} plan={planTotals.bf || objs.reduce((s,o)=>s+o.bp,0)} T={T} />
               {planTotals.bf > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 6 }}>
                 План {planLabel}: <b style={{ color: T.txt0 }}>{planTotals.bf.toLocaleString()}</b>
+              </div>}
+              {fullBf > 0 && <div style={{ fontSize:12, color: T.blue, marginTop: 4, display:"flex", justifyContent:"space-between" }}>
+                <span>План на месяц: <b>{fullBf.toLocaleString()}</b></span>
+                {bfPctFull !== null && <b style={{color: bfPctFull>=100?T.green:bfPctFull>=70?T.amber:"#ef4444"}}>{bfPctFull}%</b>}
               </div>}
             </Card>
             <Card accent={T.green} style={{ padding: "16px 18px" }} T={T}>
@@ -1571,104 +1583,6 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
       })()}
 
       <SectionTitle label={`Участки (${objs.length})`} T={T} />
-
-      {/* ── Итоги месяца: план на весь месяц vs план на текущее число ── */}
-      {completedDays && planTotals.df > 0 && (() => {
-        // Полный месячный план = пропорциональный план / долю прошедшего периода
-        const fraction = todayPlanFraction > 0 ? todayPlanFraction : 1;
-        const fullDf = Math.round(planTotals.df / fraction);
-        const fullBf = Math.round(planTotals.bf / fraction);
-        const monthName = new Date(rangeStart).toLocaleString("ru", {month:"long",year:"numeric"});
-        const dfPctFull = fullDf > 0 ? Math.round(totals.df / fullDf * 100) : null;
-        const bfPctFull = fullBf > 0 && totals.bf > 0 ? Math.round(totals.bf / fullBf * 100) : null;
-        return (
-          <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,padding:"14px 18px",marginBottom:18,display:"flex",flexWrap:"wrap",gap:16,alignItems:"flex-start"}}>
-            {/* Заголовок */}
-            <div style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-              <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".1em"}}>
-                📊 ПЛАН НА МЕСЯЦ — {monthName.toUpperCase()}
-              </div>
-              <div style={{fontSize:12,color:T.txt2}}>
-                <span style={{background:`${T.amber}18`,border:`1px solid ${T.amber}40`,borderRadius:3,padding:"2px 8px",color:T.amber,fontWeight:700,fontSize:11}}>
-                  ※ Факт и план «по {completedDays} число» — пропорциональный срез
-                </span>
-              </div>
-            </div>
-            {/* Бурение */}
-            {fullDf > 0 && (
-              <div style={{flex:"1 1 280px"}}>
-                <div style={{fontSize:12,fontWeight:700,color:T.red,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>⛏ Бурение п.м.</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  <div style={{background:T.bg1,borderRadius:5,padding:"8px 12px",border:`1px solid ${T.border}`}}>
-                    <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:3}}>Факт</div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.red,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{totals.df.toLocaleString()}</div>
-                  </div>
-                  <div style={{background:`${T.amber}08`,borderRadius:5,padding:"8px 12px",border:`1px solid ${T.amber}30`}}>
-                    <div style={{fontSize:11,color:T.amber,textTransform:"uppercase",fontWeight:700,marginBottom:3}}>
-                      План по {completedDays}
-                    </div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.amber,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{planTotals.df.toLocaleString()}</div>
-                    <div style={{fontSize:11,color:T.txt2,marginTop:2}}>пропорц. срез</div>
-                  </div>
-                  <div style={{background:`${T.blue}08`,borderRadius:5,padding:"8px 12px",border:`1px solid ${T.blue}30`}}>
-                    <div style={{fontSize:11,color:T.blue,textTransform:"uppercase",fontWeight:700,marginBottom:3}}>
-                      План на месяц
-                    </div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.blue,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{fullDf.toLocaleString()}</div>
-                    <div style={{fontSize:11,color:T.txt2,marginTop:2}}>полный месяц</div>
-                  </div>
-                </div>
-                {dfPctFull !== null && (
-                  <div style={{marginTop:8,display:"flex",gap:16}}>
-                    <div style={{fontSize:12,color:T.txt2}}>
-                      от месячного: <b style={{color:dfPctFull>=100?T.green:dfPctFull>=70?T.amber:"#ef4444"}}>{dfPctFull}%</b>
-                    </div>
-                    <div style={{fontSize:12,color:T.txt2}}>
-                      остаток: <b style={{color:T.txt0}}>{Math.max(0,fullDf-totals.df).toLocaleString()} п.м.</b>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* Взрывы */}
-            {fullBf > 0 && (
-              <div style={{flex:"1 1 280px"}}>
-                <div style={{fontSize:12,fontWeight:700,color:T.amber,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>💥 Взрывы м³</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  <div style={{background:T.bg1,borderRadius:5,padding:"8px 12px",border:`1px solid ${T.border}`}}>
-                    <div style={{fontSize:11,color:T.txt2,textTransform:"uppercase",marginBottom:3}}>Факт</div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.amber,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{totals.bf.toLocaleString()}</div>
-                  </div>
-                  <div style={{background:`${T.amber}08`,borderRadius:5,padding:"8px 12px",border:`1px solid ${T.amber}30`}}>
-                    <div style={{fontSize:11,color:T.amber,textTransform:"uppercase",fontWeight:700,marginBottom:3}}>
-                      План по {completedDays}
-                    </div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.amber,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{planTotals.bf.toLocaleString()}</div>
-                    <div style={{fontSize:11,color:T.txt2,marginTop:2}}>пропорц. срез</div>
-                  </div>
-                  <div style={{background:`${T.blue}08`,borderRadius:5,padding:"8px 12px",border:`1px solid ${T.blue}30`}}>
-                    <div style={{fontSize:11,color:T.blue,textTransform:"uppercase",fontWeight:700,marginBottom:3}}>
-                      План на месяц
-                    </div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.blue,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{fullBf.toLocaleString()}</div>
-                    <div style={{fontSize:11,color:T.txt2,marginTop:2}}>полный месяц</div>
-                  </div>
-                </div>
-                {bfPctFull !== null && (
-                  <div style={{marginTop:8,display:"flex",gap:16}}>
-                    <div style={{fontSize:12,color:T.txt2}}>
-                      от месячного: <b style={{color:bfPctFull>=100?T.green:bfPctFull>=70?T.amber:"#ef4444"}}>{bfPctFull}%</b>
-                    </div>
-                    <div style={{fontSize:12,color:T.txt2}}>
-                      остаток: <b style={{color:T.txt0}}>{Math.max(0,fullBf-totals.bf).toLocaleString()} м³</b>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })()}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
         {objs.map((obj, i) => {
