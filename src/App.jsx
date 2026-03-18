@@ -2001,7 +2001,9 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
           const dh        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.dh        || 0), 0);
           const fuel      = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.fuel      || 0), 0);
           const overDrill = approved.reduce((s,r) => s + (toNum(r.rigs?.find(x=>x.id===rg.id)?.overDrill) || 0), 0);
-          const kv2  = repKtg(rd);
+          // КТГ по станку: берём отчёты где этот станок участвовал
+          const rigRepsList = approved.filter(r => r.rigs?.find(x => x.id === rg.id));
+          const kv2  = repsKtgKio(rigRepsList).ktg;
           const kc   = scoreColor(kv2, obj.kp, obj.kp - 12, T);
           const repCount = approved.filter((r) => r.rigs?.find((x) => x.id === rg.id)).length;
           return (
