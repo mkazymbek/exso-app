@@ -718,8 +718,44 @@ function ktgCalcNew(repsList) {
 
 // Обратная совместимость для мест где ещё нет downtime_events
 // (старые отчёты, сменные данные без событий)
-// Устаревшая функция — используй calcKtgKio для новых расчётов
+// Используй только для совместимости где нет downtime_events.
+// Для правильного КТГ используй calcKtgKio или repKtg/repKio
 function ktgCalc(w, d) { return (w + d) > 0 ? Math.round(w / (w + d) * 100) : null; }
+
+// Извлечь техпростои из одного отчёта
+function repTechDH(rep) {
+  const events = rep?.downtime_events || rep?.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
+  return techDowntimeHours(events);
+}
+// КТГ одного отчёта: (calHrs - techDH) / calHrs
+// calHrs = shiftDurationHours; если нет — используем wh+dh
+function repKtg(rep) {
+  const cal = toNum(rep.shiftDurationHours || rep.shift_duration_hrs) || (toNum(rep.wh) + toNum(rep.dh));
+  if (cal <= 0) return null;
+  const techDH = repTechDH(rep);
+  return Math.min(100, Math.round((cal - techDH) / cal * 100));
+}
+// КИО одного отчёта: wh / calHrs
+function repKio(rep) {
+  const cal = toNum(rep.shiftDurationHours || rep.shift_duration_hrs) || (toNum(rep.wh) + toNum(rep.dh));
+  if (cal <= 0) return null;
+  return Math.min(100, Math.round(toNum(rep.wh) / cal * 100));
+}
+// КТГ/КИО списка отчётов с агрегацией по периоду
+function repsKtgKio(reps) {
+  let calHrs = 0, techDH = 0, wh = 0;
+  (reps||[]).forEach(r => {
+    const cal = toNum(r.shiftDurationHours || r.shift_duration_hrs) || (toNum(r.wh) + toNum(r.dh));
+    calHrs += cal;
+    techDH += repTechDH(r);
+    wh += toNum(r.wh);
+  });
+  return {
+    ktg: calHrs > 0 ? Math.min(100, Math.round((calHrs - techDH) / calHrs * 100)) : null,
+    kio: calHrs > 0 ? Math.min(100, Math.round(wh / calHrs * 100)) : null,
+    calHrs, techDH, wh,
+  };
+}
 function genId() { return Date.now() + Math.floor(Math.random() * 10000); }
 function toNum(v) { return parseFloat(v) || 0; }
 function scoreColor(v, ok, warn, T) {
@@ -1048,9 +1084,8 @@ function DataTable({ rows, onCell, totals, T }) {
               </td>
             ))}
             <td style={{ padding: "9px 10px", fontSize: 11, color: T.txt2 }}>
-              <div>КТГ <b style={{ color: scoreColor(ktgCalc(totals.wh, totals.dh), 85, 70, T) }}>
-                {ktgCalc(totals.wh, totals.dh) !== null ? `${ktgCalc(totals.wh, totals.dh)}%` : "—"}
-              </b></div>
+              <div>КТГ <b style={{ color: scoreColor(shiftKtg, 85, 70, T) }}>{shiftKtg !== null ? `${shiftKtg}%` : "—"}</b></div>
+              <div>КИО <b style={{ color: scoreColor(shiftKio, 75, 60, T) }}>{shiftKio !== null ? `${shiftKio}%` : "—"}</b></div>
             </td>
           </tr>
         </tbody>
@@ -1736,8 +1771,8 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
           const df  = rr.reduce((s,r)=>s+r.df,0), bf = rr.reduce((s,r)=>s+r.bf,0);
           const wh  = rr.reduce((s,r)=>s+r.wh,0), dh = rr.reduce((s,r)=>s+r.dh,0), fuel = rr.reduce((s,r)=>s+r.fuel,0);
           const overDrill = rr.reduce((s,r)=>s+(r.rigs||[]).reduce((ss,rig)=>ss+(toNum(rig.overDrill)||0),0), 0);
-          const kv  = ktgCalc(wh, dh);
-          // КТГ и КИО по объекту
+          // КТГ и КИО по объекту (kv — для совместимости, используем objKtg)
+          const kv  = null; // заменён на objKtg ниже
           const objRepsForKtg = filteredReps.filter(r => r.oid === obj.id);
           const objCalHrs = objRepsForKtg.reduce((s,r) => s + toNum(r.shiftDurationHours || r.shift_duration_hrs || 11), 0);
           const objTechDH = objRepsForKtg.reduce((s,r) => {
@@ -1815,7 +1850,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                 {/* КТГ план/факт по объекту */}
                 {(()=>{
                   const ktgPlan = ktgPlanForObj(obj.id);
-                  const ktgFact = objKtg !== null ? objKtg : kv;
+                  const ktgFact = objKtg;
                   const ktgPerc = ktgFact !== null && ktgPlan !== null ? Math.round(ktgFact/ktgPlan*100) : null;
                   const cc = ktgFact !== null ? scoreColor(ktgFact, 85, 70, T) : T.txt2;
                   return (
@@ -1901,7 +1936,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
     const evs = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
     tot.techDH += techDowntimeHours(evs);
   });
-  const kv    = tot.calHrs > 0 ? Math.round((tot.calHrs - tot.techDH) / tot.calHrs * 100) : ktgCalc(tot.wh, tot.dh);
+  const kv    = repsKtgKio(approved).ktg;
   const kvKio = tot.calHrs > 0 ? Math.min(100, Math.round(tot.wh / tot.calHrs * 100)) : null;
   const fuelPerM3 = tot.bf > 0 ? (tot.fuel / tot.bf).toFixed(1) : null;
   const colors = OBJ_COLORS(T);
@@ -1966,7 +2001,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
           const dh        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.dh        || 0), 0);
           const fuel      = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.fuel      || 0), 0);
           const overDrill = approved.reduce((s,r) => s + (toNum(r.rigs?.find(x=>x.id===rg.id)?.overDrill) || 0), 0);
-          const kv2  = ktgCalc(wh, dh);
+          const kv2  = repKtg(rd);
           const kc   = scoreColor(kv2, obj.kp, obj.kp - 12, T);
           const repCount = approved.filter((r) => r.rigs?.find((x) => x.id === rg.id)).length;
           return (
@@ -2025,7 +2060,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
     dh:   rigReps.reduce((s, { rd }) => s + rd.dh,   0),
     fuel: rigReps.reduce((s, { rd }) => s + rd.fuel, 0),
   };
-  const kv = ktgCalc(tot.wh, tot.dh);
+  const kv = repsKtgKio(approved).ktg;
   const kc = scoreColor(kv, obj.kp, obj.kp - 12, T);
 
   return (
@@ -2061,7 +2096,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
         : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {rigReps.map(({ rep, rd }) => {
-              const kv2 = ktgCalc(rd.wh, rd.dh);
+              const kv2 = repKtg(rd);
               return (
                 <Card key={rep.id} accent={ac} style={{ padding: "14px 16px" }} T={T}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
@@ -3022,7 +3057,7 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
               {/* Смены этого дня */}
               {dayReps.map((r, ri) => {
                 const sc   = STATUS[r.status] || STATUS.draft;
-                const kv   = ktgCalc(r.wh||0, r.dh||0);
+                const kv   = repKtg(r);
                 const dtAll = (r.rigEntries||[]).flatMap(e=>e.downtimes||[]);
                 const dtH   = dtAll.reduce((s,d)=>s+toNum(d.durationHours),0);
                 const canEdit = r.status === "submitted" || r.status === "approved";
@@ -7478,8 +7513,8 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
         const plan  = plans?.find(p=>p.oid===obj.id);
         const pDf   = plan?.dp || obj.dp || 0;
         const pBf   = plan?.bp || obj.bp || 0;
-        const kv    = ktgCalc(tot.wh, tot.dh);
-        const kvMon = ktgCalc(mon.wh, mon.dh);
+        const { ktg: kv } = repsKtgKio(approved);
+        const { ktg: kvMon } = repsKtgKio(monReps);
 
         // 30-дневный тренд бурения
         const last30 = Array.from({length:30}, (_,i)=>{
@@ -7635,7 +7670,7 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
                   const rgWh   = rgApp.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.wh||0),0);
                   const rgDh   = rgApp.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.dh||0),0);
                   const rgFuel = rgApp.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.fuel||0),0);
-                  const rgKv   = ktgCalc(rgWh,rgDh);
+                  const rgKv   = repKtg({wh:rgWh, dh:rgDh, downtime_events:[]});
                   const kc     = rgKv!==null ? scoreColor(rgKv,obj.kp,obj.kp-12,T) : T.txt2;
                   // последняя смена
                   const lastRep = rgApp.sort((a,b)=>b.date.localeCompare(a.date))[0];
