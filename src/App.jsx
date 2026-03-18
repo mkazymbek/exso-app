@@ -1172,10 +1172,7 @@ function Login({ users, onLogin, T }) {
           <Btn variant="primary" fullWidth style={{ marginTop: 18 }} onClick={handleLogin} T={T}>
             {loading ? "Входим..." : "ВОЙТИ →"}
           </Btn>
-          <div style={{ marginTop: 16, padding: "10px 12px", background: T.bg1, borderRadius: 4, border: `1px solid ${T.border}`, fontSize: 12, color: T.txt2, lineHeight: 2.2, fontFamily: "'JetBrains Mono',monospace", textAlign: "center" }}>
-            ceo/ceo123 · engineer/eng123 · mechanic/mech123<br />
-            zhanab/foreman3 · seitkali/foreman1 · mombekov/foreman2
-          </div>
+
         </div>
       </div>
     </div>
@@ -1195,15 +1192,25 @@ function Topbar({ user, nav, page, onNav, onOut, onUpdateUser, pending, isDark, 
     setErr(""); setOk(false); setShowProfile(true);
   }
 
-  function saveProfile() {
+  async function saveProfile() {
     if (!form.name.trim())  { setErr("Введите имя"); return; }
     if (!form.login.trim()) { setErr("Введите логин"); return; }
     if (form.pw && form.pw !== form.pw2) { setErr("Пароли не совпадают"); return; }
-    const ini = form.name.trim().split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
-    onUpdateUser({ ...user, name: form.name.trim(), login: form.login.trim(), ini,
-      ...(form.pw ? { pw: form.pw } : {}) });
-    setOk(true); setErr("");
-    setTimeout(() => setShowProfile(false), 1000);
+    if (form.pw && form.pw.length < 6)   { setErr("Пароль минимум 6 символов"); return; }
+    setErr("");
+    try {
+      // Меняем пароль через Supabase Auth если введён
+      if (form.pw) {
+        const { error } = await supabase.auth.updateUser({ password: form.pw });
+        if (error) throw error;
+      }
+      const ini = form.name.trim().split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+      onUpdateUser({ ...user, name: form.name.trim(), login: form.login.trim(), ini });
+      setOk(true);
+      setTimeout(() => setShowProfile(false), 1200);
+    } catch(e) {
+      setErr("Ошибка: " + e.message);
+    }
   }
 
   return (
