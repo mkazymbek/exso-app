@@ -1573,10 +1573,14 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
       <SectionTitle label={`Участки (${objs.length})`} T={T} />
 
       {/* ── Итоги месяца: план на весь месяц vs план на текущее число ── */}
-      {completedDays && (fullMonthPlanTotals.df > 0 || fullMonthPlanTotals.bf > 0) && (() => {
+      {completedDays && planTotals.df > 0 && (() => {
+        // Полный месячный план = пропорциональный план / долю прошедшего периода
+        const fraction = todayPlanFraction > 0 ? todayPlanFraction : 1;
+        const fullDf = Math.round(planTotals.df / fraction);
+        const fullBf = Math.round(planTotals.bf / fraction);
         const monthName = new Date(rangeStart).toLocaleString("ru", {month:"long",year:"numeric"});
-        const dfPctFull = fullMonthPlanTotals.df > 0 ? Math.round(totals.df / fullMonthPlanTotals.df * 100) : null;
-        const bfPctFull = fullMonthPlanTotals.bf > 0 ? Math.round(totals.bf / fullMonthPlanTotals.bf * 100) : null;
+        const dfPctFull = fullDf > 0 ? Math.round(totals.df / fullDf * 100) : null;
+        const bfPctFull = fullBf > 0 && totals.bf > 0 ? Math.round(totals.bf / fullBf * 100) : null;
         return (
           <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,padding:"14px 18px",marginBottom:18,display:"flex",flexWrap:"wrap",gap:16,alignItems:"flex-start"}}>
             {/* Заголовок */}
@@ -1591,7 +1595,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
               </div>
             </div>
             {/* Бурение */}
-            {fullMonthPlanTotals.df > 0 && (
+            {fullDf > 0 && (
               <div style={{flex:"1 1 280px"}}>
                 <div style={{fontSize:12,fontWeight:700,color:T.red,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>⛏ Бурение п.м.</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
@@ -1610,7 +1614,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                     <div style={{fontSize:11,color:T.blue,textTransform:"uppercase",fontWeight:700,marginBottom:3}}>
                       План на месяц
                     </div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.blue,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{fullMonthPlanTotals.df.toLocaleString()}</div>
+                    <div style={{fontSize:20,fontWeight:700,color:T.blue,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{fullDf.toLocaleString()}</div>
                     <div style={{fontSize:11,color:T.txt2,marginTop:2}}>полный месяц</div>
                   </div>
                 </div>
@@ -1620,14 +1624,14 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                       от месячного: <b style={{color:dfPctFull>=100?T.green:dfPctFull>=70?T.amber:"#ef4444"}}>{dfPctFull}%</b>
                     </div>
                     <div style={{fontSize:12,color:T.txt2}}>
-                      остаток: <b style={{color:T.txt0}}>{Math.max(0,fullMonthPlanTotals.df-totals.df).toLocaleString()} п.м.</b>
+                      остаток: <b style={{color:T.txt0}}>{Math.max(0,fullDf-totals.df).toLocaleString()} п.м.</b>
                     </div>
                   </div>
                 )}
               </div>
             )}
             {/* Взрывы */}
-            {fullMonthPlanTotals.bf > 0 && (
+            {fullBf > 0 && (
               <div style={{flex:"1 1 280px"}}>
                 <div style={{fontSize:12,fontWeight:700,color:T.amber,textTransform:"uppercase",letterSpacing:".06em",marginBottom:8}}>💥 Взрывы м³</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
@@ -1646,7 +1650,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                     <div style={{fontSize:11,color:T.blue,textTransform:"uppercase",fontWeight:700,marginBottom:3}}>
                       План на месяц
                     </div>
-                    <div style={{fontSize:20,fontWeight:700,color:T.blue,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{fullMonthPlanTotals.bf.toLocaleString()}</div>
+                    <div style={{fontSize:20,fontWeight:700,color:T.blue,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{fullBf.toLocaleString()}</div>
                     <div style={{fontSize:11,color:T.txt2,marginTop:2}}>полный месяц</div>
                   </div>
                 </div>
@@ -1656,7 +1660,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                       от месячного: <b style={{color:bfPctFull>=100?T.green:bfPctFull>=70?T.amber:"#ef4444"}}>{bfPctFull}%</b>
                     </div>
                     <div style={{fontSize:12,color:T.txt2}}>
-                      остаток: <b style={{color:T.txt0}}>{Math.max(0,fullMonthPlanTotals.bf-totals.bf).toLocaleString()} м³</b>
+                      остаток: <b style={{color:T.txt0}}>{Math.max(0,fullBf-totals.bf).toLocaleString()} м³</b>
                     </div>
                   </div>
                 )}
@@ -1679,18 +1683,10 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
           const pDf = pct(df, dp), pBf = pct(bf, bp);
           const chartData = getChartData(obj.id);
           const planLabel = completedDays ? `по ${completedDays} число` : "за период";
-          // Полный месячный план для этого объекта
-          const [fy,fm] = rangeStart.split("-").map(Number);
+          // Полный месячный план для этого объекта (из пропорционального через fraction)
           const objPlanFull = (() => {
-            const objPlans = (plans||[]).filter(p=>p.oid===obj.id&&p.year===fy&&p.month===fm);
-            let fdf = 0, fbf = 0;
-            objPlans.forEach(p=>{
-              const mt = p.monthTotal!=null ? p.monthTotal : (p.dates||[]).reduce((s,d)=>s+d.val,0);
-              if(p.field==="df") fdf=mt; if(p.field==="bf") fbf=mt;
-            });
-            if(!objPlans.find(p=>p.field==="df")) fdf=obj.dp||0;
-            if(!objPlans.find(p=>p.field==="bf")) fbf=obj.bp||0;
-            return { df:Math.round(fdf), bf:Math.round(fbf) };
+            const frac = todayPlanFraction > 0 ? todayPlanFraction : 1;
+            return { df: dp > 0 ? Math.round(dp / frac) : 0, bf: bp > 0 ? Math.round(bp / frac) : 0 };
           })();
           return (
             <div key={obj.id} onClick={() => onDrillObj(obj.id)}
