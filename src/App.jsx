@@ -10879,7 +10879,7 @@ export default function App() {
           getKtgPlans(),
         ]);
         if (dbObjs?.length)  setObjs(dbObjs);
-        if (dbRigs?.length)  setRigs(dbRigs);
+        if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
         if (dbReps?.length)  setReps(prev => { const dbIds = new Set(dbReps.map(r => r.id)); const localOnly = prev.filter(r => !dbIds.has(r.id)); return [...localOnly, ...dbReps]; });
         if (dbPlans?.length) setPlans(dbPlans);
         if (dbKtg?.length)   setKtgPlans(dbKtg);
