@@ -748,25 +748,34 @@ function repTechDH(rep) {
   return techDowntimeHours(events);
 }
 // КТГ одного отчёта: (calHrs - techDH) / calHrs
-// calHrs = shiftDurationHours; если нет — используем wh+dh
+// calHrs = shiftDuration × кол-во станков
 function repKtg(rep) {
-  const cal = toNum(rep.shiftDurationHours || rep.shift_duration_hrs) || (toNum(rep.wh) + toNum(rep.dh));
+  const shiftDur = toNum(rep.shiftDurationHours || rep.shift_duration_hrs || 11);
+  const rigCount = rep.rigs?.length || 1;
+  const cal = shiftDur * rigCount || (toNum(rep.wh) + toNum(rep.dh));
   if (cal <= 0) return null;
   const techDH = repTechDH(rep);
   return Math.min(100, Math.round((cal - techDH) / cal * 100));
 }
 // КИО одного отчёта: wh / calHrs
 function repKio(rep) {
-  const cal = toNum(rep.shiftDurationHours || rep.shift_duration_hrs) || (toNum(rep.wh) + toNum(rep.dh));
+  const shiftDur = toNum(rep.shiftDurationHours || rep.shift_duration_hrs || 11);
+  const rigCount = rep.rigs?.length || 1;
+  const cal = shiftDur * rigCount || (toNum(rep.wh) + toNum(rep.dh));
   if (cal <= 0) return null;
   return Math.min(100, Math.round(toNum(rep.wh) / cal * 100));
 }
 // КТГ/КИО списка отчётов с агрегацией по периоду
+// calHrs = shiftDuration × кол-во станков в отчёте (каждый станок = своё календарное время)
 function repsKtgKio(reps) {
   let calHrs = 0, techDH = 0, wh = 0;
   (reps||[]).forEach(r => {
-    const cal = toNum(r.shiftDurationHours || r.shift_duration_hrs) || (toNum(r.wh) + toNum(r.dh));
+    const shiftDur = toNum(r.shiftDurationHours || r.shift_duration_hrs || 11);
+    // Количество активных станков в отчёте
+    const rigCount = r.rigs?.length || 1;
+    const cal = shiftDur * rigCount;
     calHrs += cal;
+    // techDH тоже нужно считать по каждому станку
     techDH += repTechDH(r);
     wh += toNum(r.wh);
   });
@@ -1573,8 +1582,8 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
     filteredReps.forEach((r) => {
       t.df += r.df; t.bf += r.bf; t.fuel += r.fuel; t.wh += r.wh; t.dh += r.dh;
       t.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
-      // Календарное время = сумма смен
-      t.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11);
+      // Календарное время = сумма смен × кол-во станков
+      t.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11) * (r.rigs?.length || 1);
       // Технические простои
       const events = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
       t.techDH += techDowntimeHours(events);
@@ -1952,7 +1961,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   approved.forEach((r) => {
     tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel;
     tot.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
-    tot.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11);
+    tot.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11) * (r.rigs?.length || 1);
     const evs = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
     tot.techDH += techDowntimeHours(evs);
   });
@@ -2491,8 +2500,8 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
     fuelKg:    toNum(fuelKg),
   };
   // КТГ и КИО для текущей смены
-  const calHrsShift = entries.length * shiftDur;
-  const shiftKtg = calHrsShift > 0 ? Math.round((calHrsShift - totals.techDH) / calHrsShift * 100) : null;
+  const calHrsShift = entries.length * shiftDur; // кол-во станков × длительность смены
+  const shiftKtg = calHrsShift > 0 ? Math.min(100, Math.round((calHrsShift - totals.techDH) / calHrsShift * 100)) : null;
   const shiftKio = calHrsShift > 0 ? Math.min(100, Math.round(totals.wh / calHrsShift * 100)) : null;
 
   // Отправка
