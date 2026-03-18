@@ -1680,268 +1680,204 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
     return maxH>0 ? Math.round(totalH/maxH*100) : null;
   }
 
+  // Object accent colors for left stripe
+  const OBJ_STRIPE_COLORS = [T.red, T.blue, T.green, T.violet, T.cyan, T.amber];
+
   return (
     <div>
-      {/* ── Period selector ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <SectionTitle label="Оперативная сводка" sub="CEO DASHBOARD" T={T} />
-      </div>
-      {/* ── Month selector ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        {/* Month nav */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={() => shift(-1)} style={{ padding: "7px 12px", background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 4, color: T.txt1, cursor: "pointer", fontSize: 14, lineHeight: 1, fontFamily:"'Inter',sans-serif" }}>‹</button>
-          <div style={{ padding: "7px 18px", background: T.bg2, border: `1px solid ${T.border}`, borderRadius: 4, fontSize: 14, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif", minWidth: 160, textAlign: "center", letterSpacing: "1px" }}>
-            {label}
-          </div>
-          <button onClick={() => shift(1)} style={{ padding: "7px 12px", background: T.bg3, border: `1px solid ${T.border}`, borderRadius: 4, color: T.txt1, cursor: "pointer", fontSize: 14, lineHeight: 1, fontFamily:"'Inter',sans-serif" }}>›</button>
+      {/* ── Header ── */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18, flexWrap:"wrap", gap:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+          <button onClick={() => shift(-1)} style={{ width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center", background:T.bg3, border:`1px solid ${T.border}`, borderRadius:6, cursor:"pointer", fontSize:14, color:T.txt1 }}>‹</button>
+          <div style={{ padding:"0 18px", height:30, display:"flex", alignItems:"center", background:T.bg2, border:`1px solid ${T.border}`, borderRadius:6, fontSize:13, fontWeight:600, color:T.txt0, letterSpacing:".02em", minWidth:130, justifyContent:"center" }}>{label}</div>
+          <button onClick={() => shift(1)}  style={{ width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center", background:T.bg3, border:`1px solid ${T.border}`, borderRadius:6, cursor:"pointer", fontSize:14, color:T.txt1 }}>›</button>
+          <input type="month" value={anchor.slice(0,7)} onChange={(e) => setAnchor(e.target.value + "-01")}
+            style={{ marginLeft:6, padding:"5px 8px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:6, color:T.txt0, fontSize:12, outline:"none", cursor:"pointer" }} />
         </div>
-        {/* Month picker */}
-        <input type="month" value={anchor.slice(0,7)} onChange={(e) => setAnchor(e.target.value + "-01")}
-          style={{ padding: "7px 10px", background: T.inputBg, border: `1px solid ${T.border}`, borderRadius: 4, color: T.txt0, fontSize: 12, outline: "none", fontFamily: "'Inter',sans-serif", cursor: "pointer" }} />
-        {/* Fact count */}
-        <div style={{ fontSize: 12, color: T.txt2, marginLeft: "auto" }}>
-          <span style={{ color: T.txt0, fontWeight: 700 }}>{filteredReps.length}</span> отчётов за месяц
+        <div style={{ fontSize:12, color:T.txt2 }}>
+          по <b style={{ color:T.txt0 }}>{completedDays || "—"}</b> число
+          {" · "}<b style={{ color:T.txt0 }}>{filteredReps.length}</b> отчётов
+          {" · "}<b style={{ color:T.txt0 }}>{rigs.length}</b> станков
         </div>
       </div>
 
-      {/* ── Top KPIs ── */}
+      {/* ── Summary strip ── */}
       {(()=>{
-        const planLabel = completedDays ? `по ${completedDays} число` : "за период";
-        const fraction = todayPlanFraction > 0 ? todayPlanFraction : 1;
-        const fullDf = completedDays && planTotals.df > 0 ? Math.round(planTotals.df / fraction) : 0;
-        const fullBf = completedDays && planTotals.bf > 0 ? Math.round(planTotals.bf / fraction) : 0;
-        const dfPctFull = fullDf > 0 ? Math.round(totals.df / fullDf * 100) : null;
-        const bfPctFull = fullBf > 0 && totals.bf > 0 ? Math.round(totals.bf / fullBf * 100) : null;
+        const fraction  = todayPlanFraction > 0 ? todayPlanFraction : 1;
+        const fullDf    = completedDays && planTotals.df > 0 ? Math.round(planTotals.df / fraction) : 0;
+        const fullBf    = completedDays && planTotals.bf > 0 ? Math.round(planTotals.bf / fraction) : 0;
+        const dfPct     = planTotals.df > 0 ? Math.round(totals.df / planTotals.df * 100) : null;
+        const bfPct     = planTotals.bf > 0 ? Math.round(totals.bf / planTotals.bf * 100) : null;
+        const pctColor  = (p) => p === null ? T.txt2 : p >= 100 ? T.green : p >= 80 ? T.amber : "#ef4444";
+        const pctBg     = (p) => p === null ? "transparent" : p >= 100 ? `${T.green}18` : p >= 80 ? `${T.amber}18` : "rgba(239,68,68,0.12)";
+        const Cell = ({label, children}) => (
+          <div style={{ background:T.bg2, padding:"14px 18px", borderRight:`1px solid ${T.border}` }}>
+            <div style={{ fontSize:11, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:7 }}>{label}</div>
+            {children}
+          </div>
+        );
+        const MiniCell = ({label, value, color}) => (
+          <div style={{ background:T.bg3, borderRadius:6, padding:"6px 10px" }}>
+            <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".04em", marginBottom:2 }}>{label}</div>
+            <div style={{ fontSize:17, fontWeight:600, color: color || T.txt0 }}>{value}</div>
+          </div>
+        );
         return (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginBottom: 20 }}>
-            <Card accent={T.red} style={{ padding: "16px 18px" }} T={T}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.red, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>⛏ Бурение</div>
-              <ProgressBar fact={totals.df} plan={planTotals.df || objs.reduce((s,o)=>s+o.dp,0)} T={T} />
-              {planTotals.df > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 6 }}>
-                План {planLabel}: <b style={{ color: T.txt0 }}>{planTotals.df.toLocaleString()}</b>
-              </div>}
-              {fullDf > 0 && <div style={{ fontSize:12, color: T.blue, marginTop: 4, display:"flex", justifyContent:"space-between" }}>
-                <span>План на месяц: <b>{fullDf.toLocaleString()}</b></span>
-                {dfPctFull !== null && <b style={{color: dfPctFull>=100?T.green:dfPctFull>=70?T.amber:"#ef4444"}}>{dfPctFull}%</b>}
-              </div>}
-            </Card>
-            <Card accent={T.amber} style={{ padding: "16px 18px" }} T={T}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.amber, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>💥 Взрывы</div>
-              <ProgressBar fact={totals.bf} plan={planTotals.bf || objs.reduce((s,o)=>s+o.bp,0)} T={T} />
-              {planTotals.bf > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 6 }}>
-                План {planLabel}: <b style={{ color: T.txt0 }}>{planTotals.bf.toLocaleString()}</b>
-              </div>}
-              {fullBf > 0 && <div style={{ fontSize:12, color: T.blue, marginTop: 4, display:"flex", justifyContent:"space-between" }}>
-                <span>План на месяц: <b>{fullBf.toLocaleString()}</b></span>
-                {bfPctFull !== null && <b style={{color: bfPctFull>=100?T.green:bfPctFull>=70?T.amber:"#ef4444"}}>{bfPctFull}%</b>}
-              </div>}
-            </Card>
-            <Card accent={T.green} style={{ padding: "16px 18px" }} T={T}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.green, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 10 }}>⚙ КТГ / КИО</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 6 }}>
-                <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>КТГ ПЛАН</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: planAvgKtg!==null?T.txt0:"#5a7499", fontFamily: "'Inter',sans-serif" }}>
-                    {planAvgKtg!==null?`${planAvgKtg}%`:"—"}
-                  </div>
-                </div>
-                <div style={{ background: `${T.green}10`, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.green}30` }}>
-                  <div style={{ fontSize: 11, color: T.green, textTransform: "uppercase", marginBottom: 1, fontWeight: 700 }}>КТГ ФАКТ</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: totalKtg!==null?scoreColor(totalKtg,85,70,T):"#5a7499", fontFamily: "'Inter',sans-serif" }}>
-                    {totalKtg!==null?`${totalKtg}%`:"—"}
-                  </div>
-                </div>
-                <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>КИО</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: totalKio!==null?scoreColor(totalKio,75,60,T):"#5a7499", fontFamily: "'Inter',sans-serif" }}>
-                    {totalKio!==null?`${totalKio}%`:"—"}
-                  </div>
-                </div>
-                <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 11, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>КВ (ч)</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>
-                    {totals.calHrs > 0 ? totals.calHrs.toLocaleString() : "—"}
-                  </div>
+          <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1.4fr 1.4fr", border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden", marginBottom:16, background:T.bg2 }}>
+            {/* Бурение */}
+            <Cell label="⛏ Бурение">
+              <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:7 }}>
+                <span style={{ fontSize:26, fontWeight:600, color:T.txt0 }}>{totals.df.toLocaleString()}<span style={{ fontSize:14, color:T.txt2, fontWeight:400, marginLeft:3 }}>п.м.</span></span>
+                {dfPct !== null && <span style={{ fontSize:12, fontWeight:600, padding:"2px 8px", borderRadius:4, background:pctBg(dfPct), color:pctColor(dfPct) }}>{dfPct}%</span>}
+              </div>
+              <div style={{ height:3, borderRadius:2, background:T.cardSh }}>
+                <div style={{ height:3, borderRadius:2, background:T.red, width:`${Math.min(dfPct||0,100)}%` }} />
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:5 }}>
+                <span style={{ fontSize:11, color:T.txt2 }}>план по {completedDays||"—"} ч.: <b style={{ color:T.txt0 }}>{planTotals.df?.toLocaleString()||"—"}</b></span>
+                {fullDf > 0 && <span style={{ fontSize:11, color:T.txt2 }}>месяц: <b style={{ color:T.txt0 }}>{fullDf.toLocaleString()}</b></span>}
+              </div>
+            </Cell>
+            {/* Взрывы */}
+            <Cell label="💥 Взрывы">
+              <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:7 }}>
+                <span style={{ fontSize:26, fontWeight:600, color:T.txt0 }}>{totals.bf.toLocaleString()}<span style={{ fontSize:14, color:T.txt2, fontWeight:400, marginLeft:3 }}>м³</span></span>
+                {bfPct !== null && <span style={{ fontSize:12, fontWeight:600, padding:"2px 8px", borderRadius:4, background:pctBg(bfPct), color:pctColor(bfPct) }}>{bfPct}%</span>}
+              </div>
+              <div style={{ height:3, borderRadius:2, background:T.cardSh }}>
+                <div style={{ height:3, borderRadius:2, background:T.amber, width:`${Math.min(bfPct||0,100)}%` }} />
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:5 }}>
+                <span style={{ fontSize:11, color:T.txt2 }}>план по {completedDays||"—"} ч.: <b style={{ color:T.txt0 }}>{planTotals.bf?.toLocaleString()||"—"}</b></span>
+                {fullBf > 0 && <span style={{ fontSize:11, color:T.txt2 }}>месяц: <b style={{ color:T.txt0 }}>{fullBf.toLocaleString()}</b></span>}
+              </div>
+            </Cell>
+            {/* КТГ / КИО */}
+            <Cell label="⚙ КТГ / КИО">
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
+                <MiniCell label="КТГ факт" value={totalKtg!==null?`${totalKtg}%`:"—"} color={totalKtg!==null?scoreColor(totalKtg,85,70,T):T.txt2} />
+                <MiniCell label="КИО факт" value={totalKio!==null?`${totalKio}%`:"—"} color={totalKio!==null?scoreColor(totalKio,75,60,T):T.txt2} />
+                <MiniCell label="КТГ план" value={planAvgKtg!==null?`${planAvgKtg}%`:"—"} />
+                <MiniCell label="КВ, ч" value={totals.calHrs>0?totals.calHrs.toLocaleString():"—"} />
+              </div>
+            </Cell>
+            {/* ГСМ */}
+            <div style={{ background:T.bg2, padding:"14px 18px" }}>
+              <div style={{ fontSize:11, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:7 }}>⛽ Уд. ГСМ</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
+                <MiniCell label="л / п.м." value={totals.df>0&&totals.fuel>0?(totals.fuel/totals.df).toFixed(2):"—"} />
+                <MiniCell label="л / м³"   value={totals.bf>0&&totals.fuel>0?(totals.fuel/totals.bf).toFixed(2):"—"} />
+                <div style={{ gridColumn:"span 2", background:T.bg3, borderRadius:6, padding:"6px 10px" }}>
+                  <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".04em", marginBottom:2 }}>Итого ГСМ</div>
+                  <div style={{ fontSize:17, fontWeight:600, color:T.txt0 }}>{totals.fuel>0?totals.fuel.toLocaleString():"—"}<span style={{ fontSize:12, color:T.txt2, fontWeight:400, marginLeft:3 }}>л</span></div>
                 </div>
               </div>
-            </Card>
-            <Card accent={T.violet} style={{ padding: "16px 18px" }} T={T}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.violet, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>⛽ ГСМ удельный</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <div style={{ background: T.bg1, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>Бурение</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: totals.fuel > 0 && totals.df > 0 ? T.red : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
-                    {totals.fuel > 0 && totals.df > 0 ? (totals.fuel / totals.df).toFixed(2) : "—"}
-                  </div>
-                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>л / п.м.</div>
-                </div>
-                <div style={{ background: T.bg1, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>Взрывы</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: totals.fuel > 0 && totals.bf > 0 ? T.amber : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
-                    {totals.fuel > 0 && totals.bf > 0 ? (totals.fuel / totals.bf).toFixed(2) : "—"}
-                  </div>
-                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>л / м³</div>
-                </div>
-              </div>
-              {totals.fuel > 0 && <div style={{ fontSize: 12, color: T.txt2, marginTop: 8 }}>
-                Итого ГСМ: <b style={{ color: T.txt0 }}>{totals.fuel.toLocaleString()} л</b>
-              </div>}
-            </Card>
+            </div>
           </div>
         );
       })()}
 
-      <SectionTitle label={`Участки (${objs.length})`} T={T} />
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 }}>
+      {/* ── Objects ── */}
+      <div style={{ fontSize:11, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>
+        Участки — {objs.length}
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
         {objs.map((obj, i) => {
-          const rr  = filteredReps.filter((r) => r.oid === obj.id);
-          const df  = rr.reduce((s,r)=>s+r.df,0), bf = rr.reduce((s,r)=>s+r.bf,0);
-          const wh  = rr.reduce((s,r)=>s+r.wh,0), dh = rr.reduce((s,r)=>s+r.dh,0), fuel = rr.reduce((s,r)=>s+r.fuel,0);
+          const rr        = filteredReps.filter((r) => r.oid === obj.id);
+          const df        = rr.reduce((s,r)=>s+r.df, 0);
+          const bf        = rr.reduce((s,r)=>s+r.bf, 0);
+          const wh        = rr.reduce((s,r)=>s+r.wh, 0);
+          const dh        = rr.reduce((s,r)=>s+r.dh, 0);
+          const fuel      = rr.reduce((s,r)=>s+r.fuel, 0);
           const overDrill = rr.reduce((s,r)=>s+(r.rigs||[]).reduce((ss,rig)=>ss+(toNum(rig.overDrill)||0),0), 0);
-          // КТГ и КИО по объекту (kv — для совместимости, используем objKtg)
-          const kv  = null; // заменён на objKtg ниже
-          const objRepsForKtg = filteredReps.filter(r => r.oid === obj.id);
-          const objCalHrs = objRepsForKtg.reduce((s,r) => s + toNum(r.shiftDurationHours || r.shift_duration_hrs || 11) * (r.rigs?.length || 1), 0);
-          const objTechDH = objRepsForKtg.reduce((s,r) => {
-            const evs = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
-            return s + techDowntimeHours(evs);
-          }, 0);
-          const objWh = wh;
-          const objKtg = objCalHrs > 0 ? Math.round((objCalHrs - objTechDH) / objCalHrs * 100) : null;
-          const objKio = objCalHrs > 0 ? Math.min(100, Math.round(objWh / objCalHrs * 100)) : null;
-          const ac  = colors[i % colors.length];
-          const pp  = getPlanForPeriod(obj.id);
-          const dp  = pp.df || obj.dp, bp = pp.bf || obj.bp;
-          const pDf = pct(df, dp), pBf = pct(bf, bp);
-          const chartData = getChartData(obj.id);
-          const planLabel = completedDays ? `по ${completedDays} число` : "за период";
-          // Полный месячный план для этого объекта (из пропорционального через fraction)
-          const objPlanFull = (() => {
-            const frac = todayPlanFraction > 0 ? todayPlanFraction : 1;
-            return { df: dp > 0 ? Math.round(dp / frac) : 0, bf: bp > 0 ? Math.round(bp / frac) : 0 };
-          })();
+          const techDH    = rr.reduce((s,r)=>{ const evs=r.downtime_events||r.rigEntries?.flatMap(e=>e.downtimes||[])||[]; return s+techDowntimeHours(evs); }, 0);
+          const orgDH     = Math.round(dh - techDH);
+
+          const objKtg    = repsKtgKio(rr).ktg;
+          const objKio    = repsKtgKio(rr).kio;
+
+          const pp        = getPlanForPeriod(obj.id);
+          const fraction  = todayPlanFraction > 0 ? todayPlanFraction : 1;
+          const fullDf    = completedDays && pp.df > 0 ? Math.round(pp.df / fraction) : 0;
+          const fullBf    = completedDays && pp.bf > 0 ? Math.round(pp.bf / fraction) : 0;
+
+          const dfPct     = pp.df > 0 ? Math.round(df / pp.df * 100) : null;
+          const bfPct     = pp.bf > 0 ? Math.round(bf / pp.bf * 100) : null;
+          const pctColor  = (p) => p===null ? T.txt2 : p>=100 ? T.green : p>=80 ? T.amber : "#ef4444";
+          const pctBg     = (p) => p===null ? "transparent" : p>=100 ? `${T.green}18` : p>=80 ? `${T.amber}18` : "rgba(239,68,68,0.12)";
+          const stripe    = OBJ_STRIPE_COLORS[i % OBJ_STRIPE_COLORS.length];
+          const objRigs   = rigs.filter(r => r.o === obj.id);
+
           return (
             <div key={obj.id} onClick={() => onDrillObj(obj.id)}
-              style={{ background: T.bg2, borderRadius: 6, border: `1px solid ${T.border}`, borderLeft: `3px solid ${ac}`, cursor: "pointer", overflow: "hidden" }}>
-              <div style={{ background: `linear-gradient(90deg,${ac}18,transparent)`, padding: "12px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>{obj.name.toUpperCase()}</div>
-                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 2 }}>
-                    <span style={{ color: ac, fontWeight: 700 }}>{rigs.filter(r=>r.o===obj.id).length}</span> станков · {rr.length} отчётов
+              style={{ background:T.bg2, border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden", cursor:"pointer", transition:"border-color .15s" }}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=T.txt2}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}>
+
+              {/* Head */}
+              <div style={{ display:"flex", alignItems:"stretch" }}>
+                <div style={{ width:4, background:stripe, flexShrink:0 }} />
+                <div style={{ flex:1, padding:"11px 14px", display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:600, color:T.txt0 }}>{obj.name}</div>
+                    <div style={{ fontSize:11, color:T.txt2, marginTop:2 }}>{objRigs.length} станков · {rr.length} смен</div>
+                  </div>
+                  <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+                    {objKtg !== null && (
+                      <span style={{ fontSize:11, fontWeight:600, padding:"2px 8px", borderRadius:4, background: objKtg>=85?`${T.green}18`:`${T.amber}18`, color: objKtg>=85?T.green:T.amber }}>КТГ {objKtg}%</span>
+                    )}
+                    {objKio !== null && (
+                      <span style={{ fontSize:11, fontWeight:600, padding:"2px 8px", borderRadius:4, background: objKio>=75?`${T.green}18`:objKio>=50?`${T.amber}18`:"rgba(239,68,68,0.12)", color: objKio>=75?T.green:objKio>=50?T.amber:"#ef4444" }}>КИО {objKio}%</span>
+                    )}
                   </div>
                 </div>
               </div>
-              <div style={{ padding: "12px 16px 14px" }}>
-                {[[pDf, dp, df, "Бурение пог.м", T.red, objPlanFull.df], [pBf, bp, bf, "Взрывы м³", T.amber, objPlanFull.bf]].map(([perc, plan, fact, lbl, color, fullPlan]) => {
-                  const cc = scoreColor(perc, 85, 70, T);
-                  const pctFull = fullPlan > 0 ? Math.round(fact/fullPlan*100) : null;
-                  return (
-                    <div key={lbl} style={{ marginBottom: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                        <div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase" }}>{lbl}</span>
-                          {todayPlanFraction < 1 && plan > 0 && (
-                            <span style={{ fontSize:12, color: T.amber, marginLeft: 5, fontWeight:600 }}>план {planLabel}</span>
-                          )}
-                        </div>
-                        {perc !== null && <span style={{ fontSize: 12, fontWeight: 700, color: cc }}>{perc}%</span>}
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 4 }}>
-                        <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
-                          <div style={{ fontSize: 11, color: T.amber, textTransform: "uppercase", marginBottom: 1, fontWeight:700 }}>
-                            ПЛАН {completedDays ? `по ${completedDays}` : ""}
-                          </div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>{(plan||0).toLocaleString()}</div>
-                          {completedDays && fullPlan > 0 && (
-                            <div style={{ fontSize:11, color:T.blue, marginTop:3, fontWeight:600 }}>
-                              мес: {fullPlan.toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ background: `${color}10`, borderRadius: 3, padding: "5px 10px", border: `1px solid ${color}30` }}>
-                          <div style={{ fontSize: 12, color, textTransform: "uppercase", marginBottom: 1, fontWeight: 700 }}>ФАКТ</div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color, fontFamily: "'Inter',sans-serif" }}>{(fact||0).toLocaleString()}</div>
-                          {completedDays && pctFull !== null && (
-                            <div style={{ fontSize:11, color: pctFull>=100?T.green:pctFull>=60?T.amber:"#ef4444", marginTop:3, fontWeight:600 }}>
-                              {pctFull}% от мес.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ height: 2, background: T.cardSh, borderRadius: 2 }}>
-                        <div style={{ height: "100%", width: `${Math.min(perc||0,100)}%`, background: cc, borderRadius: 2 }} />
-                      </div>
+
+              {/* Plan vs Fact */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, background:T.border, borderTop:`1px solid ${T.border}`, borderBottom:`1px solid ${T.border}` }}>
+                {[
+                  { label:"Бурение", fact:df, unit:"п.м.", pct:dfPct, planProp:pp.df, fullPlan:fullDf, barColor:T.red },
+                  { label:"Взрывы",  fact:bf, unit:"м³",   pct:bfPct, planProp:pp.bf, fullPlan:fullBf, barColor:T.amber },
+                ].map(({ label, fact, unit, pct, planProp, fullPlan, barColor }) => (
+                  <div key={label} style={{ background:T.bg2, padding:"10px 14px" }}>
+                    <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".04em", marginBottom:4 }}>{label}</div>
+                    <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+                      <span style={{ fontSize:20, fontWeight:600, color:T.txt0 }}>{fact.toLocaleString()}</span>
+                      <span style={{ fontSize:11, color:T.txt2 }}>{unit}</span>
+                      {pct !== null && <span style={{ fontSize:12, fontWeight:600, marginLeft:"auto", padding:"1px 7px", borderRadius:4, background:pctBg(pct), color:pctColor(pct) }}>{pct}%</span>}
                     </div>
-                  );
-                })}
-                {/* КТГ план/факт по объекту */}
-                {(()=>{
-                  const ktgPlan = ktgPlanForObj(obj.id);
-                  const ktgFact = objKtg;
-                  const ktgPerc = ktgFact !== null && ktgPlan !== null ? Math.round(ktgFact/ktgPlan*100) : null;
-                  const cc = ktgFact !== null ? scoreColor(ktgFact, 85, 70, T) : T.txt2;
-                  return (
-                    <div style={{ marginBottom: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase" }}>⚙ КТГ</span>
-                        {ktgFact !== null && <span style={{ fontSize: 12, fontWeight: 700, color: cc }}>{ktgFact}%</span>}
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 4 }}>
-                        <div style={{ background: T.bg1, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.border}` }}>
-                          <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 1 }}>ПЛАН</div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: ktgPlan !== null ? T.txt0 : T.txt2, fontFamily: "'Inter',sans-serif" }}>
-                            {ktgPlan !== null ? `${ktgPlan}%` : "—"}
-                          </div>
-                        </div>
-                        <div style={{ background: `${T.green}10`, borderRadius: 3, padding: "5px 10px", border: `1px solid ${T.green}30` }}>
-                          <div style={{ fontSize: 12, color: T.green, textTransform: "uppercase", marginBottom: 1, fontWeight: 700 }}>ФАКТ</div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: ktgFact !== null ? cc : T.txt2, fontFamily: "'Inter',sans-serif" }}>
-                            {ktgFact !== null ? `${ktgFact}%` : "—"}
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ height: 2, background: T.cardSh, borderRadius: 2 }}>
-                        <div style={{ height: "100%", width: `${Math.min(ktgFact||0,100)}%`, background: cc, borderRadius: 2 }} />
-                      </div>
+                    <div style={{ height:3, borderRadius:2, background:T.cardSh, marginTop:5 }}>
+                      <div style={{ height:3, borderRadius:2, background:barColor, width:`${Math.min(pct||0,100)}%` }} />
                     </div>
-                  );
-                })()}
-                <div style={{ display: "flex", gap: 6, paddingTop: 8, borderTop: `1px solid ${T.border}`, marginTop: 4 }}>
-                  <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Уд. ГСМ бур.</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: fuel > 0 && df > 0 ? T.red : T.txt2, fontFamily: "'Inter',sans-serif" }}>
-                      {fuel > 0 && df > 0 ? (fuel / df).toFixed(2) : "—"}
-                      {fuel > 0 && df > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> л/п.м.</span>}
+                    <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+                      {planProp > 0 && <span style={{ fontSize:10, color:T.txt2 }}>по {completedDays||"—"} ч.: <b style={{ color:T.txt0 }}>{planProp.toLocaleString()}</b></span>}
+                      {fullPlan > 0 && <span style={{ fontSize:10, color:T.txt2 }}>месяц: <b style={{ color:T.txt0 }}>{fullPlan.toLocaleString()}</b></span>}
                     </div>
                   </div>
-                  <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Уд. ГСМ взр.</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: fuel > 0 && bf > 0 ? T.amber : T.txt2, fontFamily: "'Inter',sans-serif" }}>
-                      {fuel > 0 && bf > 0 ? (fuel / bf).toFixed(2) : "—"}
-                      {fuel > 0 && bf > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> л/м³</span>}
-                    </div>
-                    {fuel > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} л</div>}
+                ))}
+              </div>
+
+              {/* Stats strip */}
+              <div style={{ display:"flex", borderBottom:`1px solid ${T.border}` }}>
+                {[
+                  { label:"ГСМ", val:`${fuel.toLocaleString()} л`, sub: df>0&&fuel>0?`${(fuel/df).toFixed(2)} л/п.м.`:null },
+                  { label:"Перебур", val: overDrill>0?`${overDrill.toLocaleString()} м`:"—" },
+                  { label:"Тех. прост.", val: techDH>0?`${Math.round(techDH)} ч`:"—", col: techDH>0?"#ef4444":null },
+                  { label:"ОФР", val: orgDH>0?`${orgDH} ч`:"—", col: orgDH>0?T.amber:null },
+                ].map(({ label, val, sub, col }, idx2) => (
+                  <div key={idx2} style={{ flex:1, padding:"8px 14px", borderRight: idx2<3?`1px solid ${T.border}`:"none" }}>
+                    <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".04em", marginBottom:3 }}>{label}</div>
+                    <div style={{ fontSize:13, fontWeight:600, color:col||T.txt0 }}>{val}</div>
+                    {sub && <div style={{ fontSize:10, color:T.txt2, marginTop:1 }}>{sub}</div>}
                   </div>
-                  {overDrill > 0 && (
-                    <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                      <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>📏 Перебур</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif" }}>{overDrill.toLocaleString()} <span style={{ fontSize:12, fontWeight: 400 }}>м</span></div>
-                    </div>
-                  )}
-                  <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⏸ Простои</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: dh > 0 ? "#ef4444" : T.txt2, fontFamily: "'Inter',sans-serif" }}>{dh} ч</div>
-                    {wh > 0 && dh > 0 && <div style={{ fontSize:12, color: "#ef4444", marginTop: 1 }}>{Math.round(dh/(wh+dh)*100)}% от раб.</div>}
-                  </div>
-                  {objKio !== null && (
-                    <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                      <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⚙ КИО</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: scoreColor(objKio, 75, 60, T), fontFamily: "'Inter',sans-serif" }}>{objKio}%</div>
-                    </div>
-                  )}
-                </div>
+                ))}
+              </div>
+
+              {/* Rigs */}
+              <div style={{ display:"flex", flexWrap:"wrap", gap:4, padding:"8px 14px" }}>
+                {objRigs.map(rg => (
+                  <span key={rg.id} style={{ fontSize:10, padding:"2px 7px", background:T.bg3, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt2, fontFamily:"'JetBrains Mono',monospace" }}>{rg.n}</span>
+                ))}
               </div>
             </div>
           );
@@ -1949,9 +1885,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
       </div>
     </div>
   );
-}
-
-// ─── OBJECT DETAIL ────────────────────────────────────────────────────────────
+}─
 function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   const obj = objs.find((o) => o.id === objId);
   if (!obj) return null;
