@@ -1772,16 +1772,16 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                 <div style={{ background: T.bg1, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}` }}>
                   <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>Бурение</div>
                   <div style={{ fontSize: 20, fontWeight: 700, color: totals.fuel > 0 && totals.df > 0 ? T.red : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
-                    {totals.fuel > 0 && totals.df > 0 ? (totals.df / totals.fuel).toFixed(2) : "—"}
+                    {totals.fuel > 0 && totals.df > 0 ? (totals.fuel / totals.df).toFixed(2) : "—"}
                   </div>
-                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>п.м. / л</div>
+                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>л / п.м.</div>
                 </div>
                 <div style={{ background: T.bg1, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}` }}>
                   <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>Взрывы</div>
                   <div style={{ fontSize: 20, fontWeight: 700, color: totals.fuel > 0 && totals.bf > 0 ? T.amber : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
-                    {totals.fuel > 0 && totals.bf > 0 ? (totals.bf / totals.fuel).toFixed(2) : "—"}
+                    {totals.fuel > 0 && totals.bf > 0 ? (totals.fuel / totals.bf).toFixed(2) : "—"}
                   </div>
-                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>м³ / л</div>
+                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 3 }}>л / м³</div>
                 </div>
               </div>
               {totals.fuel > 0 && <div style={{ fontSize: 12, color: T.txt2, marginTop: 8 }}>
@@ -1910,17 +1910,17 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
                 })()}
                 <div style={{ display: "flex", gap: 6, paddingTop: 8, borderTop: `1px solid ${T.border}`, marginTop: 4 }}>
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Бур./ГСМ</div>
+                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Уд. ГСМ бур.</div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: fuel > 0 && df > 0 ? T.red : T.txt2, fontFamily: "'Inter',sans-serif" }}>
-                      {fuel > 0 && df > 0 ? (df / fuel).toFixed(2) : "—"}
-                      {fuel > 0 && df > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> п.м./л</span>}
+                      {fuel > 0 && df > 0 ? (fuel / df).toFixed(2) : "—"}
+                      {fuel > 0 && df > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> л/п.м.</span>}
                     </div>
                   </div>
                   <div style={{ flex: 1, background: T.bg1, borderRadius: 3, padding: "5px 8px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Взр./ГСМ</div>
+                    <div style={{ fontSize:12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>⛽ Уд. ГСМ взр.</div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: fuel > 0 && bf > 0 ? T.amber : T.txt2, fontFamily: "'Inter',sans-serif" }}>
-                      {fuel > 0 && bf > 0 ? (bf / fuel).toFixed(2) : "—"}
-                      {fuel > 0 && bf > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> м³/л</span>}
+                      {fuel > 0 && bf > 0 ? (fuel / bf).toFixed(2) : "—"}
+                      {fuel > 0 && bf > 0 && <span style={{ fontSize:12, color: T.txt2, fontWeight: 400 }}> л/м³</span>}
                     </div>
                     {fuel > 0 && <div style={{ fontSize:12, color: T.txt2, marginTop: 1 }}>{fuel.toLocaleString()} л</div>}
                   </div>
@@ -1967,7 +1967,8 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   });
   const kv    = repsKtgKio(approved).ktg;
   const kvKio = tot.calHrs > 0 ? Math.min(100, Math.round(tot.wh / tot.calHrs * 100)) : null;
-  const fuelPerM3 = tot.bf > 0 ? (tot.fuel / tot.bf).toFixed(1) : null;
+  const fuelPerM3 = tot.bf > 0 ? (tot.fuel / tot.bf).toFixed(2) : null;
+  const fuelPerDf = tot.df > 0 ? (tot.fuel / tot.df).toFixed(2) : null;
   const colors = OBJ_COLORS(T);
   const ac = colors[objs.findIndex((o) => o.id === objId) % colors.length];
   const objRigs = rigs.filter((rg) => rg.o === objId);
@@ -1986,7 +1987,9 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
           [T.amber,  "Взрывы",  tot.bf,   obj.bp, "м³"],
           [T.green,  "КТГ",     kv !== null ? `${kv}%` : "—", null, null],
           [T.cyan,   "КИО",     kvKio !== null ? `${kvKio}%` : "—", null, null],
-          [T.violet, "ГСМ",     tot.fuel, null,   "л"],
+          [T.violet, "ГСМ",     tot.fuel, null, "л"],
+          ...(fuelPerDf ? [[T.violet, "л/п.м.", parseFloat(fuelPerDf), null, "л/п.м."]] : []),
+          ...(fuelPerM3 ? [[T.violet, "л/м³",   parseFloat(fuelPerM3), null, "л/м³"]]  : []),
           ["#ef4444","Простои", tot.dh,   null,   "ч"],
         ].map(([color, lbl, fact, plan, unit]) => (
           <Card key={lbl} accent={color} style={{ padding: "14px 16px" }} T={T}>
@@ -2001,13 +2004,23 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
           </Card>
         ))}
         {/* Удельный ГСМ */}
-        <Card accent={T.violet} style={{ padding: "14px 16px" }} T={T}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.violet, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>⛽ ГСМ уд.</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: fuelPerM3 ? T.violet : T.txt2, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
-            {fuelPerM3 || "—"}
-          </div>
-          <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginTop: 3 }}>л/м³</div>
-        </Card>
+        {(fuelPerDf || fuelPerM3) && (
+          <Card accent={T.violet} style={{ padding: "14px 16px" }} T={T}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.violet, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>⛽ Уд. ГСМ</div>
+            {fuelPerDf && (
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: T.red, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{fuelPerDf}</div>
+                <div style={{ fontSize: 11, color: T.txt2, marginTop: 2 }}>л / п.м.</div>
+              </div>
+            )}
+            {fuelPerM3 && (
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: T.amber, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{fuelPerM3}</div>
+                <div style={{ fontSize: 11, color: T.txt2, marginTop: 2 }}>л / м³</div>
+              </div>
+            )}
+          </Card>
+        )}
         {/* Перебур (если есть) */}
         {tot.overDrill > 0 && (
           <Card accent={T.cyan} style={{ padding: "14px 16px" }} T={T}>
@@ -7652,7 +7665,7 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
                 <div style={{ fontSize:22, fontWeight:700, color:T.violet, fontFamily:"'Inter',sans-serif", lineHeight:1 }}>{tot.fuel.toLocaleString()}</div>
                 <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>л дизель</div>
                 <div style={{ marginTop:6, fontSize:12, color:T.txt2 }}>
-                  уд: <b style={{ color:T.violet }}>{tot.bf>0?(tot.fuel/tot.bf).toFixed(1):"—"}</b> л/м³
+                  уд: <b style={{ color:T.violet }}>{tot.bf>0?(tot.fuel/tot.bf).toFixed(2):"—"}</b> л/м³{tot.df>0&&<> · <b style={{color:T.red}}>{(tot.fuel/tot.df).toFixed(2)}</b> л/п.м.</>}
                 </div>
                 {tot.fuelKg>0 && <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>
                   ВВ: <b style={{ color:T.cyan }}>{tot.fuelKg.toLocaleString()} кг</b>
