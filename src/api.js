@@ -466,3 +466,45 @@ export async function getKtgPlans() {
   if (error) throw error;
   return data || [];
 }
+
+// ──────────────────────────────────────────────────────────────
+// USER MANAGEMENT (через Edge Function)
+// ──────────────────────────────────────────────────────────────
+
+const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users`;
+
+async function callEdge(body) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const res = await fetch(EDGE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || 'Edge function error');
+  return data;
+}
+
+export async function adminCreateUser({ login, password, name, role, ini, objectIds }) {
+  return callEdge({ action: 'create', email: login, password, userData: { name, role, ini, objectIds } });
+}
+
+export async function adminUpdatePassword(authId, password) {
+  return callEdge({ action: 'update_password', userId: authId, password });
+}
+
+export async function adminDeleteUser(authId) {
+  return callEdge({ action: 'delete', userId: authId });
+}
+
+export async function adminListUsers() {
+  const data = await callEdge({ action: 'list' });
+  return (data.users || []).map(u => ({
+    ...u,
+    oids: u.role === 'foreman' ? (u.user_objects || []).map(r => r.object_id) : 'all',
+  }));
+}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus } from "./api.js";
+import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus, adminCreateUser, adminUpdatePassword, adminDeleteUser, adminListUsers } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK = {
@@ -3998,32 +3998,53 @@ function UserModalForm({ data, setData, onSave, onClose, title, objs, toggleOid,
 }
 
 function UsersEditor({ users, setUsers, objs, T }) {
-  const [editing,   setEditing]   = useState(null);
-  const [addForm,   setAddForm]   = useState(null);
+  const [editing,    setEditing]   = useState(null);
+  const [addForm,    setAddForm]   = useState(null);
   const [deleteConf, setDeleteConf] = useState(null);
+  const [saving,     setSaving]    = useState(false);
+  const [msg,        setMsg]       = useState("");
 
   const foremen   = users.filter((u) => u.role === "foreman");
   const engineers = users.filter((u) => u.role === "engineer");
 
-  function saveUser(edited) {
-    if (edited.id) {
-      setUsers((prev) => prev.map((u) => u.id === edited.id ? edited : u));
-    } else {
-      if (!edited.login || !edited.pw) return;
-      setUsers((prev) => [...prev, {
-        ...edited,
-        id: genId(),
-        role: "foreman",
-        name: edited.name || "Нач. участка",
-        ini: edited.name ? edited.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "НУ",
-      }]);
+  async function saveUser(edited) {
+    setSaving(true); setMsg("");
+    try {
+      if (edited.auth_id) {
+        // Обновляем пароль если введён
+        if (edited.newPw) await adminUpdatePassword(edited.auth_id, edited.newPw);
+        setUsers(prev => prev.map(u => u.id === edited.id ? { ...edited } : u));
+      } else {
+        // Создаём нового пользователя
+        if (!edited.login || !edited.pw) { setMsg("Заполните логин и пароль"); setSaving(false); return; }
+        await adminCreateUser({
+          login: edited.login, password: edited.pw,
+          name: edited.name || "Нач. участка", role: "foreman",
+          ini: edited.name ? edited.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase() : "НУ",
+          objectIds: edited.oids || [],
+        });
+        // Перезагружаем список
+        const fresh = await adminListUsers();
+        setUsers(fresh);
+      }
+      setMsg("✓ Сохранено");
+    } catch(e) {
+      setMsg("⚠ Ошибка: " + e.message);
     }
-    setEditing(null);
-    setAddForm(null);
+    setSaving(false);
+    setEditing(null); setAddForm(null);
   }
 
-  function confirmDelete() {
-    setUsers((prev) => prev.filter((u) => u.id !== deleteConf.id));
+  async function confirmDelete() {
+    setSaving(true);
+    try {
+      await adminDeleteUser(deleteConf.auth_id);
+      setUsers(prev => prev.filter(u => u.id !== deleteConf.id));
+      setMsg("✓ Удалён");
+    } catch(e) {
+      setMsg("⚠ Ошибка: " + e.message);
+    }
+    setSaving(false);
     setDeleteConf(null);
   }
 
@@ -4098,6 +4119,7 @@ function UsersEditor({ users, setUsers, objs, T }) {
       {/* Foremen */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: T.txt2, textTransform: "uppercase" }}>Начальники участков ({foremen.length})</div>
+        {msg && <span style={{ fontSize:12, color: msg.startsWith("✓") ? T.green : "#f87171", fontWeight:700 }}>{msg}</span>}
         <Btn variant="secondary" onClick={() => setAddForm({ name: "", login: "", pw: "", oids: [] })} T={T} style={{ fontSize: 12, padding: "6px 14px" }}>+ Добавить</Btn>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))", gap: 10 }}>
@@ -4147,25 +4169,42 @@ function EngineerAssign({ users, setUsers, T }) {
   const activeList  = tab === "engineers" ? engineers : mechanics;
   const activeLabel = tab === "engineers" ? "Инженер" : "Механик";
 
-  function addUser(data) {
+  async function addUser(data) {
     if (!data.name || !data.login || !data.pw) return;
-    setUsers((prev) => [...prev, {
-      id: genId(), name: data.name, login: data.login, pw: data.pw,
-      role: activeRole, oids: "all",
-      ini: data.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
-    }]);
+    try {
+      await adminCreateUser({
+        login: data.login, password: data.pw,
+        name: data.name, role: activeRole, oids: "all",
+        ini: data.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),
+      });
+      const fresh = await adminListUsers();
+      setUsers(fresh);
+    } catch(e) {
+      console.warn("Create user error:", e.message);
+      setUsers(prev => [...prev, { id:genId(), name:data.name, login:data.login, pw:data.pw, role:activeRole, oids:"all", ini:data.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase() }]);
+    }
     setAddForm(null);
   }
 
-  function saveEdit(data) {
-    setUsers((prev) => prev.map((u) => u.id === data.id
-      ? { ...u, name: data.name, login: data.login, pw: data.pw, ini: data.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() }
-      : u));
+  async function saveEdit(data) {
+    try {
+      if (data.auth_id && data.pw) await adminUpdatePassword(data.auth_id, data.pw);
+      setUsers(prev => prev.map(u => u.id === data.id
+        ? { ...u, name:data.name, login:data.login, ini:data.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase() }
+        : u));
+    } catch(e) {
+      console.warn("Update user error:", e.message);
+    }
     setEditing(null);
   }
 
-  function confirmDelete() {
-    setUsers((prev) => prev.filter((u) => u.id !== deleteConf.id));
+  async function confirmDelete() {
+    try {
+      if (deleteConf.auth_id) await adminDeleteUser(deleteConf.auth_id);
+      setUsers(prev => prev.filter(u => u.id !== deleteConf.id));
+    } catch(e) {
+      console.warn("Delete user error:", e.message);
+    }
     setDeleteConf(null);
   }
 
