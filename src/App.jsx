@@ -3016,7 +3016,8 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
     const baseRigs = rigs.filter(rg=>rg.o===r.oid);
     setEditRows(baseRigs.map(rg=>{
       const f=r.rigs?.find(x=>x.id===rg.id||(x.n&&x.n.replace(/[\s\-]/g,"").toLowerCase()===rg.n.replace(/[\s\-]/g,"").toLowerCase()))||{};
-      return {id:rg.id,nm:rg.n,df:f.df??0,wh:f.wh??0,dh:f.dh??0,fuel:f.fuel??0,dt:f.dt||"",overDrill:f.overDrill??0};
+      const dtNote = f.dt || (r.downtime_events?.length===1 ? r.downtime_events[0].reason : "") || "";
+      return {id:rg.id,nm:rg.n,df:f.df??0,wh:f.wh??0,dh:f.dh??(f.downtime??0),fuel:f.fuel??0,dt:dtNote,overDrill:f.overDrill??0};
     }));
   }
   function setCell(id,key,val){
@@ -3474,7 +3475,13 @@ function EngineerInbox({ reps, objs, rigs, onApprove, onDelete=()=>{}, onUpdate=
                       {isPending&&<Btn variant="primary" onClick={()=>openReview(r)} T={T} style={{fontSize:12,padding:"7px 16px"}}>ПРОВЕРИТЬ →</Btn>}
                       <button onClick={()=>{
                         const baseRigs = rigs.filter(rg=>rg.o===r.oid);
-                        const rows = baseRigs.map(rg=>{const f=r.rigs?.find(x=>x.id===rg.id)||{};return{id:rg.id,nm:rg.n,df:f.df??0,bf:f.bf??0,wh:f.wh??0,dh:f.dh??0,fuel:f.fuel??0,dt:f.dt||"",overDrill:f.overDrill??0};});
+                        const rows = baseRigs.map(rg=>{
+                          const f=r.rigs?.find(x=>x.id===rg.id||(x.n&&x.n.replace(/[\s\-]/g,"").toLowerCase()===rg.n.replace(/[\s\-]/g,"").toLowerCase()))||{};
+                          // Берём простой из downtime_events если он один станок, иначе из поля riga
+                          const dtHours = f.downtime??0;
+                          const dtNote = f.dt || (r.downtime_events?.length===1 ? r.downtime_events[0].reason : "") || "";
+                          return{id:rg.id,nm:rg.n,df:f.df??0,bf:f.bf??0,wh:f.wh??0,dh:f.dh??dtHours,fuel:f.fuel??0,dt:dtNote,downtime:dtHours,overDrill:f.overDrill??0};
+                        });
                         setEditingRep({...r, _editRows: rows});
                       }} style={{padding:"6px 14px",borderRadius:5,border:`1.5px solid ${T.amber}`,background:`${T.amber}10`,color:T.amber,fontSize:12,fontWeight:700,cursor:"pointer"}}>
                         ✏ Редактировать
