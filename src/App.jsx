@@ -39,23 +39,23 @@ const INIT_RIGS = [
   // Борлы (o:1)
   { id:  3, n: "ROC-107",  o: 1 },
   { id:  4, n: "ROC-108",  o: 1 },
-  // Коскудук (o:2)
+  // Коскудук (o:2) — порядок как в файле: 109, 110, 111, 115, 117
+  { id:  9, n: "JK-109",   o: 2 },
   { id:  5, n: "JK-110",   o: 2 },
   { id:  6, n: "JK-111",   o: 2 },
   { id:  8, n: "JK-115",   o: 2 },
-  { id:  9, n: "JK-109",   o: 2 },
   { id: 20, n: "JK-117",   o: 2 },
-  // Бактай (o:3)
+  // Бактай (o:3) — порядок как в файле: 112, 113, 114, 115, 116, 118, 106, 122, 123
   { id: 10, n: "JK-112",   o: 3 },
   { id: 11, n: "JK-113",   o: 3 },
   { id: 12, n: "JK-114",   o: 3 },
   { id: 13, n: "JK-115",   o: 3 },
   { id: 14, n: "JK-116",   o: 3 },
-  { id: 19, n: "JK-106",   o: 3 },
   { id: 23, n: "JK-118",   o: 3 },
+  { id: 19, n: "JK-106",   o: 3 },
   { id: 24, n: "JK-122",   o: 3 },
   { id: 25, n: "JK-123",   o: 3 },
-  // Жолымбет (o:4)
+  // Жолымбет (o:4) — 119, 120, 121
   { id: 16, n: "JK-119",   o: 4 },
   { id: 17, n: "JK-120",   o: 4 },
   { id: 18, n: "JK-121",   o: 4 },
@@ -10879,7 +10879,7 @@ export default function App() {
           getKtgPlans(),
         ]);
         if (dbObjs?.length)  setObjs(dbObjs);
-        if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
+        if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const localNames = new Set(prev.map(r => r.n + "_" + r.o)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id) && !localNames.has(r.n + "_" + r.o)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
         if (dbReps?.length)  setReps(prev => { const dbIds = new Set(dbReps.map(r => r.id)); const localOnly = prev.filter(r => !dbIds.has(r.id)); return [...localOnly, ...dbReps]; });
         if (dbPlans?.length) setPlans(dbPlans);
         if (dbKtg?.length)   setKtgPlans(dbKtg);
