@@ -687,7 +687,7 @@ function calcKtgKio(repsList) {
   let calHrs = 0, techDH = 0, allDH = 0, workHrs = 0;
   repsList.forEach(rep => {
     const shiftDur = toNum(rep.shiftDurationHours || rep.shift_duration_hrs || 11);
-    calHrs += shiftDur;
+    calHrs += shiftDur * (rep.rigs?.length || 1);
     // Считаем простои из downtime_events
     const events = rep.downtime_events || rep.rigEntries?.flatMap(e => e.downtimes || []) || [];
     techDH  += techDowntimeHours(events);
@@ -1803,7 +1803,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
           // КТГ и КИО по объекту (kv — для совместимости, используем objKtg)
           const kv  = null; // заменён на objKtg ниже
           const objRepsForKtg = filteredReps.filter(r => r.oid === obj.id);
-          const objCalHrs = objRepsForKtg.reduce((s,r) => s + toNum(r.shiftDurationHours || r.shift_duration_hrs || 11), 0);
+          const objCalHrs = objRepsForKtg.reduce((s,r) => s + toNum(r.shiftDurationHours || r.shift_duration_hrs || 11) * (r.rigs?.length || 1), 0);
           const objTechDH = objRepsForKtg.reduce((s,r) => {
             const evs = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
             return s + techDowntimeHours(evs);
