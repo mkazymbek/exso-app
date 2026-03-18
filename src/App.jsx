@@ -695,7 +695,7 @@ function calcKtgKio(repsList) {
     workHrs += toNum(rep.wh);
   });
   const ktg = calHrs > 0 ? Math.round((calHrs - techDH) / calHrs * 100) : null;
-  const kio = calHrs > 0 ? Math.round(workHrs / calHrs * 100) : null;
+  const kio = calHrs > 0 ? Math.min(100, Math.round(workHrs / calHrs * 100)) : null;
   return { ktg, kio, calHrs, techDH, allDH, workHrs };
 }
 
@@ -705,7 +705,7 @@ function calcRigKtgKio(wh, techDh, allDh, shiftDur) {
   if (cal <= 0) return { ktg: null, kio: null };
   return {
     ktg: Math.round((cal - techDh) / cal * 100),
-    kio: Math.round(wh / cal * 100),
+    kio: Math.min(100, Math.round(wh / cal * 100)),
   };
 }
 
@@ -1529,7 +1529,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
 
   // КТГ и КИО по всем отчётам периода
   const totalKtg = totals.calHrs > 0 ? Math.round((totals.calHrs - totals.techDH) / totals.calHrs * 100) : null;
-  const totalKio = totals.calHrs > 0 ? Math.round(totals.wh / totals.calHrs * 100) : null;
+  const totalKio = totals.calHrs > 0 ? Math.min(100, Math.round(totals.wh / totals.calHrs * 100)) : null;
 
   const planTotals = useMemo(() => {
     let df = 0, bf = 0;
@@ -1746,7 +1746,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
           }, 0);
           const objWh = wh;
           const objKtg = objCalHrs > 0 ? Math.round((objCalHrs - objTechDH) / objCalHrs * 100) : null;
-          const objKio = objCalHrs > 0 ? Math.round(objWh / objCalHrs * 100) : null;
+          const objKio = objCalHrs > 0 ? Math.min(100, Math.round(objWh / objCalHrs * 100)) : null;
           const ac  = colors[i % colors.length];
           const pp  = getPlanForPeriod(obj.id);
           const dp  = pp.df || obj.dp, bp = pp.bf || obj.bp;
@@ -1902,7 +1902,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
     tot.techDH += techDowntimeHours(evs);
   });
   const kv    = tot.calHrs > 0 ? Math.round((tot.calHrs - tot.techDH) / tot.calHrs * 100) : ktgCalc(tot.wh, tot.dh);
-  const kvKio = tot.calHrs > 0 ? Math.round(tot.wh / tot.calHrs * 100) : null;
+  const kvKio = tot.calHrs > 0 ? Math.min(100, Math.round(tot.wh / tot.calHrs * 100)) : null;
   const fuelPerM3 = tot.bf > 0 ? (tot.fuel / tot.bf).toFixed(1) : null;
   const colors = OBJ_COLORS(T);
   const ac = colors[objs.findIndex((o) => o.id === objId) % colors.length];
@@ -2436,7 +2436,7 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
   // КТГ и КИО для текущей смены
   const calHrsShift = entries.length * shiftDur;
   const shiftKtg = calHrsShift > 0 ? Math.round((calHrsShift - totals.techDH) / calHrsShift * 100) : null;
-  const shiftKio = calHrsShift > 0 ? Math.round(totals.wh / calHrsShift * 100) : null;
+  const shiftKio = calHrsShift > 0 ? Math.min(100, Math.round(totals.wh / calHrsShift * 100)) : null;
 
   // Отправка
   function handleSubmit() {
