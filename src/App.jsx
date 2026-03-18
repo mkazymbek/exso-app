@@ -10697,7 +10697,7 @@ export default function App() {
         ]);
         if (dbObjs?.length)  setObjs(dbObjs);
         if (dbRigs?.length)  setRigs(dbRigs);
-        if (dbReps?.length)  setReps(dbReps);
+        if (dbReps?.length)  setReps(prev => { const dbIds = new Set(dbReps.map(r => r.id)); const localOnly = prev.filter(r => !dbIds.has(r.id)); return [...localOnly, ...dbReps]; });
         if (dbPlans?.length) setPlans(dbPlans);
         if (dbKtg?.length)   setKtgPlans(dbKtg);
       } catch (e) {
