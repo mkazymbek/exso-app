@@ -7917,9 +7917,9 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
 
   function getAssetToStatus(a) {
     const pp  = passports[a.id] || {};
-    const mh  = pp.total_hours || pp.moto_hours || 0;
+    const mh  = (pp.total_hours || 0) + (pp.moto_hours || 0);
     const sched = pp.toSchedule?.length > 0 ? pp.toSchedule
-      : [{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"ТО-3",interval:2000},{name:"Капремонт",interval:5000}];
+      : [{name:"ТО-250",interval:250,duration_hrs:2}];
     const recs = (maintRecords?.[a.id] || []).sort((x,y)=>y.hours-x.hours);
     const statuses = sched.map(item => {
       const done  = recs.filter(r=>r.type===item.name);
@@ -8021,7 +8021,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
     const pp  = passports[a.id] || {};
     const cat = cats.find(c => c.key === (pp.assetClass || a.category)) || {icon:"📦",color:T.txt2,label:"—"};
     const obj = objs.find(o => o.id === Number(a.assigned_object_id));
-    const mh  = pp.total_hours || pp.moto_hours || 0;
+    const mh  = (pp.total_hours || 0) + (pp.moto_hours || 0);
     const yr  = pp.year ? new Date().getFullYear() - parseInt(pp.year) : null;
     const log = pp.moto_hours_log || [];
     const { statuses, nearest, hasOverdue } = getAssetToStatus(a);
@@ -8539,14 +8539,18 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
   function getRigDayKtg(rigName, date) {
     const dayReps=monthReps.filter(r=>r.date===date);
     if(!dayReps.length)return null;
-    let wh=0,dh=0,found=false;
+    let wh=0,calHrs=0,found=false;
     dayReps.forEach(rep=>{
       const e=(rep.rigs||[]).find(r=>r.n===rigName);
-      if(e){wh+=parseFloat(e.wh)||0;dh+=parseFloat(e.dh)||0;found=true;}
+      if(e){
+        const shiftDur=toNum(rep.shiftDurationHours||rep.shift_duration_hrs||11);
+        wh+=parseFloat(e.wh)||0;
+        calHrs+=shiftDur;
+        found=true;
+      }
     });
     if(!found)return null;
-    const total=wh+dh;
-    return total>0?Math.min(100,Math.round(wh/total*100)):null;
+    return calHrs>0?Math.min(100,Math.round(wh/calHrs*100)):null;
   }
   function getObjDayKtg(date) {
     const vals=objRigs.map(r=>getRigDayKtg(r.n,date)).filter(v=>v!==null);
@@ -8934,6 +8938,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
       {tab==="fact" && <>
         {FactStrip}
         {FactLegend}
+        <div style={{fontSize:11,color:T.txt2,marginBottom:8}}>Тепловая карта — только буровые станки (из Dashboard). Компрессоры и прочая техника в факт не включаются.</div>
         <FactHeatmap/>
       </>}
     </div>
@@ -10733,7 +10738,7 @@ function ExplosiveTxnModal({ objs, defaultOid, onSave, onClose, T }) {
 
 // ─── FOREMAN MAINTENANCE PAGE ─────────────────────────────────────────────────
 // Начальник вахты видит технику своего объекта и может записывать ТО
-function ForemanMaintenancePage({ user, objs, rigs, maintRecords, setMaintRecords, passports, setPassports, meters, T }) {
+function ForemanMaintenancePage({ user, objs, rigs, nodes=[], maintRecords, setMaintRecords, passports, setPassports, meters, T }) {
   // Объекты форманa
   const myObjs = user.oids === "all" ? objs : objs.filter(o => user.oids.includes(o.id));
   const [selObjId, setSelObjId] = useState(myObjs[0]?.id || null);
@@ -10747,14 +10752,16 @@ function ForemanMaintenancePage({ user, objs, rigs, maintRecords, setMaintRecord
 
   const selRig = objRigs.find(r => r.id === selRigId);
 
-  // Найти nodeId по имени станка (для maintRecords)
-  // maintRecords ключ = nodeId (EAM), но у форманов нет nodes.
-  // Используем строку "rig_<id>" как ключ — изолировано от EAM, но едино внутри системы
-  const rigKey = selRig ? `rig_${selRig.id}` : null;
+  // Найти nodeId по имени станка — единый ключ с механиком
+  // nodes передаётся через props, ищем ASSET с именем = rig.n
+  const rigNode = selRig ? (nodes || []).find(n => n.type === "ASSET" && n.name === selRig.n) : null;
+  const rigKey  = rigNode ? rigNode.id : (selRig ? `rig_${selRig.id}` : null);
 
-  // Для паспортных данных ищем по совпадению имени в passports
-  const rigPassport = selRig ? Object.values(passports).find(p => p?.model === selRig.n || p?.name === selRig.n) || {} : {};
-  const rigHours = rigPassport.total_hours || 0;
+  // Паспорт ищем по nodeId (если нашли) или по имени
+  const rigPassport = rigNode
+    ? (passports[rigNode.id] || {})
+    : (selRig ? Object.values(passports).find(p => p?.model === selRig.n || p?.name === selRig.n) || {} : {});
+  const rigHours = (rigPassport.total_hours || 0) + (rigPassport.moto_hours || 0);
 
   return (
     <div>
@@ -11101,7 +11108,7 @@ export default function App() {
   } else if (subPage === "inventory") {
     content = <InventoryPage storageUnits={storageUnits} setStorageUnits={setStorageUnits} invTxns={invTxns} setInvTxns={setInvTxns} objs={user.role==="foreman"?vObjs:objs} nodes={nodes} user={user} T={T} />;
   } else if (subPage === "maint" && user.role === "foreman") {
-    content = <ForemanMaintenancePage user={user} objs={vObjs} rigs={rigs} maintRecords={maintRecords} setMaintRecords={setMaintRecords} passports={passports} setPassports={setPassports} meters={meters} T={T} />;
+    content = <ForemanMaintenancePage user={user} objs={vObjs} rigs={rigs} nodes={nodes} maintRecords={maintRecords} setMaintRecords={setMaintRecords} passports={passports} setPassports={setPassports} meters={meters} T={T} />;
   
   } else if (subPage === "finance") {
     content = <FinancePage T={T} />;
