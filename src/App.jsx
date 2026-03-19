@@ -275,13 +275,13 @@ const now = new Date().toISOString().slice(0,10);
 const INIT_NODES = [
   { id:"root", parentId:null,   name:"ExSo",                          type:"COMPANY",  catType:null,        desc:"Головная компания",        createdBy:"system", createdAt:now },
   { id:"c1",   parentId:"root", name:"Буровые станки",                type:"CATEGORY", catType:"DRILL_RIG", desc:"Буровое оборудование",     createdBy:"system", createdAt:now },
-  { id:"c2",   parentId:"root", name:"Смесительно-зарядные машины",   type:"CATEGORY", catType:"MIXER",     desc:"СЗМ",                      createdBy:"system", createdAt:now },
+  { id:"c2",   parentId:"root", name:"Смесительно-зарядные машины",   type:"CATEGORY", catType:"SZM",     desc:"СЗМ",                      createdBy:"system", createdAt:now },
   { id:"c3",   parentId:"root", name:"Гидромолоты",                   type:"CATEGORY", catType:"HYDRO",     desc:"Гидравлическое оборудование", createdBy:"system", createdAt:now },
   { id:"c6",   parentId:"root", name:"Экскаваторы",                   type:"CATEGORY", catType:"EXCAVATOR", desc:"Экскаваторная техника",    createdBy:"system", createdAt:now },
-  { id:"c4",   parentId:"root", name:"Лёгкие автомобили",             type:"CATEGORY", catType:"HILUX",     desc:"Лёгкий автотранспорт",     createdBy:"system", createdAt:now },
+  { id:"c4",   parentId:"root", name:"Лёгкие автомобили",             type:"CATEGORY", catType:"CAR",     desc:"Лёгкий автотранспорт",     createdBy:"system", createdAt:now },
   { id:"c5",   parentId:"root", name:"Грузовые / прицепы",            type:"CATEGORY", catType:"TRUCK",     desc:"Грузовой автотранспорт",   createdBy:"system", createdAt:now },
-  { id:"c7",   parentId:"root", name:"Компрессоры",                   type:"CATEGORY", catType:null,        desc:"Воздушные компрессоры",    createdBy:"system", createdAt:now },
-  { id:"c8",   parentId:"root", name:"Погрузчики",                    type:"CATEGORY", catType:null,        desc:"Погрузочная техника",      createdBy:"system", createdAt:now },
+  { id:"c7",   parentId:"root", name:"Компрессоры",                   type:"CATEGORY", catType:"COMPRESSOR",        desc:"Воздушные компрессоры",    createdBy:"system", createdAt:now },
+  { id:"c8",   parentId:"root", name:"Погрузчики",                    type:"CATEGORY", catType:"SPECIAL",        desc:"Погрузочная техника",      createdBy:"system", createdAt:now },
 
 
   // ── Буровые станки ──
@@ -432,9 +432,9 @@ const INIT_PASSPORTS = {
   ax406: { assetClass:"TRUCK", manufacturer:null, model:null, serial:"MI99882193", year:"1992", inventory:"№406", reg_plate:"068 BI 09", engine_vol:10850, commissioned:"2025-06-29", total_hours:null, fuel_rate:33.0, toSchedule:[{name:"ТО-10000км",interval:10000,duration_hrs:4},{name:"ТО-50000км",interval:50000,duration_hrs:16}] },
   ax407: { assetClass:"TRUCK", manufacturer:null, model:null, serial:"MI99879963", year:"2000", inventory:"№407", reg_plate:"721 BQ 09", engine_vol:11946, commissioned:"2025-12-23", total_hours:null, fuel_rate:30.0, toSchedule:[{name:"ТО-10000км",interval:10000,duration_hrs:4},{name:"ТО-50000км",interval:50000,duration_hrs:16}] },
   // ── Прицепы ──
-  ax601: { assetClass:"TRAILER", manufacturer:null, model:null, serial:"MJ99979419", year:"2005", inventory:"№601", reg_plate:"50 ADQ 09", engine_vol:null, commissioned:"2023-09-11", total_hours:null, fuel_rate:null, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2},{name:"ТО-500",interval:500,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:8},{name:"Капремонт",interval:5000,duration_hrs:72}] },
-  ax602: { assetClass:"TRAILER", manufacturer:null, model:null, serial:"AP99876715", year:"2024", inventory:"№602", reg_plate:"Н35202", engine_vol:null, commissioned:"2024-12-03", total_hours:null, fuel_rate:null, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2},{name:"ТО-500",interval:500,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:8},{name:"Капремонт",interval:5000,duration_hrs:72}] },
-  ax603: { assetClass:"TRAILER", manufacturer:null, model:null, serial:"MI99882859", year:"2007", inventory:"№603", reg_plate:"82 AFD 09", engine_vol:null, commissioned:"2025-04-30", total_hours:null, fuel_rate:null, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2},{name:"ТО-500",interval:500,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:8},{name:"Капремонт",interval:5000,duration_hrs:72}] },
+  ax601: { assetClass:"TRUCK", manufacturer:null, model:null, serial:"MJ99979419", year:"2005", inventory:"№601", reg_plate:"50 ADQ 09", engine_vol:null, commissioned:"2023-09-11", total_hours:null, fuel_rate:null, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2},{name:"ТО-500",interval:500,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:8},{name:"Капремонт",interval:5000,duration_hrs:72}] },
+  ax602: { assetClass:"TRUCK", manufacturer:null, model:null, serial:"AP99876715", year:"2024", inventory:"№602", reg_plate:"Н35202", engine_vol:null, commissioned:"2024-12-03", total_hours:null, fuel_rate:null, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2},{name:"ТО-500",interval:500,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:8},{name:"Капремонт",interval:5000,duration_hrs:72}] },
+  ax603: { assetClass:"TRUCK", manufacturer:null, model:null, serial:"MI99882859", year:"2007", inventory:"№603", reg_plate:"82 AFD 09", engine_vol:null, commissioned:"2025-04-30", total_hours:null, fuel_rate:null, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2},{name:"ТО-500",interval:500,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:8},{name:"Капремонт",interval:5000,duration_hrs:72}] },
   // ── Спецтехника ──
   ax701: { assetClass:"SPECIAL", manufacturer:null, model:null, serial:"", year:"2021", inventory:"№701", reg_plate:"AUD 482 M", engine_vol:null, commissioned:null, total_hours:null, fuel_rate:null, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:16}] },
   ax702: { assetClass:"SPECIAL", manufacturer:"Lonking", model:"CDM6336", serial:"ASAY2404008", year:"2024", inventory:"№702", reg_plate:"", engine_vol:null, commissioned:"2025-03-01", total_hours:null, fuel_rate:120.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:4},{name:"ТО-1000",interval:1000,duration_hrs:16}] },
@@ -799,12 +799,12 @@ const KTG_DAY_STATUS = {
 };
 
 const DEFAULT_MECH_CATS = [
-  { key:"DRILL_RIG",   label:"Буровые станки",              icon:"⛏",  color:"#f43f5e" },
-  { key:"COMPRESSOR",  label:"Компрессоры",                 icon:"💨", color:"#06b6d4" },
-  { key:"MIXER",       label:"Смесительно-зарядные машины", icon:"🧪", color:"#8b5cf6" },
-  { key:"HYDRO",       label:"Гидромолоты / Экскаваторы",  icon:"💧", color:"#3b82f6" },
-  { key:"HILUX",       label:"Лёгкие авто (Hilux)",         icon:"🚙", color:"#10b981" },
-  { key:"TRUCK",       label:"Грузовые машины",             icon:"🚛", color:"#f59e0b" },
+  { key:"DRILL_RIG",   label:"Буровые станки",            icon:"⛏",  color:"#D85A30" },
+  { key:"COMPRESSOR",  label:"Компрессоры",                icon:"💨",  color:"#185FA5" },
+  { key:"SZM",         label:"СЗМ (смесительно-зарядные)", icon:"🚛",  color:"#854F0B" },
+  { key:"CAR",         label:"Лёгкие автомобили",          icon:"🚗",  color:"#3B6D11" },
+  { key:"TRUCK",       label:"Грузовые / прицепы",         icon:"🚚",  color:"#534AB7" },
+  { key:"SPECIAL",     label:"Спецтехника",                icon:"🏗",  color:"#888780" },
 ];
 
 const CAT_ICON_OPTIONS = ["⛏","🧪","💧","🚙","🚛","🏗","⚙","🔧","🛠","🔩","🚜","🏎","🚁","⚡","🔋"];
