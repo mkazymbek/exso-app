@@ -8403,797 +8403,500 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
 // Default categories (editable at runtime via assetCategories state in App)
 
 
-// ─── MECHANIC KTG CALENDAR PAGE ───────────────────────────────────────────────
-function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, setKtgPlans, user, T }) {
-  const cats  = mechCats || DEFAULT_MECH_CATS;
-  const today = new Date().toISOString().slice(0,10);
-  const [selObjId,  setSelObjId]  = useState(objs[0]?.id || null);
-  const [yearMonth, setYearMonth] = useState(today.slice(0,7));
-  const [toast,     setToast]     = useState(null);
+// ─── MECHANIC KTG PAGES (PLAN + FACT) ────────────────────────────────────────
+function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, setKtgPlans, user, reps, rigs, T }) {
+  const cats    = mechCats || DEFAULT_MECH_CATS;
+  const today   = new Date().toISOString().slice(0,10);
+  const [tab,        setTab]        = useState("plan"); // "plan" | "fact"
+  const [selObjId,   setSelObjId]   = useState(objs[0]?.id || null);
+  const [yearMonth,  setYearMonth]  = useState(today.slice(0,7));
+  const [toast,      setToast]      = useState(null);
   const [paintHours, setPaintHours] = useState(22);
+  const [showBrushEdit, setShowBrushEdit] = useState(false);
+  const [brushPresets,  setBrushPresets]  = useState([
+    {id:"p1", label:"22ч", hours:22, color:T.green,  icon:"✓", locked:true},
+    {id:"p2", label:"ТО",  hours:20, color:T.blue,   icon:"🔧",locked:true},
+    {id:"p3", label:"0ч",  hours:0,  color:"#ef4444", icon:"✗", locked:true},
+  ]);
+  const [editPresets,   setEditPresets]   = useState([]);
+  const [activeBrush,   setActiveBrush]   = useState(null);
+  const [confirmModal,  setConfirmModal]  = useState(false);
   const DAY_CAPACITY = 22;
 
-  function showToast(msg, type="ok") {
-    setToast({msg,type}); setTimeout(()=>setToast(null),3000);
-  }
+  const [yr, mo]    = yearMonth.split("-").map(Number);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const days        = Array.from({length:daysInMonth},(_,i)=>`${yearMonth}-${String(i+1).padStart(2,"0")}`);
+  const MON_RU      = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
+  const monthLabel  = `${MON_RU[mo-1]} ${yr}`;
 
-  const objAssets = nodes.filter(n =>
-    n.type==="ASSET" && Number(n.assigned_object_id)===Number(selObjId)
-  );
+  const objAssets  = nodes.filter(n => n.type==="ASSET" && Number(n.assigned_object_id)===Number(selObjId));
   const plan       = ktgPlans.find(p => p.object_id===selObjId && p.year_month===yearMonth);
   const planStatus = plan?.status || "DRAFT";
   const isLocked   = planStatus==="SUBMITTED" || planStatus==="ACCEPTED";
 
-  const [yr, mo] = yearMonth.split("-").map(Number);
-  const daysInMonth = new Date(yr, mo, 0).getDate();
-  const days = Array.from({length:daysInMonth},(_,i)=>`${yearMonth}-${String(i+1).padStart(2,"0")}`);
+  function showToast(msg, type="ok") { setToast({msg,type}); setTimeout(()=>setToast(null),3000); }
 
   function getHours(assetId, date) {
     const v = plan?.items?.[assetId]?.[date];
     return (v === undefined || v === null) ? null : Number(v);
   }
 
-  // ── Пересчёт ТО для одного актива поверх текущих items ───────────────────
   function recalcTO(assetId, items, toInfo, colorInfo, pinnedDays) {
     const pinned = pinnedDays || new Set();
-    const pp    = passports?.[assetId] || {};
-    const sched = (pp.toSchedule && pp.toSchedule.length > 0)
-      ? pp.toSchedule
-      : [{name:"ТО-250", interval:250, duration_hrs:2, color:"#f59e0b"}];
-
-    if (!items[assetId]) {
-      items[assetId] = {};
-      days.forEach(d => { items[assetId][d] = DAY_CAPACITY; });
-    }
-
-    // Сбрасываем старые ТО-ячейки обратно в 22 (кроме pinnedDays)
+    const pp     = passports?.[assetId] || {};
+    const sched  = (pp.toSchedule?.length > 0) ? pp.toSchedule : [{name:"ТО-250",interval:250,duration_hrs:2}];
+    if (!items[assetId]) { items[assetId] = {}; days.forEach(d=>{ items[assetId][d]=DAY_CAPACITY; }); }
     const oldTo = toInfo[assetId] || {};
-    Object.keys(oldTo).forEach(d => {
-      if (!pinned.has(d)) {
-        items[assetId][d] = DAY_CAPACITY;
-      }
-    });
-
-    const newTo  = {};
-    const newClr = {};
-
-    sched.forEach(item => {
-      const dur       = item.duration_hrs || 2;
-      const workHrsTO = Math.max(0, DAY_CAPACITY - dur);
-
-      let hoursToNext = item.interval - ((parseFloat(meters?.[assetId]?.current ?? pp.total_hours) || 0) % item.interval);
-      if (hoursToNext === 0) hoursToNext = item.interval;
-
-      for (let i = 0; i < daysInMonth; i++) {
-        const ds = days[i];
-
-        // Уже помечен ТО в этом проходе — пропускаем
-        if (newTo[ds]) continue;
-
-        // Зафиксированный пользователем день — накапливаем часы, не трогаем ТО
-        if (pinned.has(ds)) {
-          hoursToNext -= Number(items[assetId][ds] ?? DAY_CAPACITY);
-          continue;
-        }
-
-        const h = Number(items[assetId][ds] ?? DAY_CAPACITY);
-
-        if (hoursToNext <= h) {
-          // ТО наступает в этот день
-          items[assetId][ds] = workHrsTO;
-          newTo[ds]  = item.name;
-          newClr[ds] = item.color || "#f59e0b";
-          hoursToNext = item.interval; // сброс до следующего ТО
-        } else {
-          hoursToNext -= h;
+    Object.keys(oldTo).forEach(d=>{ if(!pinned.has(d)) items[assetId][d]=DAY_CAPACITY; });
+    const newTo={}, newClr={};
+    sched.forEach(item=>{
+      const dur=item.duration_hrs||2, workHrsTO=Math.max(0,DAY_CAPACITY-dur);
+      let hoursToNext=item.interval-((parseFloat(meters?.[assetId]?.current??pp.total_hours)||0)%item.interval);
+      if(hoursToNext===0) hoursToNext=item.interval;
+      for(let i=0;i<daysInMonth;i++){
+        const ds=days[i];
+        if(newTo[ds]) continue;
+        if(pinned.has(ds)){ hoursToNext-=Number(items[assetId][ds]??DAY_CAPACITY); continue; }
+        const h=Number(items[assetId][ds]??DAY_CAPACITY);
+        hoursToNext-=h;
+        if(hoursToNext<=0){
+          newTo[ds]=item.name; newClr[ds]=item.color||T.blue;
+          items[assetId][ds]=workHrsTO;
+          hoursToNext+=item.interval;
         }
       }
     });
-
-    toInfo[assetId]    = newTo;
-    // Полностью пересоздаём colorInfo для этого актива
-    colorInfo[assetId] = newClr;
+    toInfo[assetId]=newTo;
+    if(!colorInfo[assetId]) colorInfo[assetId]={};
+    Object.assign(colorInfo[assetId],newClr);
   }
 
-  // ── Инициализировать план с 22ч + авто-ТО ────────────────────────────────
-  function initPlan() {
-    if (isLocked || objAssets.length === 0) return;
-    const newItems     = {};
-    const newToInfo    = {};
-    const newColorInfo = {};
-    // 1. Все ячейки = 22
-    objAssets.forEach(a => {
-      newItems[a.id] = {};
-      days.forEach(d => { newItems[a.id][d] = DAY_CAPACITY; });
-    });
-    // 2. Расставить ТО
-    objAssets.forEach(a => recalcTO(a.id, newItems, newToInfo, newColorInfo));
-
-    setKtgPlans(prev => {
-      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
-        status:"DRAFT", created_by:user.name, engineer_comment:"",
-        submitted_at:null, decided_at:null };
-      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
-        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
-      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
-    });
-    showToast("План инициализирован: 22ч/день + авто-ТО");
-  }
-
-  // ── Применить кисть к ячейке + пересчитать ТО для этого актива ───────────
-  function setHours(assetId, date, h) {
-    if (isLocked) return;
-    const val = Math.max(0, Math.min(DAY_CAPACITY, Math.round(Number(h))));
-    setKtgPlans(prev => {
-      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
-      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
-      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
-
-      if (!newItems[assetId]) {
-        newItems[assetId] = {};
-        days.forEach(d => { newItems[assetId][d] = DAY_CAPACITY; });
-      }
-      // Ставим значение кисти
-      newItems[assetId][date] = val;
-      // Пересчитываем ТО; этот день зафиксирован — ТО его не перезапишет
-      recalcTO(assetId, newItems, newToInfo, newColorInfo, new Set([date]));
-
-      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
-        status:"DRAFT", created_by:user.name, engineer_comment:"",
-        submitted_at:null, decided_at:null };
-      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
-        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
-      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
+  function updatePlan(updater) {
+    if(isLocked) return;
+    setKtgPlans(prev=>{
+      const existing=prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
+      const base={id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:{},to_info:{},color_info:{}};
+      const cur=existing?{...existing,items:JSON.parse(JSON.stringify(existing.items||{})),to_info:JSON.parse(JSON.stringify(existing.to_info||{})),color_info:JSON.parse(JSON.stringify(existing.color_info||{}))}:base;
+      updater(cur);
+      if(existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?cur:p);
+      return [...prev,cur];
     });
   }
 
-  function fillRow(assetId) {
-    if (isLocked) return;
-    setKtgPlans(prev => {
-      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
-      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
-      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
-      if (!newItems[assetId]) newItems[assetId] = {};
-      days.forEach(d => { newItems[assetId][d] = paintHours; });
-      // Сброс ТО-меток строки
-      newToInfo[assetId]    = {};
-      if (newColorInfo[assetId]) {
-        days.forEach(d => delete newColorInfo[assetId][d]);
-      }
-      // Пересчёт ТО
-      recalcTO(assetId, newItems, newToInfo, newColorInfo);
-      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
-        status:"DRAFT", created_by:user.name, engineer_comment:"",
-        submitted_at:null, decided_at:null };
-      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
-        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
-      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
-    });
-  }
-
-  function fillCol(date) {
-    if (isLocked) return;
-    setKtgPlans(prev => {
-      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
-      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
-      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
-      objAssets.forEach(a => {
-        if (!newItems[a.id]) {
-          newItems[a.id] = {};
-          days.forEach(d => { newItems[a.id][d] = DAY_CAPACITY; });
-        }
-        newItems[a.id][date] = paintHours;
-        if (newToInfo[a.id])    delete newToInfo[a.id][date];
-        if (newColorInfo[a.id]) delete newColorInfo[a.id][date];
-        recalcTO(a.id, newItems, newToInfo, newColorInfo);
-      });
-      const base = { id:"kp"+genId(), object_id:selObjId, year_month:yearMonth,
-        status:"DRAFT", created_by:user.name, engineer_comment:"",
-        submitted_at:null, decided_at:null };
-      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth
-        ? {...p, items:newItems, to_info:newToInfo, color_info:newColorInfo} : p);
-      return [...prev, {...base, items:newItems, to_info:newToInfo, color_info:newColorInfo}];
-    });
-  }
-
-  function cellCfg(h, toName) {
-    if (h === null)         return { bg:"transparent",            color:"#5a7499", label:"Не задан",       icon:null,  textColor:"#5a7499" };
-    if (h === 0 && toName)  return { bg:"rgba(245,158,11,0.18)",  color:"#f59e0b", label:`${toName}`,       icon:"🔧",  textColor:"#fbbf24" };
-    if (h === 0)            return { bg:"rgba(239,68,68,0.18)",   color:"#ef4444", label:"Простой 0ч",     icon:"🛠",  textColor:"#f87171" };
-    if (toName)             return { bg:"rgba(245,158,11,0.15)",  color:"#f59e0b", label:`${toName}: ${h}ч`,icon:"🔧", textColor:"#fbbf24" };
-    if (h === DAY_CAPACITY) return { bg:"rgba(99,120,160,0.12)",  color:"#6378a0", label:`${h}ч`,          icon:null,  textColor:"#8899bb" };
-    const pct = h / DAY_CAPACITY;
-    if (pct >= 0.8) return { bg:"rgba(99,120,160,0.10)",  color:"#6378a0", label:`${h}ч`, icon:null, textColor:"#8899bb" };
-    if (pct >= 0.5) return { bg:"rgba(245,158,11,0.15)",  color:"#f59e0b", label:`${h}ч`, icon:"🔧", textColor:"#fbbf24" };
-    return               { bg:"rgba(239,68,68,0.12)",    color:"#f97316", label:`${h}ч`, icon:"🔧", textColor:"#fb923c" };
-  }
-
-  function ktgForDay(date) {
-    if (!plan || objAssets.length===0) return null;
-    const setA = objAssets.filter(a=>getHours(a.id,date)!==null);
-    if (!setA.length) return null;
-    const total = setA.reduce((s,a)=>s+getHours(a.id,date),0);
-    return Math.round(total / (setA.length * DAY_CAPACITY) * 100);
-  }
-  function ktgForAsset(assetId) {
-    const setD = days.filter(d=>getHours(assetId,d)!==null);
-    if (!setD.length) return null;
-    const total = setD.reduce((s,d)=>s+getHours(assetId,d),0);
-    return Math.round(total / (setD.length * DAY_CAPACITY) * 100);
-  }
-  const avgKtg = (() => {
-    const vals = days.map(d=>ktgForDay(d)).filter(v=>v!==null);
-    return vals.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : null;
-  })();
-
-  // ── Кисть: настраиваемые пресеты ─────────────────────────────────────────
-  const toTypes = [...new Map(
-    objAssets.flatMap(a=>(passports?.[a.id]?.toSchedule||[]).map(s=>[s.name,s]))
-  ).values()];
-  const defaultPresets = useMemo(()=>[
-    { id:"p_full", label:"Полный день", hours:22, color:"#6378a0", icon:"🔵", locked:true  },
-    ...toTypes.map((s,i)=>{
-      const dur=s.duration_hrs||2;
-      const work=Math.max(0, DAY_CAPACITY-dur);
-      return { id:`p_to_${i}`, label:s.name, hours:work, color:"#f59e0b", icon:"🔧", locked:false };
-    }),
-    { id:"p_stop", label:"Простой",    hours:0,  color:"#ef4444", icon:"🛠", locked:true  },
-  ], [selObjId]);
-  const [brushPresets,   setBrushPresets]   = useState(defaultPresets);
-  const [showBrushEdit,  setShowBrushEdit]  = useState(false);
-  const [editPresets,    setEditPresets]    = useState(defaultPresets);
-  function openBrushEdit()  { setEditPresets(brushPresets.map(p=>({...p}))); setShowBrushEdit(true); }
-  function saveBrushEdit()  { setBrushPresets(editPresets.filter(p=>p.label.trim()&&p.hours>=0&&p.hours<=22)); setShowBrushEdit(false); }
-  function updateEP(id,k,v) { setEditPresets(prev=>prev.map(p=>p.id===id?{...p,[k]:v}:p)); }
-  function removeEP(id)     { setEditPresets(prev=>prev.filter(p=>p.id!==id||p.locked)); }
-  function addEP()          { setEditPresets(prev=>[...prev,{id:"p_"+genId(),label:"",hours:22,color:"#10b981",icon:"🔧",locked:false}]); }
-
-  // Заполнить всё выбранным значением + пересчёт ТО
   function fillAll() {
-    if (isLocked) return;
-    setKtgPlans(prev => {
-      const existing = prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-      const newItems     = existing ? JSON.parse(JSON.stringify(existing.items||{}))      : {};
-      const newToInfo    = existing ? JSON.parse(JSON.stringify(existing.to_info||{}))    : {};
-      const newColorInfo = existing ? JSON.parse(JSON.stringify(existing.color_info||{})) : {};
-      objAssets.forEach(a => {
-        newItems[a.id]  = {};
-        newToInfo[a.id] = {};
-        if (newColorInfo[a.id]) days.forEach(d=>delete newColorInfo[a.id][d]);
-        days.forEach(d => { newItems[a.id][d] = paintHours; });
-        recalcTO(a.id, newItems, newToInfo, newColorInfo);
+    if(isLocked) return;
+    updatePlan(cur=>{
+      objAssets.forEach(a=>{
+        cur.items[a.id]={}; cur.to_info[a.id]={};
+        if(cur.color_info[a.id]) days.forEach(d=>delete cur.color_info[a.id][d]);
+        days.forEach(d=>{ cur.items[a.id][d]=paintHours; });
+        recalcTO(a.id,cur.items,cur.to_info,cur.color_info);
       });
-      const base = {id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null};
-      if (existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?{...p,items:newItems,to_info:newToInfo,color_info:newColorInfo}:p);
-      return [...prev,{...base,items:newItems,to_info:newToInfo,color_info:newColorInfo}];
     });
     showToast(`Заполнено ${paintHours}ч + ТО пересчитано`);
   }
 
-  const [confirmModal, setConfirmModal] = useState(false);
+  function paintCell(assetId, date) {
+    if(isLocked||activeBrush===null) return;
+    const preset=brushPresets.find(p=>p.id===activeBrush);
+    if(!preset) return;
+    updatePlan(cur=>{
+      if(!cur.items[assetId]) { cur.items[assetId]={}; days.forEach(d=>{ cur.items[assetId][d]=DAY_CAPACITY; }); }
+      cur.items[assetId][date]=preset.hours;
+      recalcTO(assetId,cur.items,cur.to_info,cur.color_info,new Set([date]));
+    });
+  }
 
   function saveDraft() {
-    const base = {id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:{},to_info:{}};
-    if (!plan) setKtgPlans(prev=>[...prev, base]);
-    const savePlan = plan || base;
-    saveKtgPlanToDB(savePlan).catch(e=>console.warn("KTG draft save error:", e.message));
+    const base={id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:{},to_info:{}};
+    if(!plan) setKtgPlans(prev=>[...prev,base]);
+    saveKtgPlanToDB(plan||base).catch(e=>console.warn("KTG draft save error:",e.message));
     showToast("Черновик сохранён");
   }
-  function openSubmitConfirm() {
-    if (!objAssets.length){showToast("Нет техники","err");return;}
-    if (!plan){showToast("Сначала заполните план","err");return;}
-    setConfirmModal(true);
-  }
+
   function confirmSubmit() {
     setKtgPlans(prev=>prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?{...p,status:"SUBMITTED",submitted_at:new Date().toISOString()}:p));
-    // Сохраняем в БД
-    const curPlan = (window.__ktgPlansRef||[]).find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
-    if (curPlan) {
-      saveKtgPlanToDB({...curPlan, status:"SUBMITTED"})
-        .catch(e=>console.warn("KTG save error:", e.message));
-    }
     setConfirmModal(false);
     showToast("КТГ-план отправлен инженеру!");
   }
 
-  const MON_RU=["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
-  const monthLabel=`${MON_RU[mo-1]} ${yr}`;
-  const stepLabels={DRAFT:"Черновик",SUBMITTED:"На проверке",ACCEPTED:"Принят",RETURNED:"Возвращён"};
+  // ── FACT KTG helpers ────────────────────────────────────────────────────────
+  const objRigs   = rigs ? rigs.filter(r=>Number(r.o)===Number(selObjId)) : [];
+  const monthReps = reps ? reps.filter(r=>r.status==="approved"&&Number(r.oid)===Number(selObjId)&&r.date?.startsWith(yearMonth)) : [];
 
-  return (
-    <div>
-      {confirmModal&&(()=>{
-        const totalWH = objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0);
-        const maxWH   = objAssets.length*daysInMonth*DAY_CAPACITY;
-        const planKtg = maxWH>0?Math.round(totalWH/maxWH*100):0;
-        const toCount = Object.values(plan?.to_info||{}).reduce((s,v)=>s+Object.keys(v).length,0);
-        const setDays = [...new Set(days.filter(d=>objAssets.some(a=>getHours(a.id,d)!==null)))].length;
-        return(
-          <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-            <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.green}`,borderRadius:8,width:"100%",maxWidth:420,padding:28}}>
-              <div style={{fontSize:15,fontWeight:700,color:T.txt0,marginBottom:4}}>📤 Отправить КТГ-план?</div>
-              <div style={{fontSize:12,color:T.txt2,marginBottom:20}}>После отправки план нельзя редактировать до возврата инженером.</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-                {[["Объект",objs.find(o=>o.id===selObjId)?.name||"—"],["Период",monthLabel],["Техника",`${objAssets.length} ед.`],["Ср. КТГ план",`${planKtg}%`],["Заполнено дней",`${setDays} / ${daysInMonth}`],["ТО по расписанию",toCount?`${toCount} ячеек`:"—"]].map(([l,v])=>(
-                  <div key={l} style={{padding:"8px 12px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-                    <div style={{fontSize:12,color:T.txt2,marginBottom:2}}>{l}</div>
-                    <div style={{fontSize:13,fontWeight:700,color:T.txt0}}>{v}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:10}}>
-                <Btn variant="success" style={{flex:1,padding:"11px"}} onClick={confirmSubmit} T={T}>✓ Подтвердить</Btn>
-                <Btn variant="ghost" style={{padding:"11px 16px"}} onClick={()=>setConfirmModal(false)} T={T}>Отмена</Btn>
-              </div>
-            </div>
+  function getRigDayKtg(rigName, date) {
+    const dayReps=monthReps.filter(r=>r.date===date);
+    if(!dayReps.length) return null;
+    let wh=0,dh=0,found=false;
+    dayReps.forEach(rep=>{
+      const e=(rep.rigs||[]).find(r=>r.n===rigName);
+      if(e){ wh+=parseFloat(e.wh)||0; dh+=parseFloat(e.dh)||0; found=true; }
+    });
+    if(!found) return null;
+    const shiftDur=toNum(dayReps[0]?.shiftDurationHours||11);
+    return shiftDur>0 ? Math.min(100,Math.round((shiftDur-0)/shiftDur*100)) : null;
+  }
+
+  function getObjDayKtg(date) {
+    const vals=objRigs.map(r=>getRigDayKtg(r.n,date)).filter(v=>v!==null);
+    return vals.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : null;
+  }
+
+  const factVals   = days.map(d=>getObjDayKtg(d)).filter(v=>v!==null);
+  const factAvg    = factVals.length ? Math.round(factVals.reduce((s,v)=>s+v,0)/factVals.length) : null;
+
+  // Plan KTG for comparison
+  const planKtgVal = (() => {
+    if(!plan||!objAssets.length) return null;
+    const totalWH=objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0);
+    const maxWH=objAssets.length*daysInMonth*DAY_CAPACITY;
+    return maxWH>0?Math.round(totalWH/maxWH*100):null;
+  })();
+
+  // Colors
+  const KC = (v) => v===null?T.txt2:v>=85?T.green:v>=70?T.amber:"#ef4444";
+  const KB = (v) => v===null?"transparent":v>=85?`${T.green}18`:v>=70?`${T.amber}18`:"rgba(239,68,68,0.12)";
+
+  // Cell style for plan
+  function planCellStyle(assetId, date) {
+    const h=getHours(assetId,date);
+    const isTO=plan?.to_info?.[assetId]?.[date];
+    if(isTO) return {bg:`${T.blue}18`,color:T.blue,text:"ТО"};
+    if(h===null) return {bg:T.bg3,color:T.txt2,text:"·"};
+    if(h===0)    return {bg:"rgba(239,68,68,0.12)",color:"#ef4444",text:"0"};
+    if(h>=20)    return {bg:`${T.green}18`,color:T.green,text:String(h)};
+    return {bg:`${T.amber}18`,color:T.amber,text:String(h)};
+  }
+
+  const stepCfg = {
+    DRAFT:     {label:"Черновик",   done:false},
+    SUBMITTED: {label:"На проверке",done:false},
+    ACCEPTED:  {label:"Принят",     done:true},
+    RETURNED:  {label:"Возвращён",  done:false},
+  };
+  const steps = ["DRAFT","SUBMITTED","ACCEPTED","RETURNED"];
+  const curStepIdx = steps.indexOf(planStatus);
+
+  // Header controls shared
+  const SharedHeader = (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <select value={selObjId||""} onChange={e=>setSelObjId(Number(e.target.value))}
+          style={{padding:"5px 10px",border:`1px solid ${T.border}`,borderRadius:6,background:T.inputBg,color:T.txt0,fontSize:12,cursor:"pointer"}}>
+          {objs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+        <div style={{display:"flex",alignItems:"center",gap:4}}>
+          <button onClick={()=>{const [y,m]=yearMonth.split("-").map(Number);const d=new Date(y,m-1,1);d.setMonth(d.getMonth()-1);setYearMonth(d.toISOString().slice(0,7));}}
+            style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:5,cursor:"pointer",fontSize:13,color:T.txt1}}>‹</button>
+          <div style={{padding:"0 14px",height:28,display:"flex",alignItems:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,fontSize:12,fontWeight:600,color:T.txt0,minWidth:120,justifyContent:"center"}}>{monthLabel}</div>
+          <button onClick={()=>{const [y,m]=yearMonth.split("-").map(Number);const d=new Date(y,m-1,1);d.setMonth(d.getMonth()+1);setYearMonth(d.toISOString().slice(0,7));}}
+            style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:5,cursor:"pointer",fontSize:13,color:T.txt1}}>›</button>
+        </div>
+      </div>
+      {tab==="plan" && (
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={saveDraft} style={{padding:"5px 12px",border:`1px solid ${T.border}`,borderRadius:6,background:T.bg3,color:T.txt1,fontSize:12,cursor:"pointer"}}>💾 Черновик</button>
+          {!isLocked && <button onClick={()=>setConfirmModal(true)} style={{padding:"5px 12px",border:`1px solid ${T.green}`,borderRadius:6,background:`${T.green}18`,color:T.green,fontSize:12,fontWeight:600,cursor:"pointer"}}>📤 Отправить</button>}
+        </div>
+      )}
+      {tab==="fact" && (
+        <div style={{fontSize:11,color:T.txt2}}>КТГ = (КВ − тех.простои) / КВ · из утверждённых отчётов</div>
+      )}
+    </div>
+  );
+
+  // Summary strip
+  const PlanStrip = (
+    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:14}}>
+      {[
+        {l:"Техника",       v:objAssets.length,                                              s:"ед. на объекте"},
+        {l:"Плановый КТГ",  v:planKtgVal!==null?`${planKtgVal}%`:"—",                       s:"по плану",      c:planKtgVal!==null?KC(planKtgVal):null},
+        {l:"КВ план",       v:objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0).toLocaleString(), s:"мч за месяц"},
+        {l:"ТО в плане",    v:Object.values(plan?.to_info||{}).reduce((s,v)=>s+Object.keys(v).length,0), s:"ячеек ТО",       c:T.blue},
+        {l:"Статус",        v:{DRAFT:"Черновик",SUBMITTED:"Проверка",ACCEPTED:"Принят",RETURNED:"Возвращён"}[planStatus], s:planStatus, c:KC(planKtgVal)},
+      ].map(({l,v,s,c})=>(
+        <div key={l} style={{background:T.bg2,padding:"10px 14px"}}>
+          <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
+          <div style={{fontSize:19,fontWeight:600,color:c||T.txt0,lineHeight:1}}>{v}</div>
+          <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{s}</div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const FactStrip = (
+    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:14}}>
+      {[
+        {l:"КТГ факт",        v:factAvg!==null?`${factAvg}%`:"—",         c:factAvg!==null?KC(factAvg):null},
+        {l:"КТГ план",        v:planKtgVal!==null?`${planKtgVal}%`:"—",    c:T.txt0},
+        {l:"КИО",             v:repsKtgKio(monthReps).kio!==null?`${repsKtgKio(monthReps).kio}%`:"—", c:repsKtgKio(monthReps).kio!==null?KC(repsKtgKio(monthReps).kio):null},
+        {l:"Отчётов",         v:monthReps.length,                           c:T.txt0},
+        {l:"Дней с данными",  v:`${factVals.length} / ${daysInMonth}`,      c:T.txt0},
+      ].map(({l,v,c})=>(
+        <div key={l} style={{background:T.bg2,padding:"10px 14px"}}>
+          <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
+          <div style={{fontSize:19,fontWeight:600,color:c||T.txt0,lineHeight:1}}>{v}</div>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Stepper
+  const Stepper = (
+    <div style={{display:"flex",alignItems:"center",gap:4,padding:"8px 14px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,marginBottom:14,flexWrap:"wrap"}}>
+      {steps.map((s,i)=>{
+        const isCur=planStatus===s;
+        const isDone=i<curStepIdx;
+        return (
+          <div key={s} style={{display:"flex",alignItems:"center",gap:4}}>
+            {i>0 && <span style={{color:T.txt2,fontSize:11}}>→</span>}
+            <span style={{padding:"3px 10px",borderRadius:4,fontSize:11,fontWeight:isCur?600:400,
+              background:isCur?T.txt0:isDone?`${T.green}18`:"transparent",
+              color:isCur?T.bg1:isDone?T.green:T.txt2,
+              border:`1px solid ${isCur?T.txt0:isDone?T.green+"40":T.border}`}}>
+              {isDone?"✓ ":""}{stepCfg[s].label}
+            </span>
           </div>
         );
-      })()}
+      })}
+    </div>
+  );
 
-      {toast&&<div style={{position:"fixed",top:70,right:24,zIndex:900,padding:"12px 20px",borderRadius:6,background:toast.type==="err"?"rgba(239,68,68,0.95)":"rgba(16,185,129,0.95)",color:"#fff",fontSize:13,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>{toast.msg}</div>}
+  // Legend
+  const PlanLegend = (
+    <div style={{display:"flex",gap:12,fontSize:11,color:T.txt2,marginBottom:10,flexWrap:"wrap"}}>
+      {[[`${T.green}18`,T.green,"22ч — полная смена"],[`${T.blue}18`,T.blue,"ТО — техобслуживание"],["rgba(239,68,68,0.12)","#ef4444","0ч — простой"],[T.bg3,T.txt2,"· — нет данных"]].map(([bg,c,l])=>(
+        <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
+          <div style={{width:10,height:10,borderRadius:2,background:bg,border:`1px solid ${c}40`,flexShrink:0}}/>
+          <span>{l}</span>
+        </div>
+      ))}
+    </div>
+  );
 
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18}}>
-        <div style={{background:T.green,color:"#fff",padding:"4px 12px",borderRadius:3,fontSize:12,fontWeight:700,textTransform:"uppercase"}}>МЕХАНИК — КТГ</div>
-        <div style={{fontSize:12,color:T.txt2}}>Планирование рабочих часов — {DAY_CAPACITY}ч/день</div>
+  const FactLegend = (
+    <div style={{display:"flex",gap:12,fontSize:11,color:T.txt2,marginBottom:10,flexWrap:"wrap"}}>
+      {[[`${T.green}18`,T.green,"≥85% — норма"],[`${T.amber}18`,T.amber,"70–84% — внимание"],["rgba(239,68,68,0.12)","#ef4444","<70% — нарушение"],[T.bg3,T.txt2,"· — нет данных"]].map(([bg,c,l])=>(
+        <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
+          <div style={{width:10,height:10,borderRadius:2,background:bg,border:`1px solid ${c}40`,flexShrink:0}}/>
+          <span>{l}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Toolbar for plan
+  const Toolbar = !isLocked && (
+    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,marginBottom:12,flexWrap:"wrap"}}>
+      <span style={{fontSize:11,color:T.txt2}}>Заполнить всё:</span>
+      <div style={{display:"flex",alignItems:"center",gap:3}}>
+        <button onClick={()=>setPaintHours(h=>Math.max(0,h-1))} style={{width:24,height:24,border:`1px solid ${T.border}`,borderRadius:4,background:T.bg3,color:T.txt1,cursor:"pointer",fontSize:13,lineHeight:1}}>−</button>
+        <div style={{width:32,textAlign:"center",fontSize:13,fontWeight:600,color:T.txt0}}>{paintHours}</div>
+        <button onClick={()=>setPaintHours(h=>Math.min(22,h+1))} style={{width:24,height:24,border:`1px solid ${T.border}`,borderRadius:4,background:T.bg3,color:T.txt1,cursor:"pointer",fontSize:13,lineHeight:1}}>+</button>
       </div>
+      <button onClick={fillAll} style={{padding:"5px 12px",border:`1px solid ${T.border}`,borderRadius:5,background:T.txt0,color:T.bg1,fontSize:11,fontWeight:600,cursor:"pointer"}}>▶ Заполнить</button>
+      <div style={{width:1,height:18,background:T.border}}/>
+      <span style={{fontSize:11,color:T.txt2}}>Кисть:</span>
+      {brushPresets.map(p=>(
+        <button key={p.id} onClick={()=>setActiveBrush(activeBrush===p.id?null:p.id)}
+          style={{padding:"3px 10px",borderRadius:4,fontSize:11,fontWeight:600,cursor:"pointer",
+            background:activeBrush===p.id?p.color:`${p.color}15`,
+            color:activeBrush===p.id?"#fff":p.color,
+            border:`1px solid ${p.color}50`}}>
+          {p.icon} {p.label}
+        </button>
+      ))}
+      {activeBrush && <span style={{fontSize:11,color:T.amber}}>✏ Кисть активна — кликай по ячейкам</span>}
+    </div>
+  );
 
-      <div style={{display:"flex",alignItems:"center",gap:4,marginBottom:18,padding:"8px 14px",background:T.bg2,borderRadius:6,border:`1px solid ${T.border}`,flexWrap:"wrap"}}>
-        {["DRAFT","SUBMITTED","ACCEPTED","RETURNED"].map((s,i)=>{
-          const isCur=planStatus===s; const cfg=KTG_PLAN_STATUS[s];
-          return(<div key={s} style={{display:"flex",alignItems:"center",gap:4}}>{i>0&&<span style={{color:T.txt2,fontSize:12}}>→</span>}<span style={{padding:"3px 10px",borderRadius:3,fontSize:12,fontWeight:700,background:isCur?cfg.bg:"transparent",border:`1px solid ${isCur?cfg.border:T.border}`,color:isCur?cfg.color:T.txt2}}>{stepLabels[s]}</span></div>);
-        })}
-        <div style={{marginLeft:"auto"}}>{plan&&<KTGPlanBadge status={planStatus}/>}</div>
+  // Heatmap table shared
+  function HeatmapTable({isPlan}) {
+    const rows = isPlan ? objAssets : objRigs;
+    if(!rows.length) return (
+      <div style={{padding:32,textAlign:"center",fontSize:12,color:T.txt2,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10}}>
+        {isPlan ? "Нет техники на объекте" : "Нет буровых станков или отчётов"}
       </div>
+    );
+    const today_d = today;
+    return (
+      <div style={{border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,minWidth:Math.max(700,daysInMonth*30+180)}}>
+            <thead>
+              <tr style={{background:T.bg3}}>
+                <th style={{padding:"6px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em",borderBottom:`1px solid ${T.border}`,position:"sticky",left:0,background:T.bg3,zIndex:2,minWidth:140}}>
+                  {isPlan ? "Техника" : "Станок"}
+                </th>
+                {days.map(d=>{
+                  const dn=parseInt(d.slice(8),10);
+                  const dow=new Date(d).getDay();
+                  const isWe=dow===0||dow===6;
+                  const isFuture=!isPlan&&d>today_d;
+                  return (
+                    <th key={d} style={{padding:"3px 1px",textAlign:"center",fontSize:10,borderBottom:`1px solid ${T.border}`,minWidth:28,color:isFuture?T.border:isWe?T.amber:T.txt2,fontWeight:isWe?600:400}}>
+                      {dn}
+                    </th>
+                  );
+                })}
+                <th style={{padding:"6px 8px",textAlign:"center",fontSize:10,fontWeight:600,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:50,whiteSpace:"nowrap"}}>
+                  {isPlan ? "КТГ" : "КТГ"}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((item, ri) => {
+                const rowId   = isPlan ? item.id : item.id;
+                const rowName = isPlan ? item.name : item.n;
+                const rowVals = isPlan
+                  ? days.map(d=>{const h=getHours(item.id,d);return h!==null?Math.round(h/DAY_CAPACITY*100):null;}).filter(v=>v!==null)
+                  : days.map(d=>getRigDayKtg(rowName,d)).filter(v=>v!==null);
+                const rowAvg  = rowVals.length ? Math.round(rowVals.reduce((s,v)=>s+v,0)/rowVals.length) : null;
 
-      <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
-        <FieldSelect label="Объект" value={selObjId||""} onChange={e=>setSelObjId(Number(e.target.value))} T={T} style={{minWidth:160}}>
-          {objs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
-        </FieldSelect>
-        <div style={{display:"flex",flexDirection:"column",gap:4}}>
-          <label style={{fontSize:12,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".08em"}}>Месяц</label>
-          <input type="month" value={yearMonth} onChange={e=>setYearMonth(e.target.value)} disabled={isLocked}
-            style={{padding:"9px 12px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}}/>
-        </div>
-        <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"flex-end"}}>
-          {!isLocked&&<><Btn variant="secondary" onClick={saveDraft} T={T} style={{fontSize:12}}>Сохранить</Btn><Btn variant="primary" onClick={openSubmitConfirm} T={T} style={{fontSize:12}}>📤 Отправить →</Btn></>}
-        </div>
-      </div>
-
-      {planStatus==="RETURNED"&&plan?.engineer_comment&&(
-        <div style={{marginBottom:14,padding:"12px 16px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#f87171",marginBottom:4}}>↩ Возвращён инженером:</div>
-          <div style={{fontSize:13,color:T.txt1,marginBottom:10}}>{plan.engineer_comment}</div>
-          <Btn variant="secondary" onClick={()=>setKtgPlans(prev=>prev.map(p=>p.id===plan.id?{...p,status:"DRAFT",engineer_comment:""}:p))} T={T} style={{fontSize:12}}>✏ Исправить и переотправить</Btn>
-        </div>
-      )}
-
-      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-        <Card accent={T.green} style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⚙ КТГ план</div>
-          <div style={{fontSize:28,fontWeight:700,color:avgKtg===null?"#5a7499":avgKtg>=85?T.green:avgKtg>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif",lineHeight:1}}>{avgKtg!==null?`${avgKtg}%`:"—"}</div>
-          <div style={{fontSize:12,color:T.txt2,marginTop:2}}>по заполненным дням</div>
-        </Card>
-        <Card style={{padding:"12px 16px",minWidth:100}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>🏗 Техника</div>
-          <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{objAssets.length}</div>
-        </Card>
-        <Card style={{padding:"12px 16px",minWidth:100}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⏱ Часов/день</div>
-          <div style={{fontSize:28,fontWeight:700,color:T.cyan,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{DAY_CAPACITY}</div>
-        </Card>
-        <Card style={{padding:"12px 16px",minWidth:110}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📅 Период</div>
-          <div style={{fontSize:18,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1.2}}>{monthLabel}</div>
-        </Card>
-      </div>
-
-      {/* ── Brush edit modal ── */}
-      {showBrushEdit&&(
-        <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.cyan}`,borderRadius:8,width:"100%",maxWidth:500,padding:24,maxHeight:"80vh",overflowY:"auto"}}>
-            <div style={{fontSize:15,fontWeight:700,color:T.txt0,marginBottom:4}}>🎨 Настройка кисти</div>
-            <div style={{fontSize:12,color:T.txt2,marginBottom:18}}>Задайте пресеты — метки и количество рабочих часов (0–22)</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 60px 36px 36px 32px",gap:8,marginBottom:6}}>
-              {["Название","Часы","Иконка","Цвет",""].map(h=>(
-                <div key={h} style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>{h}</div>
-              ))}
-            </div>
-            {editPresets.map(p=>{
-              const iS={width:"100%",padding:"7px 10px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",boxSizing:"border-box"};
-              return(
-                <div key={p.id} style={{display:"grid",gridTemplateColumns:"1fr 60px 36px 36px 32px",gap:8,marginBottom:8,alignItems:"center"}}>
-                  <input value={p.label} onChange={e=>updateEP(p.id,"label",e.target.value)} placeholder="Название" style={iS} disabled={p.locked}/>
-                  <input type="number" min="0" max="22" value={p.hours} onChange={e=>updateEP(p.id,"hours",Math.max(0,Math.min(22,Number(e.target.value))))} style={{...iS,textAlign:"center"}}/>
-                  <select value={p.icon} onChange={e=>updateEP(p.id,"icon",e.target.value)} style={{...iS,padding:"7px 4px",textAlign:"center"}}>
-                    {["🔵","✅","🔧","🛠","📦","⚙","🔩","⏸","🚫","🟢","🟡","🔴"].map(ic=><option key={ic} value={ic}>{ic}</option>)}
-                  </select>
-                  <div style={{position:"relative",width:36,height:34}}>
-                    <input type="color" value={p.color||"#6378a0"} onChange={e=>updateEP(p.id,"color",e.target.value)} disabled={p.locked}
-                      style={{position:"absolute",inset:0,width:"100%",height:"100%",padding:2,border:`1px solid ${T.border}`,borderRadius:4,cursor:p.locked?"default":"pointer",background:T.inputBg,opacity:p.locked?0.4:1}}/>
-                  </div>
-                  {p.locked
-                    ? <div style={{width:32}}/>
-                    : <button onClick={()=>removeEP(p.id)} style={{width:32,height:34,background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,color:"#f87171",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
-                </div>
-              );
-            })}
-            <Btn variant="ghost" onClick={addEP} T={T} style={{fontSize:12,marginBottom:16}}>+ Добавить пресет</Btn>
-            <div style={{display:"flex",gap:10}}>
-              <Btn variant="primary" onClick={saveBrushEdit} T={T} style={{flex:1}}>✓ Сохранить</Btn>
-              <Btn variant="ghost" onClick={()=>setShowBrushEdit(false)} T={T}>Отмена</Btn>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {!isLocked&&(
-        <div style={{marginBottom:14,padding:"14px 16px",background:T.bg2,borderRadius:6,border:`1px solid ${T.border}`}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
-            <div style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase"}}>⚡ Кисть</div>
-            <div style={{fontSize:12,color:T.txt2}}>— нажмите ячейку или заголовок строки/столбца</div>
-            <div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap"}}>
-              <button onClick={openBrushEdit} style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"transparent",border:`1px solid ${T.cyan}`,color:T.cyan,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>🎨 Настроить</button>
-              <button onClick={fillAll} style={{padding:"5px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"rgba(99,120,160,0.12)",border:`1px solid rgba(99,120,160,0.4)`,color:"#8899bb",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>▦ Заполнить всё</button>
-              <button onClick={initPlan} style={{padding:"5px 14px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,background:"rgba(16,185,129,0.12)",border:`1px solid rgba(16,185,129,0.5)`,color:T.green,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:5}}>🗓 Инициализировать</button>
-            </div>
-          </div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-            {brushPresets.map(p=>{
-              const active=paintHours===p.hours;
-              return(
-                <button key={p.id} onClick={()=>setPaintHours(p.hours)}
-                  style={{padding:"6px 12px",borderRadius:5,cursor:"pointer",fontSize:12,fontWeight:700,
-                    background:active?`${p.color}25`:"transparent",border:`2px solid ${active?p.color:T.border}`,
-                    color:active?p.color:T.txt1,fontFamily:"'Inter',sans-serif",transition:"all 0.1s",display:"flex",alignItems:"center",gap:5}}>
-                  <span>{p.icon}</span><span>{p.label}</span>
-                  <span style={{fontSize:12,opacity:.7,fontWeight:400}}>{p.hours}ч</span>
-                </button>
-              );
-            })}
-            <div style={{display:"flex",alignItems:"center",gap:5,marginLeft:4,padding:"4px 10px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-              <span style={{fontSize:12,color:T.txt2}}>Custom:</span>
-              <input type="number" min="0" max="22" value={paintHours}
-                onChange={e=>setPaintHours(Math.max(0,Math.min(22,Number(e.target.value))))}
-                style={{width:44,padding:"3px 6px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",textAlign:"center"}}/>
-              <span style={{fontSize:12,color:T.txt2}}>ч</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {objAssets.length===0?(
-        <Card style={{padding:32,textAlign:"center"}} T={T}>
-          <div style={{fontSize:32,marginBottom:12}}>⚙</div>
-          <div style={{fontSize:14,color:T.txt2}}>Нет техники на объекте <b style={{color:T.txt0}}>{objs.find(o=>o.id===selObjId)?.name}</b></div>
-          <div style={{fontSize:12,color:T.txt2,marginTop:6}}>Назначьте активы в разделе «Активы»</div>
-        </Card>
-      ):(
-        <Card T={T} style={{padding:0}}>
-          <div style={{padding:"10px 14px",borderBottom:`1px solid ${T.border}`,display:"flex",gap:14,flexWrap:"wrap",alignItems:"center"}}>
-            {[{h:22,label:"Полный день (22ч)",color:"#10b981"},{h:18,label:"ТО лёгкое (−4ч)",color:"#34d399"},{h:14,label:"ТО среднее (−8ч)",color:"#fbbf24"},{h:0,label:"Простой",color:"#ef4444"},{h:null,label:"Не задан",color:"#5a7499"}].map(({h,label,color})=>(
-              <span key={label} style={{display:"flex",alignItems:"center",gap:5,fontSize:12}}>
-                <span style={{width:14,height:14,borderRadius:3,background:cellCfg(h).bg,border:`1px solid ${color}60`,display:"inline-block"}}/>
-                <span style={{color:T.txt2}}>{label}</span>
-              </span>
-            ))}
-          </div>
-          <div style={{overflowX:"auto"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",minWidth:Math.max(700,daysInMonth*36+220)}}>
-              <thead>
-                <tr style={{background:T.bg3}}>
-                  <th style={{padding:"8px 12px",textAlign:"left",fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,minWidth:160,position:"sticky",left:0,background:T.bg3,zIndex:2}}>Актив</th>
-                  {days.map(d=>{
-                    const dayNum=parseInt(d.slice(8),10);
-                    const dow=new Date(d).getDay();
-                    const isWe=dow===0||dow===6;
-                    const ktgV=ktgForDay(d);
-                    return(
-                      <th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:12,borderBottom:`1px solid ${T.border}`,minWidth:34,background:T.bg3}}>
-                        <div style={{color:isWe?T.amber:T.txt2,fontWeight:700,fontSize:12,cursor:isLocked?"default":"pointer",padding:"2px 0",borderRadius:3}}
-                          onClick={()=>fillCol(d)} title={isLocked?"":"Заполнить весь столбец"}>{dayNum}</div>
-                        {ktgV!==null&&<div style={{fontSize:12,fontWeight:700,color:ktgV>=85?T.green:ktgV>=70?T.amber:"#ef4444"}}>{ktgV}%</div>}
-                      </th>
-                    );
-                  })}
-                  <th style={{padding:"8px 6px",textAlign:"center",fontSize:12,fontWeight:700,color:T.green,borderBottom:`1px solid ${T.border}`,minWidth:52,whiteSpace:"nowrap"}}>КТГ</th>
-                  <th style={{padding:"8px 4px",textAlign:"center",fontSize:12,fontWeight:700,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:36,whiteSpace:"nowrap"}}>ч/д</th>
-                </tr>
-              </thead>
-              <tbody>
-                {objAssets.map((asset,ai)=>{
-                  const cat   = cats.find(c=>{const pp=passports?.[asset.id];return pp&&pp.assetClass===c.key;})||{color:T.txt2};
-                  const assetK= ktgForAsset(asset.id);
-                  const setD  = days.filter(d=>getHours(asset.id,d)!==null);
-                  const avgH  = setD.length ? Math.round(setD.reduce((s,d)=>s+getHours(asset.id,d),0)/setD.length*10)/10 : null;
-                  return(
-                    <tr key={asset.id} style={{background:ai%2?T.rowAlt:"transparent"}}>
-                      <td style={{padding:"5px 12px",fontWeight:700,color:T.txt0,fontSize:12,position:"sticky",left:0,background:ai%2?T.rowAlt:T.bg2,zIndex:1,borderRight:`1px solid ${T.border}`,cursor:isLocked?"default":"pointer"}}
-                        onClick={()=>fillRow(asset.id)} title={isLocked?"":"Заполнить всю строку"}>
-                        <div style={{display:"flex",alignItems:"center",gap:6}}>
-                          <div style={{width:4,height:28,borderRadius:2,background:cat.color||T.red,flexShrink:0}}/>
-                          {asset.name}
-                          {!isLocked&&<span style={{fontSize:12,color:T.txt2,marginLeft:"auto"}}>→</span>}
-                        </div>
-                      </td>
-                      {days.map(d=>{
-                        const h      = getHours(asset.id,d);
-                        const toName   = plan?.to_info?.[asset.id]?.[d]||null;
-                        const cellClr  = plan?.color_info?.[asset.id]?.[d]||null;
-                        const baseCfg  = cellCfg(h, toName);
-                        const cfg      = cellClr ? {...baseCfg, bg:`${cellClr}22`, color:cellClr, textColor:cellClr} : baseCfg;
-                        return(
-                          <td key={d} style={{padding:"2px 1px",textAlign:"center"}}>
-                            <div onClick={()=>!isLocked&&setHours(asset.id,d,paintHours)}
-                              title={toName?`${toName}: ${h}ч работы`:cfg.label}
-                              style={{width:30,height:28,borderRadius:4,margin:"0 auto",background:cfg.bg,border:`1px solid ${cfg.color}60`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:isLocked?"default":"pointer",transition:"background 0.08s",gap:0}}>
-                              {h===null?(
-                                <span style={{fontSize:12,color:"#5a7499"}}>·</span>
-                              ):(
-                                <>
-                                  {cfg.icon&&<span style={{fontSize:12,lineHeight:1}}>{cfg.icon}</span>}
-                                  <span style={{fontSize:12,fontWeight:700,color:cfg.textColor,lineHeight:1}}>{toName||h}</span>
-                                </>
-                              )}
+                return (
+                  <tr key={rowId} style={{background:ri%2===1?T.rowAlt:"transparent"}}>
+                    <td style={{padding:"4px 12px",fontSize:12,fontWeight:500,color:T.txt0,position:"sticky",left:0,background:ri%2===1?T.rowAlt:T.bg2,zIndex:1,borderRight:`1px solid ${T.border}`,fontFamily:"'JetBrains Mono',monospace"}}>
+                      {rowName}
+                    </td>
+                    {days.map(d=>{
+                      const isFuture=!isPlan&&d>today_d;
+                      if(isPlan){
+                        const cs=planCellStyle(item.id,d);
+                        return (
+                          <td key={d} style={{padding:"1px"}} onClick={()=>activeBrush&&paintCell(item.id,d)}>
+                            <div style={{width:26,height:24,borderRadius:3,margin:"0 auto",background:cs.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:cs.color,cursor:activeBrush?"pointer":"default"}}>
+                              {cs.text}
                             </div>
                           </td>
                         );
-                      })}
-                      <td style={{padding:"5px 6px",textAlign:"center",fontWeight:700,fontSize:13,color:assetK===null?"#5a7499":assetK>=85?"#8899bb":assetK>=70?T.amber:"#ef4444",fontFamily:"'Inter',sans-serif"}}>{assetK!==null?`${assetK}%`:"—"}</td>
-                      <td style={{padding:"5px 4px",textAlign:"center",fontSize:12,color:T.txt2,fontFamily:"'Inter',sans-serif"}}>{avgH!==null?avgH:"—"}</td>
-                    </tr>
+                      } else {
+                        const v=isFuture?null:getRigDayKtg(rowName,d);
+                        return (
+                          <td key={d} style={{padding:"1px"}}>
+                            <div style={{width:26,height:24,borderRadius:3,margin:"0 auto",background:isFuture?T.bg3:KB(v),display:"flex",alignItems:"center",justifyContent:"center",fontSize:v!==null?9:11,fontWeight:700,color:isFuture?T.border:KC(v)}}>
+                              {isFuture?"":v!==null?`${v}%`:"·"}
+                            </div>
+                          </td>
+                        );
+                      }
+                    })}
+                    <td style={{padding:"4px 8px",textAlign:"center",fontSize:13,fontWeight:600,color:KC(rowAvg)}}>
+                      {rowAvg!==null?`${rowAvg}%`:"—"}
+                    </td>
+                  </tr>
+                );
+              })}
+              {/* Итоговая строка */}
+              <tr style={{borderTop:`1px solid ${T.border}`,background:T.bg3}}>
+                <td style={{padding:"5px 12px",fontSize:11,fontWeight:600,color:T.txt2,position:"sticky",left:0,background:T.bg3,zIndex:1,borderRight:`1px solid ${T.border}`}}>
+                  ⚙ {isPlan?"КТГ план":"КТГ факт"}
+                </td>
+                {days.map(d=>{
+                  const isFuture=!isPlan&&d>today_d;
+                  let v=null;
+                  if(isPlan){
+                    if(objAssets.length){
+                      const vals=objAssets.map(a=>{const h=getHours(a.id,d);return h!==null?Math.round(h/DAY_CAPACITY*100):null;}).filter(x=>x!==null);
+                      v=vals.length?Math.round(vals.reduce((s,x)=>s+x,0)/vals.length):null;
+                    }
+                  } else {
+                    v=isFuture?null:getObjDayKtg(d);
+                  }
+                  return (
+                    <td key={d} style={{padding:"1px"}}>
+                      <div style={{width:26,height:24,borderRadius:3,margin:"0 auto",background:isFuture?T.bg3:KB(v),display:"flex",alignItems:"center",justifyContent:"center",fontSize:v!==null?8:11,fontWeight:700,color:isFuture?T.border:KC(v)}}>
+                        {isFuture?"":v!==null?`${v}%`:"·"}
+                      </div>
+                    </td>
                   );
                 })}
-              </tbody>
-            </table>
+                <td style={{padding:"5px 8px",textAlign:"center",fontSize:14,fontWeight:700,color:KC(isPlan?planKtgVal:factAvg)}}>
+                  {isPlan?(planKtgVal!==null?`${planKtgVal}%`:"—"):(factAvg!==null?`${factAvg}%`:"—")}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Confirm submit modal
+  const ConfirmModal = confirmModal && (() => {
+    const totalWH=objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0);
+    const maxWH=objAssets.length*daysInMonth*DAY_CAPACITY;
+    const pKtg=maxWH>0?Math.round(totalWH/maxWH*100):0;
+    const toCount=Object.values(plan?.to_info||{}).reduce((s,v)=>s+Object.keys(v).length,0);
+    return (
+      <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+        <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.green}`,borderRadius:10,width:"100%",maxWidth:420,padding:26}}>
+          <div style={{fontSize:15,fontWeight:600,color:T.txt0,marginBottom:4}}>Отправить КТГ-план?</div>
+          <div style={{fontSize:12,color:T.txt2,marginBottom:18}}>После отправки план нельзя редактировать до возврата инженером.</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
+            {[["Объект",objs.find(o=>o.id===selObjId)?.name||"—"],["Период",monthLabel],["Техника",`${objAssets.length} ед.`],["Ср. КТГ",`${pKtg}%`],["Заполнено",`${[...new Set(days.filter(d=>objAssets.some(a=>getHours(a.id,d)!==null)))].length} / ${daysInMonth} дней`],["ТО",toCount?`${toCount} ячеек`:"—"]].map(([l,v])=>(
+              <div key={l} style={{padding:"7px 10px",background:T.bg3,borderRadius:6,border:`1px solid ${T.border}`}}>
+                <div style={{fontSize:11,color:T.txt2,marginBottom:2}}>{l}</div>
+                <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>{v}</div>
+              </div>
+            ))}
           </div>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-// ─── MECHANIC KTG FACT PAGE ───────────────────────────────────────────────────
-// Факт КТГ считается по утверждённым сменным отчётам форманов.
-// КТГ станка за день = wh / (wh + dh) × 100% (суммируем все смены дня)
-// КТГ объекта за день = среднее по станкам у которых есть данные
-function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
-  const today = new Date().toISOString().slice(0,10);
-  const [selObjId,  setSelObjId]  = useState(objs[0]?.id || null);
-  const [yearMonth, setYearMonth] = useState(today.slice(0,7));
-
-  const [yr, mo] = yearMonth.split("-").map(Number);
-  const daysInMonth = new Date(yr, mo, 0).getDate();
-  const days = Array.from({length:daysInMonth}, (_,i) => `${yearMonth}-${String(i+1).padStart(2,"0")}`);
-  const MON_RU = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
-
-  // Буровые на объекте (через INIT_RIGS → node)
-  const objRigs = rigs.filter(r => Number(r.o) === Number(selObjId));
-
-  // Утверждённые отчёты по объекту за выбранный месяц
-  const monthReps = reps.filter(r =>
-    r.status === "approved" &&
-    Number(r.oid) === Number(selObjId) &&
-    r.date?.startsWith(yearMonth)
-  );
-
-  // Для каждого станка и каждого дня считаем КТГ
-  // Матчинг: rig.n (из INIT_RIGS) === rep.rigs[i].n (имя в отчёте)
-  function getRigDayKtg(rigName, date) {
-    const dayReps = monthReps.filter(r => r.date === date);
-    if (dayReps.length === 0) return null;
-    let totalWh = 0, totalDh = 0, found = false;
-    dayReps.forEach(rep => {
-      const rigEntry = (rep.rigs || []).find(r => r.n === rigName);
-      if (rigEntry) {
-        totalWh += parseFloat(rigEntry.wh) || 0;
-        totalDh += parseFloat(rigEntry.dh) || 0;
-        found = true;
-      }
-    });
-    if (!found) return null;
-    const total = totalWh + totalDh;
-    return total > 0 ? Math.round(totalWh / total * 100) : null;
-  }
-
-  // КТГ объекта за день = среднее по станкам у которых есть данные
-  function getObjDayKtg(date) {
-    const vals = objRigs.map(r => getRigDayKtg(r.n, date)).filter(v => v !== null);
-    if (vals.length === 0) return null;
-    return Math.round(vals.reduce((s,v) => s+v, 0) / vals.length);
-  }
-
-  // Средний КТГ за месяц
-  const monthVals = days.map(d => getObjDayKtg(d)).filter(v => v !== null);
-  const monthAvg  = monthVals.length ? Math.round(monthVals.reduce((s,v)=>s+v,0)/monthVals.length) : null;
-
-  function ktgColor(v) {
-    if (v === null) return T.txt2;
-    if (v >= 85) return T.green;
-    if (v >= 70) return T.amber;
-    return "#ef4444";
-  }
-  function ktgBg(v) {
-    if (v === null) return "transparent";
-    if (v >= 85) return "rgba(16,185,129,0.15)";
-    if (v >= 70) return "rgba(245,158,11,0.15)";
-    return "rgba(239,68,68,0.15)";
-  }
+          <div style={{display:"flex",gap:8}}>
+            <Btn variant="success" style={{flex:1}} onClick={confirmSubmit} T={T}>✓ Подтвердить</Btn>
+            <Btn variant="ghost" onClick={()=>setConfirmModal(false)} T={T}>Отмена</Btn>
+          </div>
+        </div>
+      </div>
+    );
+  })();
 
   return (
     <div>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18}}>
-        <div style={{background:T.cyan,color:"#fff",padding:"4px 12px",borderRadius:3,fontSize:12,fontWeight:700,textTransform:"uppercase"}}>МЕХАНИК — ФАКТ КТГ</div>
-        <div style={{fontSize:12,color:T.txt2}}>Из утверждённых сменных отчётов. КТГ = wh / (wh + dh)</div>
+      {ConfirmModal}
+      {toast && <div style={{position:"fixed",top:70,right:24,zIndex:900,padding:"11px 18px",borderRadius:7,background:toast.type==="err"?"rgba(239,68,68,0.95)":"rgba(16,185,129,0.95)",color:"#fff",fontSize:13,fontWeight:600}}>{toast.msg}</div>}
+
+      {/* Tabs */}
+      <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,marginBottom:18}}>
+        {[["plan","КТГ-план"],["fact","Факт КТГ"]].map(([id,label])=>(
+          <div key={id} onClick={()=>setTab(id)}
+            style={{padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer",
+              color:tab===id?T.txt0:T.txt2,
+              borderBottom:tab===id?`2px solid ${T.txt0}`:"2px solid transparent",
+              marginBottom:-1,transition:"color .1s"}}>
+            {label}
+          </div>
+        ))}
       </div>
 
-      {/* Controls */}
-      <div style={{display:"flex",gap:12,marginBottom:16,flexWrap:"wrap",alignItems:"flex-end"}}>
-        <FieldSelect label="Объект" value={selObjId||""} onChange={e=>setSelObjId(Number(e.target.value))} T={T} style={{minWidth:160}}>
-          {objs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
-        </FieldSelect>
-        <div style={{display:"flex",flexDirection:"column",gap:4}}>
-          <label style={{fontSize:12,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".08em"}}>Месяц</label>
-          <input type="month" value={yearMonth} onChange={e=>setYearMonth(e.target.value)}
-            style={{padding:"9px 12px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,fontFamily:"'Inter',sans-serif",outline:"none"}}/>
-        </div>
-      </div>
+      {SharedHeader}
 
-      {/* Summary */}
-      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-        <Card accent={T.cyan} style={{padding:"12px 16px",minWidth:140}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>⚙ КТГ факт (мес)</div>
-          <div style={{fontSize:28,fontWeight:700,fontFamily:"'Inter',sans-serif",lineHeight:1,color:ktgColor(monthAvg)}}>
-            {monthAvg !== null ? `${monthAvg}%` : "—"}
+      {tab==="plan" && <>
+        {Stepper}
+        {PlanStrip}
+        {Toolbar}
+        {PlanLegend}
+        <HeatmapTable isPlan={true}/>
+        {/* Returned comment */}
+        {planStatus==="RETURNED"&&plan?.engineer_comment&&(
+          <div style={{marginTop:12,padding:"10px 14px",background:`${T.amber}10`,border:`1px solid ${T.amber}30`,borderRadius:8,fontSize:12,color:T.amber}}>
+            ↩ Комментарий инженера: <b style={{color:T.txt0}}>{plan.engineer_comment}</b>
           </div>
-        </Card>
-        <Card style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📋 Отчётов</div>
-          <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{monthReps.length}</div>
-        </Card>
-        <Card style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>🏗 Буровых</div>
-          <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{objRigs.length}</div>
-        </Card>
-        <Card style={{padding:"12px 16px",minWidth:130}} T={T}>
-          <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:4}}>📅 Дней с данными</div>
-          <div style={{fontSize:28,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>{monthVals.length}</div>
-        </Card>
-      </div>
+        )}
+      </>}
 
-      {objRigs.length === 0 ? (
-        <Card style={{padding:32,textAlign:"center"}} T={T}>
-          <div style={{fontSize:32,marginBottom:12}}>📋</div>
-          <div style={{fontSize:14,color:T.txt2}}>Нет буровых станков на объекте <b style={{color:T.txt0}}>{objs.find(o=>o.id===selObjId)?.name}</b></div>
-        </Card>
-      ) : monthReps.length === 0 ? (
-        <Card style={{padding:32,textAlign:"center"}} T={T}>
-          <div style={{fontSize:32,marginBottom:12}}>📭</div>
-          <div style={{fontSize:14,color:T.txt2,marginBottom:6}}>Нет утверждённых отчётов за <b style={{color:T.txt0}}>{MON_RU[mo-1]} {yr}</b></div>
-          <div style={{fontSize:12,color:T.txt2}}>Факт КТГ формируется из сменных отчётов начальников вахты</div>
-        </Card>
-      ) : (
-        <Card T={T} style={{overflowX:"auto"}}>
-          {/* Legend */}
-          <div style={{padding:"10px 14px",borderBottom:`1px solid ${T.border}`,display:"flex",gap:16,flexWrap:"wrap",alignItems:"center"}}>
-            {[["≥85% — норма",T.green],["70–84% — внимание",T.amber],["<70% — нарушение","#ef4444"],["— нет данных",T.txt2]]
-              .map(([l,c])=>(
-                <span key={l} style={{display:"flex",alignItems:"center",gap:5,fontSize:12}}>
-                  <span style={{width:10,height:10,borderRadius:2,background:c,display:"inline-block"}}/>
-                  <span style={{color:T.txt2}}>{l}</span>
-                </span>
-              ))}
-          </div>
-          <div style={{overflowX:"auto"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",minWidth:Math.max(700,daysInMonth*36+200)}}>
-              <thead>
-                <tr style={{background:T.bg3}}>
-                  <th style={{padding:"8px 12px",textAlign:"left",fontSize:12,fontWeight:700,color:T.txt2,
-                    textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,minWidth:160,
-                    position:"sticky",left:0,background:T.bg3,zIndex:2}}>
-                    Станок
-                  </th>
-                  {days.map(d=>{
-                    const dayNum = parseInt(d.slice(8),10);
-                    const dow    = new Date(d).getDay();
-                    const isWe   = dow===0||dow===6;
-                    const objV   = getObjDayKtg(d);
-                    return (
-                      <th key={d} style={{padding:"2px 1px",textAlign:"center",fontSize:12,borderBottom:`1px solid ${T.border}`,minWidth:34,background:T.bg3}}>
-                        <div style={{color:isWe?T.amber:T.txt2,fontWeight:700,fontSize:12,padding:"2px 0"}}>
-                          {dayNum}
-                        </div>
-                        {objV !== null && (
-                          <div style={{fontSize:12,fontWeight:700,color:ktgColor(objV)}}>
-                            {objV}%
-                          </div>
-                        )}
-                      </th>
-                    );
-                  })}
-                  <th style={{padding:"8px 8px",textAlign:"center",fontSize:12,fontWeight:700,color:T.cyan,
-                    borderBottom:`1px solid ${T.border}`,minWidth:60,whiteSpace:"nowrap"}}>Ср. КТГ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {objRigs.map((rig, ri) => {
-                  const rigVals = days.map(d => getRigDayKtg(rig.n, d)).filter(v => v !== null);
-                  const rigAvg  = rigVals.length ? Math.round(rigVals.reduce((s,v)=>s+v,0)/rigVals.length) : null;
-                  return (
-                    <tr key={rig.id} style={{background:ri%2?T.rowAlt:"transparent"}}>
-                      <td style={{padding:"5px 12px",fontWeight:700,color:T.txt0,fontSize:12,
-                        position:"sticky",left:0,background:ri%2?T.rowAlt:T.bg2,zIndex:1,
-                        borderRight:`1px solid ${T.border}`}}>
-                        <div style={{display:"flex",alignItems:"center",gap:6}}>
-                          <div style={{width:4,height:28,borderRadius:2,background:T.red,flexShrink:0}}/>
-                          {rig.n}
-                        </div>
-                      </td>
-                      {days.map(d => {
-                        const v = getRigDayKtg(rig.n, d);
-                        return (
-                          <td key={d} style={{padding:"2px 1px",textAlign:"center"}}>
-                            <div style={{
-                              width:30,height:28,borderRadius:4,margin:"0 auto",
-                              background:ktgBg(v),
-                              border:`1px solid ${v!==null ? ktgColor(v)+"50" : T.border}`,
-                              display:"flex",alignItems:"center",justifyContent:"center",
-                              fontSize:v!==null?10:8,fontWeight:700,
-                              color:v!==null?ktgColor(v):T.txt2,
-                            }}>
-                              {v !== null ? `${v}%` : <span style={{fontSize:12}}>·</span>}
-                            </div>
-                          </td>
-                        );
-                      })}
-                      <td style={{padding:"5px 8px",textAlign:"center",fontWeight:700,fontSize:14,
-                        color:ktgColor(rigAvg),fontFamily:"'Inter',sans-serif"}}>
-                        {rigAvg !== null ? `${rigAvg}%` : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-
-                {/* Итоговая строка объекта */}
-                <tr style={{borderTop:`2px solid ${T.border}`,background:T.bg3}}>
-                  <td style={{padding:"6px 12px",fontWeight:700,color:T.cyan,fontSize:12,
-                    position:"sticky",left:0,background:T.bg3,zIndex:1,borderRight:`1px solid ${T.border}`}}>
-                    ⚙ КТГ объекта
-                  </td>
-                  {days.map(d => {
-                    const v = getObjDayKtg(d);
-                    return (
-                      <td key={d} style={{padding:"2px 1px",textAlign:"center"}}>
-                        <div style={{
-                          width:30,height:28,borderRadius:4,margin:"0 auto",
-                          background:ktgBg(v),
-                          border:`1px solid ${v!==null ? ktgColor(v)+"60" : T.border}`,
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          fontSize:v!==null?9:8,fontWeight:700,color:v!==null?ktgColor(v):T.txt2,
-                        }}>
-                          {v !== null ? `${v}%` : <span style={{fontSize:12}}>·</span>}
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td style={{padding:"6px 8px",textAlign:"center",fontWeight:700,fontSize:16,
-                    color:ktgColor(monthAvg),fontFamily:"'Inter',sans-serif"}}>
-                    {monthAvg !== null ? `${monthAvg}%` : "—"}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      {tab==="fact" && <>
+        {FactStrip}
+        {FactLegend}
+        <HeatmapTable isPlan={false}/>
+      </>}
     </div>
   );
 }
 
-// ─── ENGINEER KTG INBOX ───────────────────────────────────────────────────────
+function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
+  return null; // Merged into MechanicKTGPage
+}
+
+
 function EngineerKTGInbox({ ktgPlans, setKtgPlans, objs, nodes, T }) {
   const [selPlan,    setSelPlan]    = useState(null);
   const [comment,    setComment]    = useState("");
@@ -11318,11 +11021,11 @@ export default function App() {
   } else if (subPage === "maint" && user.role === "foreman") {
     content = <ForemanMaintenancePage user={user} objs={vObjs} rigs={rigs} maintRecords={maintRecords} setMaintRecords={setMaintRecords} passports={passports} setPassports={setPassports} meters={meters} T={T} />;
   } else if (subPage === "ktgfact" && user.role === "mechanic") {
-    content = <MechanicKTGFactPage nodes={nodes} objs={objs} reps={reps} rigs={rigs} passports={passports} T={T} />;
+    content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} meters={meters} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} reps={reps} rigs={rigs} T={T} />;
   } else if (subPage === "finance") {
     content = <FinancePage T={T} />;
   } else if (subPage === "ktgplan" && user.role === "mechanic") {
-    content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} meters={meters} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} T={T} />;
+    content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} meters={meters} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} reps={reps} rigs={rigs} T={T} />;
   } else if (subPage === "assets" && user.role === "mechanic") {
     content = <MechanicAssetsPage nodes={nodes} setNodes={setNodes} objs={objs} reps={reps} assetClasses={assetClasses} mechCats={mechCats} setMechCats={setMechCats} passports={passports} setPassports={setPassports} maintRecords={maintRecords} setMaintRecords={setMaintRecords} user={user} T={T} />;
   } else if (user.role === "mechanic") {
