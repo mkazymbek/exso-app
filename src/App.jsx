@@ -7803,225 +7803,153 @@ function KTGPlanBadge({ status }) {
 // ─── MECHANIC ASSETS PAGE ─────────────────────────────────────────────────────
 function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passports, setPassports, mechCats, setMechCats, maintRecords, setMaintRecords, user, T }) {
   const cats = mechCats || DEFAULT_MECH_CATS;
-  const [selCat,        setSelCat]        = useState(null);
-  const [detailNode,    setDetailNode]    = useState(null); // asset detail view
-  const [assetModal,    setAssetModal]    = useState(null);
-  const [catModal,      setCatModal]      = useState(null);
-  const [selNode,       setSelNode]       = useState(null);
-  const [deleteConfId,  setDeleteConfId]  = useState(null);
-  const [assetForm,     setAssetForm]     = useState({ name:"", category:"DRILL_RIG", assigned_object_id:"", note:"" });
-  const [catForm,       setCatForm]       = useState({ key:"", label:"", icon:"⛏", color:"#f43f5e" });
-  const [err,           setErr]           = useState("");
-  const [passportEdit,  setPassportEdit]  = useState(false);
-  const [ppForm,        setPpForm]        = useState({});
+  const [selCat,       setSelCat]       = useState(null);
+  const [detailNode,   setDetailNode]   = useState(null);
+  const [assetModal,   setAssetModal]   = useState(null);
+  const [catModal,     setCatModal]     = useState(null);
+  const [selNode,      setSelNode]      = useState(null);
+  const [deleteConfId, setDeleteConfId] = useState(null);
+  const [assetForm,    setAssetForm]    = useState({ name:"", category:"DRILL_RIG", assigned_object_id:"", note:"" });
+  const [catForm,      setCatForm]      = useState({ key:"", label:"", icon:"⛏", color:"#f43f5e" });
+  const [err,          setErr]          = useState("");
+  const [passportEdit, setPassportEdit] = useState(false);
+  const [ppForm,       setPpForm]       = useState({});
+  const [moveModal,    setMoveModal]    = useState(null);
 
-  const [moveModal,     setMoveModal]    = useState(null); // { nodeId, nodeName, currentOid }
-
-  function openMoveAsset(a, e) {
-    if (e) e.stopPropagation();
-    setMoveModal({ nodeId: a.id, nodeName: a.name, currentOid: a.assigned_object_id ?? null });
-  }
-  function doMoveAsset(newOid) {
-    setNodes(prev => prev.map(n => n.id === moveModal.nodeId
-      ? { ...n, assigned_object_id: newOid }
-      : n
-    ));
-    if (detailNode?.id === moveModal.nodeId) {
-      setDetailNode(prev => prev ? { ...prev, assigned_object_id: newOid } : prev);
-    }
-    setMoveModal(null);
-  }
-
-  const assets = nodes.filter(n => n.type === "ASSET").map(n => ({
-    ...n,
-    category: passports[n.id]?.assetClass || "DRILL_RIG",
-  }));
+  const assets    = nodes.filter(n => n.type === "ASSET").map(n => ({ ...n, category: passports[n.id]?.assetClass || "DRILL_RIG" }));
   const catAssets = selCat ? assets.filter(a => a.category === selCat) : assets;
 
-  // ── Asset CRUD ──
-  function openAddAsset() {
-    setAssetForm({ name:"", category: selCat || cats[0]?.key || "DRILL_RIG", assigned_object_id:"", note:"" });
-    setErr(""); setAssetModal("add");
+  // helpers
+  const ktgColor = (k) => k===null ? T.txt2 : k>=85 ? T.green : k>=70 ? T.amber : "#ef4444";
+  const ktgBg    = (k) => k===null ? "transparent" : k>=85 ? `${T.green}18` : k>=70 ? `${T.amber}18` : "rgba(239,68,68,0.12)";
+
+  function getAssetToStatus(a) {
+    const pp  = passports[a.id] || {};
+    const mh  = pp.total_hours || pp.moto_hours || 0;
+    const sched = pp.toSchedule?.length > 0 ? pp.toSchedule
+      : [{name:"ТО-1",interval:500},{name:"ТО-2",interval:1000},{name:"ТО-3",interval:2000},{name:"Капремонт",interval:5000}];
+    const recs = (maintRecords?.[a.id] || []).sort((x,y)=>y.hours-x.hours);
+    const statuses = sched.map(item => {
+      const done  = recs.filter(r=>r.type===item.name);
+      const lastAt = done[0] ? parseFloat(done[0].hours) : 0;
+      const nextAt = lastAt > 0 ? lastAt + item.interval : item.interval;
+      const rem   = Math.max(0, nextAt - mh);
+      const pct   = lastAt > 0 ? Math.min(100, Math.round((mh-lastAt)/item.interval*100)) : Math.min(100,Math.round(mh/item.interval*100));
+      const overdue = mh >= nextAt;
+      const urgent  = !overdue && rem <= Math.round(item.interval * 0.1);
+      return { ...item, lastAt, nextAt, rem, pct, overdue, urgent, mh };
+    });
+    const nearest = statuses.slice().sort((a,b)=>a.rem-b.rem)[0];
+    const hasOverdue = statuses.some(s=>s.overdue);
+    const hasUrgent  = statuses.some(s=>s.urgent);
+    return { statuses, nearest, hasOverdue, hasUrgent };
   }
-  function openEditAsset(a) {
-    setSelNode(a);
-    setAssetForm({ name:a.name, category:a.category, assigned_object_id:a.assigned_object_id||"", note:a.note||"" });
-    setErr(""); setAssetModal("edit");
+
+  function getAssetKtg(a) {
+    const approvedReps = reps.filter(r => r.status !== "draft" && r.oid === Number(a.assigned_object_id));
+    const rigReps = approvedReps.filter(r => r.rigs?.find(x => x.n === a.name || x.id === a.id));
+    return repsKtgKio(rigReps).ktg;
   }
+
+  // summary counts
+  const summary = assets.reduce((s, a) => {
+    const { hasOverdue, hasUrgent } = getAssetToStatus(a);
+    if (hasOverdue) s.bad++;
+    else if (hasUrgent) s.warn++;
+    else s.ok++;
+    return s;
+  }, { ok:0, warn:0, bad:0 });
+
+  // CRUD
+  function openMoveAsset(a, e) { if(e) e.stopPropagation(); setMoveModal({ nodeId:a.id, nodeName:a.name, currentOid:a.assigned_object_id??null }); }
+  function doMoveAsset(newOid) {
+    setNodes(prev=>prev.map(n=>n.id===moveModal.nodeId?{...n,assigned_object_id:newOid}:n));
+    if(detailNode?.id===moveModal.nodeId) setDetailNode(prev=>prev?{...prev,assigned_object_id:newOid}:prev);
+    setMoveModal(null);
+  }
+  function openAddAsset() { setAssetForm({name:"",category:selCat||cats[0]?.key||"DRILL_RIG",assigned_object_id:"",note:""}); setErr(""); setAssetModal("add"); }
+  function openEditAsset(a) { setSelNode(a); setAssetForm({name:a.name,category:a.category,assigned_object_id:a.assigned_object_id||"",note:a.note||""}); setErr(""); setAssetModal("edit"); }
   function saveAsset() {
-    if (!assetForm.name.trim()) { setErr("Введите название актива"); return; }
-    const catNode = nodes.find(n => n.catType === assetForm.category);
-    if (assetModal === "add") {
-      const newNode = {
-        id:"ua"+genId(), parentId:catNode?.id||"c1",
-        name:assetForm.name.trim(), type:"ASSET", catType:null, desc:assetForm.note||"",
-        assigned_object_id: assetForm.assigned_object_id ? Number(assetForm.assigned_object_id) : null,
-        note:assetForm.note||"", createdBy:user.name, createdAt:new Date().toISOString().slice(0,10),
-      };
-      setNodes(prev => [...prev, newNode]);
-      setPassports(prev => ({ ...prev, [newNode.id]: { assetClass: assetForm.category, moto_hours: 0 } }));
+    if(!assetForm.name.trim()){setErr("Введите название актива");return;}
+    const catNode=nodes.find(n=>n.catType===assetForm.category);
+    if(assetModal==="add"){
+      const newNode={id:"ua"+genId(),parentId:catNode?.id||"c1",name:assetForm.name.trim(),type:"ASSET",catType:null,desc:assetForm.note||"",assigned_object_id:assetForm.assigned_object_id?Number(assetForm.assigned_object_id):null,note:assetForm.note||"",createdBy:user.name,createdAt:new Date().toISOString().slice(0,10)};
+      setNodes(prev=>[...prev,newNode]);
+      setPassports(prev=>({...prev,[newNode.id]:{assetClass:assetForm.category,moto_hours:0}}));
     } else {
-      setNodes(prev => prev.map(n => n.id===selNode.id
-        ? { ...n, name:assetForm.name.trim(), assigned_object_id: assetForm.assigned_object_id?Number(assetForm.assigned_object_id):null, note:assetForm.note||"" }
-        : n));
-      setPassports(prev => ({ ...prev, [selNode.id]: { ...(prev[selNode.id]||{}), assetClass:assetForm.category } }));
-      if (detailNode?.id === selNode.id) setDetailNode(prev => prev ? {...prev, name:assetForm.name.trim()} : prev);
+      setNodes(prev=>prev.map(n=>n.id===selNode.id?{...n,name:assetForm.name.trim(),assigned_object_id:assetForm.assigned_object_id?Number(assetForm.assigned_object_id):null,note:assetForm.note||""}:n));
+      setPassports(prev=>({...prev,[selNode.id]:{...(prev[selNode.id]||{}),assetClass:assetForm.category}}));
+      if(detailNode?.id===selNode.id) setDetailNode(prev=>prev?{...prev,name:assetForm.name.trim()}:prev);
     }
     setAssetModal(null); setErr("");
   }
-  function confirmDeleteAsset() {
-    if (detailNode?.id === deleteConfId) setDetailNode(null);
-    setNodes(prev => prev.filter(n => n.id !== deleteConfId));
-    setDeleteConfId(null);
-  }
-
-  // ── Category CRUD ──
-  function openAddCat() { setCatForm({ key:"", label:"", icon:"⛏", color:"#f43f5e" }); setErr(""); setCatModal("add"); }
-  function openEditCat(cat) { setCatForm({ key:cat.key, label:cat.label, icon:cat.icon, color:cat.color }); setErr(""); setCatModal("edit_"+cat.key); }
-  function saveCat() {
-    const key = catForm.key.trim().toUpperCase().replace(/\s+/g,"_");
-    if (!key) { setErr("Введите ключ категории"); return; }
-    if (!catForm.label.trim()) { setErr("Введите название категории"); return; }
-    if (catModal === "add" && cats.find(c=>c.key===key)) { setErr("Категория с таким ключом уже существует"); return; }
-    if (catModal === "add") {
-      setMechCats(prev => [...prev, { key, label:catForm.label.trim(), icon:catForm.icon, color:catForm.color }]);
-    } else {
-      const editKey = catModal.replace("edit_","");
-      setMechCats(prev => prev.map(c => c.key===editKey ? { key:editKey, label:catForm.label.trim(), icon:catForm.icon, color:catForm.color } : c));
-    }
+  function confirmDeleteAsset() { if(detailNode?.id===deleteConfId) setDetailNode(null); setNodes(prev=>prev.filter(n=>n.id!==deleteConfId)); setDeleteConfId(null); }
+  function openAddCat(){setCatForm({key:"",label:"",icon:"⛏",color:"#f43f5e"});setErr("");setCatModal("add");}
+  function saveCat(){
+    const key=catForm.key.trim().toUpperCase().replace(/\s+/g,"_");
+    if(!key){setErr("Введите ключ");return;}
+    if(!catForm.label.trim()){setErr("Введите название");return;}
+    if(catModal==="add"&&cats.find(c=>c.key===key)){setErr("Такой ключ уже есть");return;}
+    if(catModal==="add") setMechCats(prev=>[...prev,{key,label:catForm.label.trim(),icon:catForm.icon,color:catForm.color}]);
+    else { const ek=catModal.replace("edit_",""); setMechCats(prev=>prev.map(c=>c.key===ek?{key:ek,label:catForm.label.trim(),icon:catForm.icon,color:catForm.color}:c)); }
     setCatModal(null); setErr("");
   }
-  function deleteCat(key) { setMechCats(prev => prev.filter(c => c.key !== key)); }
 
-  const activeCat = cats.find(c => c.key === selCat);
-
-  // ── MOVE MODAL ────────────────────────────────────────────────────────────────
+  // ── MODALS ──────────────────────────────────────────────────────────────────
   const MoveModal = moveModal ? (
     <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.cyan}`,borderRadius:8,width:"100%",maxWidth:400}}>
         <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>📦 Переместить актив</div>
-            <div style={{fontSize:12,color:T.cyan,marginTop:2}}>{moveModal.nodeName}</div>
-          </div>
+          <div><div style={{fontSize:14,fontWeight:600,color:T.txt0}}>Переместить актив</div><div style={{fontSize:12,color:T.cyan,marginTop:2}}>{moveModal.nodeName}</div></div>
           <button onClick={()=>setMoveModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
         </div>
         <div style={{padding:16,display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:12,color:T.txt2,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>Выберите объект назначения</div>
-          <div onClick={()=>doMoveAsset(null)}
-            style={{padding:"10px 14px",borderRadius:6,cursor:"pointer",border:`1.5px solid ${moveModal.currentOid===null?T.amber:T.border}`,
-              background:moveModal.currentOid===null?`${T.amber}12`:"transparent",
-              display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.12s"}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor=T.amber}
-            onMouseLeave={e=>e.currentTarget.style.borderColor=moveModal.currentOid===null?T.amber:T.border}>
-            <span style={{fontSize:13,color:moveModal.currentOid===null?T.amber:T.txt2,fontStyle:"italic"}}>— Не назначен (на склад)</span>
-            {moveModal.currentOid===null && <span style={{fontSize:12,color:T.amber,fontWeight:700}}>текущий</span>}
+          <div onClick={()=>doMoveAsset(null)} style={{padding:"10px 14px",borderRadius:6,cursor:"pointer",border:`1.5px solid ${moveModal.currentOid===null?T.amber:T.border}`,background:moveModal.currentOid===null?`${T.amber}12`:"transparent",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span style={{fontSize:13,color:moveModal.currentOid===null?T.amber:T.txt2,fontStyle:"italic"}}>— Не назначен</span>
+            {moveModal.currentOid===null && <span style={{fontSize:12,color:T.amber,fontWeight:600}}>текущий</span>}
           </div>
           {objs.map(obj=>{
-            const isCurrent = Number(moveModal.currentOid) === obj.id;
-            return (
-              <div key={obj.id} onClick={()=>!isCurrent && doMoveAsset(obj.id)}
-                style={{padding:"10px 14px",borderRadius:6,
-                  cursor:isCurrent?"default":"pointer",
-                  border:`1.5px solid ${isCurrent?T.cyan:T.border}`,
-                  background:isCurrent?`${T.cyan}12`:"transparent",
-                  display:"flex",alignItems:"center",justifyContent:"space-between",transition:"all 0.12s",
-                  opacity:isCurrent?1:0.9}}
-                onMouseEnter={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.cyan;}}
-                onMouseLeave={e=>{if(!isCurrent)e.currentTarget.style.borderColor=T.border;}}>
-                <span style={{fontSize:13,fontWeight:isCurrent?700:400,color:isCurrent?T.cyan:T.txt0}}>📍 {obj.name}</span>
-                {isCurrent && <span style={{fontSize:12,color:T.cyan,fontWeight:700}}>текущий</span>}
-              </div>
-            );
+            const isCurrent=Number(moveModal.currentOid)===obj.id;
+            return <div key={obj.id} onClick={()=>!isCurrent&&doMoveAsset(obj.id)} style={{padding:"10px 14px",borderRadius:6,cursor:isCurrent?"default":"pointer",border:`1.5px solid ${isCurrent?T.cyan:T.border}`,background:isCurrent?`${T.cyan}12`:"transparent",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <span style={{fontSize:13,fontWeight:isCurrent?600:400,color:isCurrent?T.cyan:T.txt0}}>📍 {obj.name}</span>
+              {isCurrent&&<span style={{fontSize:12,color:T.cyan,fontWeight:600}}>текущий</span>}
+            </div>;
           })}
         </div>
       </div>
     </div>
   ) : null;
 
-  // ── ASSET DETAIL VIEW ──────────────────────────────────────────────────────
+  // ── DETAIL VIEW ──────────────────────────────────────────────────────────────
   if (detailNode) {
     const a   = detailNode;
     const pp  = passports[a.id] || {};
-    const cat = cats.find(c => c.key === pp.assetClass) || {icon:"📦", color:T.txt2, label:"—"};
+    const cat = cats.find(c => c.key === (pp.assetClass || a.category)) || {icon:"📦",color:T.txt2,label:"—"};
     const obj = objs.find(o => o.id === Number(a.assigned_object_id));
-    const log = pp.moto_hours_log || [];
     const mh  = pp.total_hours || pp.moto_hours || 0;
     const yr  = pp.year ? new Date().getFullYear() - parseInt(pp.year) : null;
+    const log = pp.moto_hours_log || [];
+    const { statuses, nearest, hasOverdue } = getAssetToStatus(a);
+    const assetKtg = getAssetKtg(a);
+    const statusLabel = hasOverdue ? "Просрочен" : nearest?.urgent ? "Скоро ТО" : "Норма";
+    const statusColor = hasOverdue ? "#ef4444" : nearest?.urgent ? T.amber : T.green;
 
     function openPassportEdit() {
-      setPpForm({
-        manufacturer: pp.manufacturer||"",
-        model: pp.model||"",
-        year: pp.year||"",
-        serial: pp.serial||"",
-        inventory: pp.inventory||"",
-        reg_plate: pp.reg_plate||"",
-        engine_vol: pp.engine_vol ? String(pp.engine_vol) : "",
-        commissioned: pp.commissioned||"",
-        location: pp.location||"",
-        avg_monthly: pp.avg_monthly ? String(pp.avg_monthly) : "",
-        total_hours: pp.total_hours ? String(pp.total_hours) : "",
-        fuel_rate: pp.fuel_rate ? String(pp.fuel_rate) : "",
-      });
+      setPpForm({ manufacturer:pp.manufacturer||"", model:pp.model||"", year:pp.year||"", serial:pp.serial||"", inventory:pp.inventory||"", reg_plate:pp.reg_plate||"", engine_vol:pp.engine_vol?String(pp.engine_vol):"", commissioned:pp.commissioned||"", location:pp.location||"", avg_monthly:pp.avg_monthly?String(pp.avg_monthly):"", total_hours:pp.total_hours?String(pp.total_hours):"", fuel_rate:pp.fuel_rate?String(pp.fuel_rate):"" });
       setPassportEdit(true);
     }
     function savePassport() {
-      setPassports(prev => ({
-        ...prev,
-        [a.id]: {
-          ...(prev[a.id]||{}),
-          manufacturer: ppForm.manufacturer,
-          model: ppForm.model,
-          year: ppForm.year,
-          serial: ppForm.serial,
-          inventory: ppForm.inventory,
-          reg_plate: ppForm.reg_plate,
-          engine_vol: parseFloat(ppForm.engine_vol)||null,
-          commissioned: ppForm.commissioned,
-          location: ppForm.location,
-          avg_monthly: parseFloat(ppForm.avg_monthly)||null,
-          total_hours: parseFloat(ppForm.total_hours)||null,
-          fuel_rate: parseFloat(ppForm.fuel_rate)||null,
-        }
-      }));
+      setPassports(prev=>({...prev,[a.id]:{...(prev[a.id]||{}),manufacturer:ppForm.manufacturer,model:ppForm.model,year:ppForm.year,serial:ppForm.serial,inventory:ppForm.inventory,reg_plate:ppForm.reg_plate,engine_vol:parseFloat(ppForm.engine_vol)||null,commissioned:ppForm.commissioned,location:ppForm.location,avg_monthly:parseFloat(ppForm.avg_monthly)||null,total_hours:parseFloat(ppForm.total_hours)||null,fuel_rate:parseFloat(ppForm.fuel_rate)||null}}));
       setPassportEdit(false);
     }
 
-    // Status based on toSchedule — nearest upcoming TO
-    const sched = pp.toSchedule && pp.toSchedule.length > 0
-      ? pp.toSchedule
-      : [{name:"ТО-1",interval:250,duration_hrs:2},{name:"ТО-2",interval:500,duration_hrs:4},{name:"ТО-3",interval:1000,duration_hrs:8},{name:"Капремонт",interval:5000,duration_hrs:72}];
-
-    // For each schedule item: find last done record, calc next
-    const assetRecs = (maintRecords?.[a.id] || []).sort((x,y)=>y.hours-x.hours);
-    const schedStatus = sched.map(item => {
-      const done   = assetRecs.filter(r=>r.type===item.name);
-      const lastAt = done[0] ? parseFloat(done[0].hours) : 0;
-      const nextAt = lastAt > 0 ? lastAt + item.interval : item.interval;
-      const rem    = Math.max(0, nextAt - mh);
-      const pct    = lastAt > 0
-        ? Math.min(100, Math.round((mh - lastAt) / item.interval * 100))
-        : Math.min(100, Math.round(mh / item.interval * 100));
-      const overdue = mh >= nextAt;
-      const urgent  = !overdue && rem <= Math.round(item.interval * 0.1);
-      const color   = overdue ? "#ef4444" : urgent ? T.amber : T.green;
-      return { ...item, lastAt, nextAt, rem, pct, overdue, color };
-    });
-    // Nearest = smallest rem (or first overdue)
-    const nearest = schedStatus.slice().sort((a,b) => a.rem - b.rem)[0];
-    const hs = nearest
-      ? { label: nearest.name, color: nearest.color }
-      : { label:"Норма", color: T.green };
-
     return (
       <div>
-        {/* Passport edit modal */}
         {passportEdit && (
           <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
             <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${cat.color}`,borderRadius:8,width:"100%",maxWidth:480}}>
               <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.bg3}}>
-                <div style={{fontSize:14,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>✏ ПАСПОРТ — {a.name}</div>
+                <div style={{fontSize:14,fontWeight:600,color:T.txt0}}>Паспорт — {a.name}</div>
                 <button onClick={()=>setPassportEdit(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
               </div>
               <div style={{padding:18,display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -8033,10 +7961,10 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
                 <FieldInput label="Гос. номер"          value={ppForm.reg_plate}    onChange={e=>setPpForm(p=>({...p,reg_plate:e.target.value}))} T={T}/>
                 <FieldInput label="Объём двигателя"     value={ppForm.engine_vol}   onChange={e=>setPpForm(p=>({...p,engine_vol:e.target.value}))} T={T} placeholder="куб.см"/>
                 <FieldInput label="Год ввода в экспл."  value={ppForm.commissioned} onChange={e=>setPpForm(p=>({...p,commissioned:e.target.value}))} T={T}/>
-                <FieldInput label="Наработка с ввода, мч" type="number" value={ppForm.total_hours} onChange={e=>setPpForm(p=>({...p,total_hours:e.target.value}))} T={T}/>
-                <FieldInput label="Ср. наработка/мес"   type="number" value={ppForm.avg_monthly}  onChange={e=>setPpForm(p=>({...p,avg_monthly:e.target.value}))}  T={T}/>
-                <FieldInput label="Норма расхода топлива" value={ppForm.fuel_rate}  onChange={e=>setPpForm(p=>({...p,fuel_rate:e.target.value}))} T={T} placeholder="л/мч"/>
-                <FieldInput label="Дислокация"          value={ppForm.location}     onChange={e=>setPpForm(p=>({...p,location:e.target.value}))}     T={T} style={{gridColumn:"1/-1"}}/>
+                <FieldInput label="Наработка мч"        type="number" value={ppForm.total_hours} onChange={e=>setPpForm(p=>({...p,total_hours:e.target.value}))} T={T}/>
+                <FieldInput label="Ср. наработка/мес"   type="number" value={ppForm.avg_monthly} onChange={e=>setPpForm(p=>({...p,avg_monthly:e.target.value}))} T={T}/>
+                <FieldInput label="Норма топлива, л/мч" value={ppForm.fuel_rate}    onChange={e=>setPpForm(p=>({...p,fuel_rate:e.target.value}))} T={T}/>
+                <FieldInput label="Дислокация"          value={ppForm.location}     onChange={e=>setPpForm(p=>({...p,location:e.target.value}))} T={T}/>
                 <div style={{gridColumn:"1/-1",display:"flex",gap:8,marginTop:4}}>
                   <Btn variant="success" style={{flex:1}} onClick={savePassport} T={T}>✓ Сохранить</Btn>
                   <Btn variant="ghost" onClick={()=>setPassportEdit(false)} T={T}>Отмена</Btn>
@@ -8045,27 +7973,11 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
             </div>
           </div>
         )}
-
-        {MoveModal}
-
-        {/* Breadcrumb */}
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:20,flexWrap:"wrap"}}>
-          <button onClick={()=>setDetailNode(null)} style={{padding:"6px 14px",borderRadius:5,border:`1px solid ${T.border}`,background:T.bg2,color:T.txt2,cursor:"pointer",fontSize:12,fontFamily:"'Inter',sans-serif",fontWeight:600}}>← Все активы</button>
-          <span style={{color:T.txt2}}>›</span>
-          <div style={{padding:"5px 14px",borderRadius:5,background:`${cat.color}15`,border:`1px solid ${cat.color}40`,fontSize:13,fontWeight:700,color:cat.color,fontFamily:"'Inter',sans-serif"}}>{cat.icon} {a.name}</div>
-          <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-            <button onClick={()=>openMoveAsset(a)} style={{padding:"6px 14px",borderRadius:5,border:`1.5px solid ${T.cyan}`,background:`${T.cyan}10`,color:T.cyan,cursor:"pointer",fontSize:12,fontFamily:"'Inter',sans-serif",fontWeight:700}}>📦 Переместить</button>
-            <button onClick={openPassportEdit} style={{padding:"6px 14px",borderRadius:5,border:`1px solid ${T.border}`,background:T.bg2,color:T.txt1,cursor:"pointer",fontSize:12,fontFamily:"'Inter',sans-serif",fontWeight:600}}>✏ Редактировать</button>
-            <button onClick={()=>setDeleteConfId(a.id)} style={{padding:"6px 12px",borderRadius:5,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#f87171",cursor:"pointer",fontSize:12}}>🗑</button>
-          </div>
-        </div>
-
-        {/* Delete confirm */}
         {deleteConfId && (
           <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
             <div style={{background:T.bg2,border:"1px solid rgba(239,68,68,0.4)",borderRadius:8,maxWidth:360,width:"100%",padding:28,textAlign:"center"}}>
               <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
-              <div style={{fontSize:15,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",marginBottom:8}}>УДАЛИТЬ {a.name}?</div>
+              <div style={{fontSize:15,fontWeight:600,color:T.txt0,marginBottom:8}}>Удалить {a.name}?</div>
               <div style={{fontSize:13,color:T.txt2,marginBottom:20}}>Это действие нельзя отменить.</div>
               <div style={{display:"flex",gap:10,justifyContent:"center"}}>
                 <Btn variant="primary" style={{background:"linear-gradient(135deg,#dc2626,#991b1b)"}} onClick={confirmDeleteAsset} T={T}>Удалить</Btn>
@@ -8074,151 +7986,139 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
             </div>
           </div>
         )}
+        {MoveModal}
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-          {/* LEFT — Passport */}
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {/* Header card */}
-            <Card accent={cat.color} T={T} style={{overflow:"hidden",padding:0}}>
-              <div style={{height:6,background:`linear-gradient(90deg,${cat.color},${cat.color}60)`}}/>
-              <div style={{padding:"16px 20px"}}>
-                <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14}}>
-                  <div style={{width:56,height:56,borderRadius:12,background:`${cat.color}20`,border:`2px solid ${cat.color}40`,
-                    display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>
-                    {cat.icon}
-                  </div>
-                  <div>
-                    <div style={{fontSize:22,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",letterSpacing:"1px"}}>{a.name}</div>
-                    <div style={{fontSize:12,color:cat.color,fontWeight:700,textTransform:"uppercase",letterSpacing:".08em"}}>{cat.label}</div>
-                    {obj && <div style={{fontSize:12,color:T.cyan,marginTop:2}}>📍 {obj.name}</div>}
-                  </div>
-                </div>
-                {/* Key specs */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  {[
-                    {lbl:"Производитель",      val:pp.manufacturer||"—",                                icon:"🏭"},
-                    {lbl:"Марка/Модель",        val:pp.model||"—",                                       icon:"🔧"},
-                    {lbl:"Год выпуска",         val:pp.year ? `${pp.year} г. (${yr} лет)` : "—",         icon:"📅"},
-                    {lbl:"Серийный №",          val:pp.serial||"—",                                      icon:"🔢"},
-                    {lbl:"Инвент. №",           val:pp.inventory||"—",                                   icon:"📋"},
-                    {lbl:"Гос. номер",          val:pp.reg_plate||"—",                                   icon:"🚗"},
-                    {lbl:"Объём двигателя",     val:pp.engine_vol ? `${Number(pp.engine_vol).toLocaleString()} куб.см` : "—", icon:"⚙️"},
-                    {lbl:"Год ввода в экспл.",  val:pp.commissioned||"—",                                icon:"🗓"},
-                    {lbl:"Норма расхода",       val:pp.fuel_rate ? `${pp.fuel_rate} л/мч` : "—",         icon:"⛽"},
-                    {lbl:"Ср. наработка/мес",   val:pp.avg_monthly ? `${Number(pp.avg_monthly).toLocaleString()} мч` : "—", icon:"📈"},
-                    {lbl:"Объект",              val:obj?.name||"Не назначен",                            icon:"📍"},
-                    {lbl:"Дислокация",          val:pp.location||"—",                                    icon:"🗺"},
-                  ].map(({lbl,val,icon})=>(
-                    <div key={lbl} style={{padding:"8px 10px",background:T.bg3,borderRadius:5,border:`1px solid ${T.border}`}}>
-                      <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",marginBottom:3}}>{icon} {lbl}</div>
-                      <div style={{fontSize:13,fontWeight:700,color:T.txt0}}>{val}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
+        {/* Breadcrumb */}
+        <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:T.txt2,marginBottom:14}}>
+          <button onClick={()=>setDetailNode(null)} style={{background:"none",border:"none",cursor:"pointer",color:T.txt2,fontSize:12,padding:0}}>← Все активы</button>
+          <span>/</span>
+          <span style={{color:T.txt0,fontWeight:500}}>{a.name}</span>
+        </div>
+
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:4,height:36,borderRadius:3,background:cat.color,flexShrink:0}}/>
+            <div>
+              <div style={{fontSize:22,fontWeight:600,color:T.txt0,fontFamily:"'JetBrains Mono',monospace"}}>{a.name}</div>
+              <div style={{fontSize:11,color:T.txt2,marginTop:2}}>{[pp.manufacturer,pp.model,pp.year&&`${pp.year}г`,obj&&obj.name].filter(Boolean).join(" · ")}</div>
+            </div>
           </div>
-
-          {/* RIGHT — Moto hours */}
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {/* Hours gauge card */}
-            <Card accent={hs.color} T={T} style={{padding:"16px 20px"}}>
-              <div style={{fontSize:12,color:T.txt2,textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>⏱ Наработка</div>
-              <div style={{display:"flex",alignItems:"flex-end",gap:12,marginBottom:12}}>
-                <div style={{fontSize:48,fontWeight:700,color:hs.color,fontFamily:"'Inter',sans-serif",lineHeight:1}}>
-                  {mh.toLocaleString()}
-                </div>
-                <div style={{fontSize:16,color:T.txt2,marginBottom:8}}>мч</div>
-              </div>
-              {/* Progress toward next service — from toSchedule */}
-              {nearest && (
-                <div style={{marginBottom:10}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                    <div style={{fontSize:12,color:T.txt2}}>
-                      До {nearest.name} ({nearest.nextAt.toLocaleString()} мч)
-                      {nearest.duration_hrs ? <span style={{marginLeft:6,color:T.violet}}>· {nearest.duration_hrs} ч простоя</span> : ""}
-                    </div>
-                    <div style={{fontSize:12,fontWeight:700,color:nearest.color}}>
-                      {nearest.overdue ? "ПРОСРОЧЕНО" : `${nearest.rem.toLocaleString()} мч`}
-                    </div>
-                  </div>
-                  <div style={{height:8,background:T.border,borderRadius:4,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:`${nearest.pct}%`,background:nearest.color,borderRadius:4,transition:"width 0.6s"}}/>
-                  </div>
-                  <div style={{fontSize:12,color:T.txt2,marginTop:4}}>{nearest.pct}% до {nearest.name}</div>
-                </div>
-              )}
-              {/* All schedule items as chips */}
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
-                {schedStatus.map(s=>(
-                  <div key={s.name} style={{fontSize:12,padding:"2px 8px",borderRadius:3,
-                    background:s.overdue?`#ef444420`:`${s.color}15`,
-                    border:`1px solid ${s.overdue?"#ef444450":s.color+"50"}`,
-                    color:s.overdue?"#ef4444":s.color,fontWeight:700,
-                    title:`${s.name}: каждые ${s.interval} мч`}}>
-                    {s.name} {s.overdue ? "⚠" : s.pct >= 90 ? "⚡" : ""}
-                    {s.duration_hrs ? ` (${s.duration_hrs}ч)` : ""}
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Hours log */}
-            <Card T={T}>
-              <div style={{padding:"10px 14px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{fontSize:12,fontWeight:700,color:T.txt0,textTransform:"uppercase"}}>📒 История наработки</div>
-                <div style={{fontSize:12,color:T.txt2}}>{log.length} записей</div>
-              </div>
-              {log.length === 0 ? (
-                <div style={{padding:"20px 14px",textAlign:"center",fontSize:12,color:T.txt2}}>
-                  Наработка пока не накапливалась<br/>
-                  <span style={{fontSize:12,opacity:0.7}}>Увеличивается при утверждении отчётов нач. участка</span>
-                </div>
-              ) : (
-                <div style={{maxHeight:240,overflowY:"auto"}}>
-                  {[...log].reverse().map((entry,i)=>(
-                    <div key={entry.id} style={{
-                      display:"flex",justifyContent:"space-between",alignItems:"center",
-                      padding:"8px 14px",
-                      borderBottom:i<log.length-1?`1px solid ${T.border}`:"none",
-                      background:i%2?T.rowAlt:"transparent",
-                    }}>
-                      <div>
-                        <div style={{fontSize:12,fontWeight:700,color:T.txt0}}>{entry.date}</div>
-                        <div style={{fontSize:12,color:T.txt2}}>{entry.by}</div>
-                      </div>
-                      <div style={{fontSize:16,fontWeight:700,color:T.green,fontFamily:"'Inter',sans-serif"}}>
-                        +{entry.wh} мч
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={()=>openMoveAsset(a)} style={{padding:"5px 12px",border:`1px solid ${T.border}`,borderRadius:6,background:T.bg3,color:T.txt1,fontSize:12,cursor:"pointer"}}>↔ Переместить</button>
+            <button onClick={openPassportEdit} style={{padding:"5px 12px",border:`1px solid ${T.border}`,borderRadius:6,background:T.bg3,color:T.txt1,fontSize:12,cursor:"pointer"}}>✏ Редактировать</button>
+            <button onClick={()=>setDeleteConfId(a.id)} style={{padding:"5px 10px",border:"1px solid rgba(239,68,68,0.4)",borderRadius:6,background:"rgba(239,68,68,0.08)",color:"#f87171",fontSize:12,cursor:"pointer"}}>🗑</button>
           </div>
         </div>
 
-        {/* ТО секция */}
-        <div style={{marginTop:16}}>
-          <AssetMaintenanceTab
-            nodeId={a.id} nodeName={a.name}
-            passport={pp} meters={{ [a.id]: { current: Number(mh) } }}
-            maintRecords={maintRecords} setMaintRecords={setMaintRecords}
-            setPassports={setPassports}
-            user={user} T={T}
-          />
+        {/* Key strip */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:14}}>
+          {[
+            {label:"Моточасы",   val:`${mh.toLocaleString()} мч`, sub:"с начала эксплуатации", color:T.txt0},
+            {label:"Статус ТО",  val:statusLabel, sub:nearest?`${nearest.name}: ${nearest.overdue?"просрочен":"через "+nearest.rem.toLocaleString()+" мч"}`:"-", color:statusColor},
+            {label:"КТГ",        val:assetKtg!==null?`${assetKtg}%`:"—", sub:"текущий месяц", color:assetKtg!==null?ktgColor(assetKtg):T.txt2},
+            {label:"Норма ГСМ",  val:pp.fuel_rate?`${pp.fuel_rate} л/мч`:"—", sub:"по паспорту", color:T.txt0},
+          ].map(({label,val,sub,color})=>(
+            <div key={label} style={{background:T.bg2,padding:"11px 14px"}}>
+              <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>{label}</div>
+              <div style={{fontSize:20,fontWeight:600,color,lineHeight:1}}>{val}</div>
+              <div style={{fontSize:11,color:T.txt2,marginTop:3}}>{sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* 2-col layout */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          {/* LEFT: Passport */}
+          <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
+            <div style={{padding:"9px 14px",borderBottom:`1px solid ${T.border}`,fontSize:11,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em"}}>Паспорт</div>
+            {[
+              ["Производитель",       pp.manufacturer||"—"],
+              ["Марка / Модель",      pp.model||"—"],
+              ["Год выпуска",         pp.year?`${pp.year} г. (${yr} лет)`:"—"],
+              ["Серийный №",          pp.serial||"—"],
+              ["Инвентарный №",       pp.inventory||"—"],
+              ["Год ввода в экспл.",  pp.commissioned||"—"],
+              ["Объём двигателя",     pp.engine_vol?`${Number(pp.engine_vol).toLocaleString()} куб.см`:"—"],
+              ["Ср. наработка / мес", pp.avg_monthly?`${pp.avg_monthly} мч`:"—"],
+              ["Дислокация",          pp.location||"—"],
+              ["Объект",              obj?.name||"Не назначен"],
+            ].map(([l,v])=>(
+              <div key={l} style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",padding:"7px 14px",borderBottom:`1px solid ${T.border}`,fontSize:12}}>
+                <span style={{color:T.txt2}}>{l}</span>
+                <span style={{fontWeight:500,color:T.txt0,textAlign:"right",maxWidth:"55%"}}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* RIGHT: TO + history */}
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {/* TO schedule */}
+            <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
+              <div style={{padding:"9px 14px",borderBottom:`1px solid ${T.border}`,fontSize:11,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em"}}>График ТО</div>
+              <div style={{padding:"10px 14px",display:"flex",flexDirection:"column",gap:10}}>
+                {statuses.map(s=>(
+                  <div key={s.name} style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{minWidth:90}}>
+                      <div style={{fontSize:12,fontWeight:500,color:T.txt0}}>{s.name}</div>
+                      <div style={{fontSize:10,color:T.txt2}}>каждые {s.interval} мч</div>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{height:4,borderRadius:2,background:T.cardSh,overflow:"hidden"}}>
+                        <div style={{height:4,borderRadius:2,background:s.overdue?"#ef4444":s.urgent?T.amber:T.green,width:`${s.pct}%`}}/>
+                      </div>
+                      <div style={{fontSize:10,color:T.txt2,marginTop:2}}>{s.lastAt>0?`посл.: ${s.lastAt.toLocaleString()} мч`:"ещё не выполнялось"}</div>
+                    </div>
+                    <div style={{textAlign:"right",minWidth:85}}>
+                      <div style={{fontSize:12,fontWeight:600,color:s.overdue?"#ef4444":s.urgent?T.amber:T.green}}>{s.overdue?`+${(mh-s.nextAt).toFixed(0)} мч`:s.rem.toLocaleString()+" мч"}</div>
+                      <div style={{fontSize:10,color:T.txt2}}>{s.overdue?"ПРОСРОЧЕНО":"до "+s.name}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* History */}
+            <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
+              <div style={{padding:"9px 14px",borderBottom:`1px solid ${T.border}`,fontSize:11,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",display:"flex",justifyContent:"space-between"}}>
+                <span>История наработки</span>
+                <span style={{fontWeight:400,color:T.txt2}}>{log.length} записей</span>
+              </div>
+              {log.length === 0
+                ? <div style={{padding:"16px 14px",fontSize:12,color:T.txt2,textAlign:"center"}}>Наработка накапливается из утверждённых отчётов</div>
+                : <div style={{maxHeight:220,overflowY:"auto"}}>
+                    {[...log].reverse().map((entry,i)=>(
+                      <div key={entry.id||i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 14px",borderBottom:`1px solid ${T.border}`,fontSize:12}}>
+                        <div>
+                          <div style={{color:T.txt0,fontWeight:500}}>{entry.date}</div>
+                          <div style={{fontSize:11,color:T.txt2,marginTop:1}}>{entry.by}</div>
+                        </div>
+                        <div style={{fontWeight:600,color:T.green}}>+{entry.wh} мч</div>
+                      </div>
+                    ))}
+                  </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* Maintenance tab */}
+        <div style={{marginTop:14}}>
+          <AssetMaintenanceTab nodeId={a.id} nodeName={a.name} passport={pp} meters={{[a.id]:{current:Number(mh)}}} maintRecords={maintRecords} setMaintRecords={setMaintRecords} setPassports={setPassports} user={user} T={T}/>
         </div>
       </div>
     );
   }
+
+  // ── LIST VIEW ────────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* Delete confirm modal */}
+      {/* Modals */}
       {deleteConfId && (
         <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:T.bg2,border:"1px solid rgba(239,68,68,0.4)",borderRadius:8,maxWidth:360,width:"100%",padding:28,textAlign:"center"}}>
             <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
-            <div style={{fontSize:15,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif",marginBottom:8}}>УДАЛИТЬ АКТИВ?</div>
+            <div style={{fontSize:15,fontWeight:600,color:T.txt0,marginBottom:8}}>Удалить актив?</div>
             <div style={{fontSize:13,color:T.txt2,marginBottom:20}}>Это действие нельзя отменить.</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               <Btn variant="primary" style={{background:"linear-gradient(135deg,#dc2626,#991b1b)"}} onClick={confirmDeleteAsset} T={T}>Удалить</Btn>
@@ -8227,13 +8127,11 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           </div>
         </div>
       )}
-
-      {/* Asset form modal */}
       {assetModal && (
         <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,width:"100%",maxWidth:440}}>
             <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.bg3}}>
-              <div style={{fontSize:14,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>{assetModal==="add"?"+ ДОБАВИТЬ АКТИВ":"РЕДАКТИРОВАТЬ АКТИВ"}</div>
+              <div style={{fontSize:14,fontWeight:600,color:T.txt0}}>{assetModal==="add"?"Добавить актив":"Редактировать актив"}</div>
               <button onClick={()=>{setAssetModal(null);setErr("");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
             </div>
             <div style={{padding:16,display:"flex",flexDirection:"column",gap:12}}>
@@ -8255,22 +8153,20 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           </div>
         </div>
       )}
-
-      {/* Category modal */}
       {catModal && (
         <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
           <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,width:"100%",maxWidth:420}}>
             <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",background:T.bg3}}>
-              <div style={{fontSize:14,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>{catModal==="add"?"+ КАТЕГОРИЯ":"КАТЕГОРИЯ"}</div>
+              <div style={{fontSize:14,fontWeight:600,color:T.txt0}}>{catModal==="add"?"Добавить категорию":"Редактировать категорию"}</div>
               <button onClick={()=>{setCatModal(null);setErr("");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
             </div>
             <div style={{padding:16,display:"flex",flexDirection:"column",gap:12}}>
-              {catModal==="add" && <FieldInput label="Ключ (DRILL_RIG, MIXER…)" value={catForm.key} onChange={e=>setCatForm(p=>({...p,key:e.target.value}))} T={T}/>}
+              {catModal==="add" && <FieldInput label="Ключ (DRILL_RIG…)" value={catForm.key} onChange={e=>setCatForm(p=>({...p,key:e.target.value}))} T={T}/>}
               <FieldInput label="Название" value={catForm.label} onChange={e=>setCatForm(p=>({...p,label:e.target.value}))} T={T}/>
               <div style={{display:"flex",gap:10}}>
-                <FieldInput label="Иконка (emoji)" value={catForm.icon} onChange={e=>setCatForm(p=>({...p,icon:e.target.value}))} T={T} style={{flex:1}}/>
-                <FieldInput label="Цвет (#hex)" value={catForm.color} onChange={e=>setCatForm(p=>({...p,color:e.target.value}))} T={T} style={{flex:1}}/>
-                <div style={{width:40,height:40,borderRadius:8,background:catForm.color,border:`1px solid ${T.border}`,alignSelf:"flex-end",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{catForm.icon}</div>
+                <FieldInput label="Иконка" value={catForm.icon} onChange={e=>setCatForm(p=>({...p,icon:e.target.value}))} T={T} style={{flex:1}}/>
+                <FieldInput label="Цвет" value={catForm.color} onChange={e=>setCatForm(p=>({...p,color:e.target.value}))} T={T} style={{flex:1}}/>
+                <div style={{width:40,height:40,borderRadius:8,background:catForm.color,alignSelf:"flex-end",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{catForm.icon}</div>
               </div>
               {err && <div style={{fontSize:12,color:"#f87171"}}>⚠ {err}</div>}
               <div style={{display:"flex",gap:8}}>
@@ -8281,139 +8177,143 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
           </div>
         </div>
       )}
+      {MoveModal}
 
-      {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
-        <SectionTitle label="Активы" sub="РЕЕСТР ТЕХНИКИ" T={T}/>
+      {/* Page header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+        <div style={{fontSize:22,fontWeight:600,color:T.txt0}}>Активы</div>
         <div style={{display:"flex",gap:8}}>
           <Btn variant="ghost" onClick={openAddCat} T={T} style={{fontSize:12}}>+ Категория</Btn>
           <Btn variant="primary" onClick={openAddAsset} T={T} style={{fontSize:12}}>+ Актив</Btn>
         </div>
       </div>
 
-      {/* Category cards */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:8,marginBottom:20}}>
-        <div onClick={()=>setSelCat(null)} style={{
-          padding:"14px 16px",borderRadius:7,cursor:"pointer",
-          background:!selCat?`${T.red}15`:T.bg2,
-          border:`2px solid ${!selCat?T.red:T.border}`,transition:"all 0.15s",
-        }}>
-          <div style={{fontSize:22,marginBottom:4}}>📋</div>
-          <div style={{fontSize:12,fontWeight:700,color:!selCat?T.red:T.txt0}}>Все активы</div>
-          <div style={{fontSize:22,fontWeight:900,color:!selCat?T.red:T.txt1,fontFamily:"'Inter',sans-serif",lineHeight:1,marginTop:4}}>{assets.length}</div>
+      {/* Summary strip */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:16}}>
+        {[
+          {label:"Всего",      val:assets.length,    sub:"единиц техники",      color:T.txt0},
+          {label:"В норме",    val:summary.ok,        sub:"ТО не требуется",     color:T.green},
+          {label:"Скоро ТО",   val:summary.warn,      sub:"менее 10% до порога", color:T.amber},
+          {label:"Просрочено", val:summary.bad,       sub:"требует обслуживания",color:"#ef4444"},
+          {label:"КТГ парка",  val:"—",               sub:"текущий месяц",       color:T.txt0},
+        ].map(({label,val,sub,color})=>(
+          <div key={label} style={{background:T.bg2,padding:"11px 14px"}}>
+            <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>{label}</div>
+            <div style={{fontSize:22,fontWeight:600,color,lineHeight:1}}>{val}</div>
+            <div style={{fontSize:11,color:T.txt2,marginTop:3}}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Category tabs */}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+        <div onClick={()=>setSelCat(null)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",background:T.bg2,border:`${!selCat?"1.5px":"0.5px"} solid ${!selCat?T.red:T.border}`,borderRadius:8,cursor:"pointer",transition:"all .12s"}}>
+          <div style={{width:32,height:32,borderRadius:6,background:`${T.red}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📋</div>
+          <div>
+            <div style={{fontSize:12,fontWeight:500,color:!selCat?T.red:T.txt0}}>Все активы</div>
+            <div style={{fontSize:11,color:T.txt2}}>{assets.length} единиц</div>
+          </div>
         </div>
         {cats.map(cat=>{
-          const cnt = assets.filter(a=>a.category===cat.key).length;
-          const isActive = selCat===cat.key;
-          return(
-            <div key={cat.key} style={{
-              padding:"14px 16px",borderRadius:7,cursor:"pointer",position:"relative",
-              background:isActive?`${cat.color}15`:T.bg2,
-              border:`2px solid ${isActive?cat.color:T.border}`,transition:"all 0.15s",
-            }} onClick={()=>setSelCat(isActive?null:cat.key)}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                <div style={{fontSize:22}}>{cat.icon}</div>
-                <div style={{display:"flex",gap:2}}>
-                  <button onClick={e=>{e.stopPropagation();openEditCat(cat);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:T.txt2,padding:"2px 3px"}}>✏</button>
-                  <button onClick={e=>{e.stopPropagation();deleteCat(cat.key);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#ef4444",padding:"2px 3px"}}>🗑</button>
-                </div>
+          const cnt=assets.filter(a=>a.category===cat.key).length;
+          const isActive=selCat===cat.key;
+          return (
+            <div key={cat.key} onClick={()=>setSelCat(isActive?null:cat.key)}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",background:T.bg2,border:`${isActive?"1.5px":"0.5px"} solid ${isActive?cat.color:T.border}`,borderRadius:8,cursor:"pointer",transition:"all .12s",position:"relative"}}>
+              <div style={{width:32,height:32,borderRadius:6,background:`${cat.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{cat.icon}</div>
+              <div>
+                <div style={{fontSize:12,fontWeight:500,color:isActive?cat.color:T.txt0}}>{cat.label}</div>
+                <div style={{fontSize:11,color:T.txt2}}>{cnt} единиц</div>
               </div>
-              <div style={{fontSize:12,fontWeight:700,color:isActive?cat.color:T.txt0,marginTop:4,lineHeight:1.3}}>{cat.label}</div>
-              <div style={{fontSize:24,fontWeight:900,color:cat.color,fontFamily:"'Inter',sans-serif",lineHeight:1,marginTop:4}}>{cnt}</div>
+              <div style={{display:"flex",gap:2,marginLeft:4}} onClick={e=>e.stopPropagation()}>
+                <button onClick={()=>{setCatForm({key:cat.key,label:cat.label,icon:cat.icon,color:cat.color});setErr("");setCatModal("edit_"+cat.key);}} style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.txt2,padding:"2px 3px"}}>✏</button>
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Assets header row */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <div style={{fontSize:13,fontWeight:700,color:T.txt0,textTransform:"uppercase",fontFamily:"'Inter',sans-serif"}}>
-          {activeCat?<span>{activeCat.icon} {activeCat.label}</span>:"Все активы"}
-          <span style={{fontSize:12,color:T.txt2,fontFamily:"'Inter',sans-serif",fontWeight:400,marginLeft:8}}>({catAssets.length})</span>
-        </div>
-        <div style={{fontSize:12,color:T.txt2}}>Нажмите на карточку для просмотра паспорта</div>
+      {/* Section label */}
+      <div style={{fontSize:11,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>
+        {selCat ? `${cats.find(c=>c.key===selCat)?.icon} ${cats.find(c=>c.key===selCat)?.label}` : "Все активы"} — {catAssets.length}
       </div>
 
-      {catAssets.length === 0 ? (
-        <Card style={{padding:32,textAlign:"center"}} T={T}>
-          <div style={{fontSize:32,marginBottom:12}}>🏗</div>
-          <div style={{fontSize:13,color:T.txt2}}>Нет активов{selCat?" в этой категории":""}</div>
-          <Btn variant="primary" onClick={openAddAsset} T={T} style={{marginTop:14,fontSize:12}}>+ Добавить актив</Btn>
-        </Card>
-      ) : (
-        <>
-          {MoveModal}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:10}}>
-          {catAssets.map(a=>{
-            const cat    = cats.find(c=>c.key===a.category)||{icon:"📦",color:T.txt2,label:"Другое"};
-            const obj    = objs.find(o=>o.id===Number(a.assigned_object_id));
-            const pp     = passports[a.id]||{};
-            const mh     = pp.moto_hours||0;
-            const hs     = mh>=20000?{c:"#ef4444",l:"Кап"}: mh>=15000?{c:T.amber,l:"ТО-3"}: mh>=10000?{c:"#f59e0b",l:"ТО-2"}: mh>=5000?{c:T.green,l:"ТО-1"}:{c:T.cyan,l:"Новое"};
-            return(
-              <div key={a.id}
-                onClick={()=>setDetailNode(a)}
-                style={{borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,
-                  background:T.bg2,boxShadow:`0 2px 8px ${T.cardSh}`,cursor:"pointer",transition:"all 0.15s"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=cat.color;e.currentTarget.style.transform="translateY(-2px)";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="none";}}>
-                <div style={{height:4,background:`linear-gradient(90deg,${cat.color},${cat.color}80)`}}/>
-                <div style={{padding:"12px 14px"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <div style={{width:36,height:36,borderRadius:8,background:`${cat.color}20`,border:`1px solid ${cat.color}40`,
-                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{cat.icon}</div>
-                      <div>
-                        <div style={{fontSize:14,fontWeight:700,color:T.txt0,fontFamily:"'Inter',sans-serif"}}>{a.name}</div>
-                        <div style={{fontSize:12,color:cat.color,fontWeight:700,textTransform:"uppercase",letterSpacing:".06em"}}>{cat.label}</div>
+      {/* Asset cards */}
+      {catAssets.length === 0
+        ? <div style={{padding:32,textAlign:"center",fontSize:12,color:T.txt2,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10}}>
+            <div style={{fontSize:32,marginBottom:12}}>🏗</div>
+            <div>Нет активов{selCat?" в этой категории":""}</div>
+            <Btn variant="primary" onClick={openAddAsset} T={T} style={{marginTop:14,fontSize:12}}>+ Добавить актив</Btn>
+          </div>
+        : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
+            {catAssets.map(a=>{
+              const cat     = cats.find(c=>c.key===a.category)||{icon:"📦",color:T.txt2,label:"Другое"};
+              const obj     = objs.find(o=>o.id===Number(a.assigned_object_id));
+              const pp      = passports[a.id]||{};
+              const mh      = pp.total_hours||pp.moto_hours||0;
+              const {nearest,hasOverdue,hasUrgent} = getAssetToStatus(a);
+              const assetKtg = getAssetKtg(a);
+              const sColor  = hasOverdue?"#ef4444":hasUrgent?T.amber:T.green;
+              const sLabel  = hasOverdue?"Просрочено":hasUrgent?"Скоро ТО":"Норма";
+              const sBg     = hasOverdue?"rgba(239,68,68,0.12)":hasUrgent?`${T.amber}18`:`${T.green}18`;
+              return (
+                <div key={a.id} onClick={()=>setDetailNode(a)}
+                  style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",cursor:"pointer",transition:"border-color .12s"}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=T.txt2}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}>
+                  <div style={{display:"flex",alignItems:"stretch"}}>
+                    <div style={{width:4,background:sColor,flexShrink:0}}/>
+                    <div style={{flex:1,padding:"12px 14px"}}>
+                      {/* Head */}
+                      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
+                        <div>
+                          <div style={{fontSize:15,fontWeight:600,color:T.txt0,fontFamily:"'JetBrains Mono',monospace"}}>{a.name}</div>
+                          <div style={{fontSize:11,color:T.txt2,marginTop:1}}>{[pp.manufacturer,pp.model,pp.year&&`${pp.year}г`].filter(Boolean).join(" · ")||cat.label}</div>
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                          <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:sBg,color:sColor}}>{sLabel}</span>
+                          {assetKtg!==null && <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:ktgBg(assetKtg),color:ktgColor(assetKtg)}}>КТГ {assetKtg}%</span>}
+                        </div>
                       </div>
-                    </div>
-                    <div style={{display:"flex",gap:2}} onClick={e=>e.stopPropagation()}>
-                      <button onClick={e=>openMoveAsset(a,e)} title="Переместить на другой объект"
-                        style={{background:`${T.cyan}12`,border:`1px solid ${T.cyan}40`,borderRadius:4,cursor:"pointer",fontSize:12,color:T.cyan,padding:"3px 7px",fontWeight:700}}>↔</button>
-                      <button onClick={()=>openEditAsset(a)} style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:4,cursor:"pointer",fontSize:12,color:T.txt2,padding:"3px 7px"}}>✏</button>
-                      <button onClick={()=>setDeleteConfId(a.id)} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:12,color:"#f87171",padding:"3px 7px"}}>🗑</button>
+                      {/* Stats */}
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
+                        <div style={{background:T.bg3,borderRadius:6,padding:"6px 8px"}}>
+                          <div style={{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:2}}>Моточасы</div>
+                          <div style={{fontSize:13,fontWeight:500,color:T.txt0}}>{mh>0?mh.toLocaleString():"—"}</div>
+                        </div>
+                        <div style={{background:T.bg3,borderRadius:6,padding:"6px 8px"}}>
+                          <div style={{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:2}}>Объект</div>
+                          <div style={{fontSize:11,fontWeight:500,color:obj?T.cyan:T.txt2}}>{obj?.name||"—"}</div>
+                        </div>
+                        <div style={{background:T.bg3,borderRadius:6,padding:"6px 8px"}}>
+                          <div style={{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:2}}>{nearest?.name||"ТО"}</div>
+                          <div style={{fontSize:13,fontWeight:500,color:sColor}}>{nearest?(nearest.overdue?`+${Math.round(mh-nearest.nextAt)} мч`:`${nearest.rem.toLocaleString()} мч`):"—"}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Specs row */}
-                  {(pp.manufacturer||pp.model||pp.year) && (
-                    <div style={{fontSize:12,color:T.txt2,marginBottom:8}}>
-                      {[pp.manufacturer,pp.model,pp.year&&`${pp.year}г`].filter(Boolean).join(" · ")}
+                  {/* Footer bar */}
+                  <div style={{borderTop:`1px solid ${T.border}`,padding:"7px 14px",display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:10,color:T.txt2,whiteSpace:"nowrap"}}>{nearest?`до ${nearest.name}`:""}</span>
+                    <div style={{flex:1,height:3,borderRadius:2,background:T.cardSh,overflow:"hidden"}}>
+                      <div style={{height:3,borderRadius:2,background:sColor,width:`${nearest?.pct||0}%`}}/>
                     </div>
-                  )}
-
-                  {/* Moto hours + status */}
-                  {mh > 0 && (
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                      <div style={{flex:1,height:5,background:T.border,borderRadius:3,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:`${Math.min(100,Math.round(mh/20000*100))}%`,background:hs.c,borderRadius:3}}/>
-                      </div>
-                      <div style={{fontSize:12,fontWeight:700,color:hs.c,fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>
-                        {mh.toLocaleString()} мч
-                      </div>
-                      <div style={{fontSize:12,padding:"2px 6px",borderRadius:3,background:`${hs.c}18`,border:`1px solid ${hs.c}40`,color:hs.c,fontWeight:700}}>{hs.l}</div>
+                    <span style={{fontSize:10,color:T.txt2,whiteSpace:"nowrap"}}>{mh>0?`${mh.toLocaleString()} мч`:""}</span>
+                    <div style={{display:"flex",gap:2}} onClick={e=>e.stopPropagation()}>
+                      <button onClick={e=>openMoveAsset(a,e)} style={{background:`${T.cyan}12`,border:`1px solid ${T.cyan}40`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.cyan,padding:"2px 6px"}}>↔</button>
+                      <button onClick={e=>{e.stopPropagation();openEditAsset(a);}} style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.txt2,padding:"2px 6px"}}>✏</button>
+                      <button onClick={e=>{e.stopPropagation();setDeleteConfId(a.id);}} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:11,color:"#f87171",padding:"2px 6px"}}>🗑</button>
                     </div>
-                  )}
-
-                  {/* Object */}
-                  <div style={{padding:"6px 10px",borderRadius:5,
-                    background:obj?`${T.cyan}12`:`${T.border}20`,border:`1px solid ${obj?T.cyan+"40":T.border}`}}>
-                    {obj
-                      ?<div style={{fontSize:12,fontWeight:700,color:T.cyan}}>📍 {obj.name}</div>
-                      :<div style={{fontSize:12,color:T.txt2,fontStyle:"italic"}}>Не назначен на объект</div>
-                    }
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
-        </>
-      )}
+      }
     </div>
   );
 }
+
 // Default categories (editable at runtime via assetCategories state in App)
 
 
