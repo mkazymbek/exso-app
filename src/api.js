@@ -508,3 +508,153 @@ export async function adminListUsers() {
     oids: u.role === 'foreman' ? (u.user_objects || []).map(r => r.object_id) : 'all',
   }));
 }
+
+// ──────────────────────────────────────────────────────────────
+// ASSETS (nodes + passports + maintRecords)
+// Таблицы: assets, asset_passports, asset_maint_records
+// ──────────────────────────────────────────────────────────────
+
+// ── Загрузить все активы ──────────────────────────────────────
+export async function getAssets() {
+  const { data, error } = await supabase
+    .from('assets')
+    .select('*')
+    .order('garage_num');
+  if (error) throw error;
+  return data; // [{id, parent_id, name, type, cat_type, fuel_rate, desc, assigned_object_id, garage_num, created_by, created_at}]
+}
+
+// ── Сохранить/обновить один актив ────────────────────────────
+export async function upsertAsset(asset) {
+  const row = {
+    id:                 asset.id,
+    parent_id:          asset.parentId,
+    name:               asset.name,
+    type:               asset.type,
+    cat_type:           asset.catType,
+    fuel_rate:          asset.fuelRate,
+    desc:               asset.desc || '',
+    assigned_object_id: asset.assigned_object_id ?? null,
+    created_by:         asset.createdBy || 'system',
+  };
+  const { data, error } = await supabase
+    .from('assets')
+    .upsert(row, { onConflict: 'id' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ── Загрузить все паспорта ────────────────────────────────────
+export async function getPassports() {
+  const { data, error } = await supabase
+    .from('asset_passports')
+    .select('*');
+  if (error) throw error;
+  // Convert array → object keyed by asset_id
+  const result = {};
+  (data || []).forEach(row => {
+    result[row.asset_id] = {
+      assetClass:      row.asset_class,
+      manufacturer:    row.manufacturer,
+      model:           row.model,
+      serial:          row.serial,
+      year:            row.year,
+      inventory:       row.inventory,
+      reg_plate:       row.reg_plate,
+      engine_vol:      row.engine_vol,
+      commissioned:    row.commissioned,
+      total_hours:     row.total_hours,
+      moto_hours:      row.moto_hours,
+      moto_hours_log:  row.moto_hours_log || [],
+      avg_monthly:     row.avg_monthly,
+      fuel_rate:       row.fuel_rate,
+      location:        row.location,
+      toSchedule:      row.to_schedule || [{name:"ТО-250",interval:250,duration_hrs:2}],
+    };
+  });
+  return result;
+}
+
+// ── Сохранить/обновить паспорт актива ────────────────────────
+export async function upsertPassport(assetId, passport) {
+  const row = {
+    asset_id:        assetId,
+    asset_class:     passport.assetClass,
+    manufacturer:    passport.manufacturer,
+    model:           passport.model,
+    serial:          passport.serial,
+    year:            passport.year,
+    inventory:       passport.inventory,
+    reg_plate:       passport.reg_plate,
+    engine_vol:      passport.engine_vol,
+    commissioned:    passport.commissioned,
+    total_hours:     passport.total_hours,
+    moto_hours:      passport.moto_hours,
+    moto_hours_log:  passport.moto_hours_log || [],
+    avg_monthly:     passport.avg_monthly,
+    fuel_rate:       passport.fuel_rate,
+    location:        passport.location,
+    to_schedule:     passport.toSchedule || [{name:"ТО-250",interval:250,duration_hrs:2}],
+  };
+  const { data, error } = await supabase
+    .from('asset_passports')
+    .upsert(row, { onConflict: 'asset_id' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ── Загрузить все записи ТО ───────────────────────────────────
+export async function getMaintRecords() {
+  const { data, error } = await supabase
+    .from('asset_maint_records')
+    .select('*')
+    .order('date', { ascending: false });
+  if (error) throw error;
+  // Convert to {assetId: [{id,date,type,hours,note,by}]}
+  const result = {};
+  (data || []).forEach(row => {
+    if (!result[row.asset_id]) result[row.asset_id] = [];
+    result[row.asset_id].push({
+      id:    row.id,
+      date:  row.date,
+      type:  row.type,
+      hours: row.hours,
+      note:  row.note,
+      by:    row.by,
+    });
+  });
+  return result;
+}
+
+// ── Добавить запись ТО ────────────────────────────────────────
+export async function addMaintRecord(assetId, record) {
+  const row = {
+    id:       record.id,
+    asset_id: assetId,
+    date:     record.date,
+    type:     record.type,
+    hours:    record.hours,
+    note:     record.note || '',
+    by:       record.by || 'system',
+  };
+  const { data, error } = await supabase
+    .from('asset_maint_records')
+    .upsert(row, { onConflict: 'id' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ── Удалить запись ТО ─────────────────────────────────────────
+export async function deleteMaintRecord(recordId) {
+  const { error } = await supabase
+    .from('asset_maint_records')
+    .delete()
+    .eq('id', recordId);
+  if (error) throw error;
+}

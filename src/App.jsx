@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus, adminCreateUser, adminUpdatePassword, adminDeleteUser, adminListUsers } from "./api.js";
+import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus, adminCreateUser, adminUpdatePassword, adminDeleteUser, adminListUsers, getAssets, upsertAsset, getPassports, upsertPassport, getMaintRecords, addMaintRecord, deleteMaintRecord } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK = {
@@ -3917,7 +3917,12 @@ function ObjectsEditor({ objs, setObjs, rigs, setRigs, nodes, setNodes, T }) {
   }
 
   function doMove(newOid) {
-    setNodes(prev => prev.map(n => n.id === moveModal.nodeId ? { ...n, assigned_object_id: newOid } : n));
+    setNodes(prev => {
+      const updated = prev.map(n => n.id === moveModal.nodeId ? { ...n, assigned_object_id: newOid } : n);
+      const node = updated.find(n => n.id === moveModal.nodeId);
+      if (node) upsertAsset(node).catch(e => console.warn('upsertAsset error:', e.message));
+      return updated;
+    });
     setMoveModal(null);
   }
 
@@ -6228,6 +6233,7 @@ function AssetMaintenanceTab({ nodeId, nodeName, passport, meters, maintRecords,
     if (isNaN(h) || h < 0) { setErr("Укажите наработку (мч)"); return; }
     const rec = { id:"mr"+genId(), date:form.date, type:form.type, hours:h, note:form.note.trim(), by:user?.name||"Механик" };
     setMaintRecords(prev => ({ ...prev, [nodeId]: [rec, ...(prev[nodeId]||[])] }));
+    addMaintRecord(nodeId, rec).catch(e => console.warn('addMaintRecord error:', e.message));
     setShowForm(false);
     setForm({ date:new Date().toISOString().slice(0,10), type:schedule[0]?.name||"ТО-1", hours:"", note:"" });
     setErr("");
@@ -7961,7 +7967,10 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
     if(assetModal==="add"){
       const newNode={id:"ua"+genId(),parentId:catNode?.id||"c1",name:assetForm.name.trim(),type:"ASSET",catType:null,desc:assetForm.note||"",assigned_object_id:assetForm.assigned_object_id?Number(assetForm.assigned_object_id):null,note:assetForm.note||"",createdBy:user.name,createdAt:new Date().toISOString().slice(0,10)};
       setNodes(prev=>[...prev,newNode]);
-      setPassports(prev=>({...prev,[newNode.id]:{assetClass:assetForm.category,moto_hours:0}}));
+      const newPp={assetClass:assetForm.category,moto_hours:0,toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}]};
+      setPassports(prev=>({...prev,[newNode.id]:newPp}));
+      upsertAsset(newNode).catch(e=>console.warn('upsertAsset error:',e.message));
+      upsertPassport(newNode.id, newPp).catch(e=>console.warn('upsertPassport error:',e.message));
     } else {
       setNodes(prev=>prev.map(n=>n.id===selNode.id?{...n,name:assetForm.name.trim(),assigned_object_id:assetForm.assigned_object_id?Number(assetForm.assigned_object_id):null,note:assetForm.note||""}:n));
       setPassports(prev=>({...prev,[selNode.id]:{...(prev[selNode.id]||{}),assetClass:assetForm.category}}));
@@ -8025,7 +8034,9 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
       setPassportEdit(true);
     }
     function savePassport() {
-      setPassports(prev=>({...prev,[a.id]:{...(prev[a.id]||{}),manufacturer:ppForm.manufacturer,model:ppForm.model,year:ppForm.year,serial:ppForm.serial,inventory:ppForm.inventory,reg_plate:ppForm.reg_plate,engine_vol:parseFloat(ppForm.engine_vol)||null,commissioned:ppForm.commissioned,location:ppForm.location,avg_monthly:parseFloat(ppForm.avg_monthly)||null,total_hours:parseFloat(ppForm.total_hours)||null,fuel_rate:parseFloat(ppForm.fuel_rate)||null}}));
+      const updated = {...(passports[a.id]||{}),manufacturer:ppForm.manufacturer,model:ppForm.model,year:ppForm.year,serial:ppForm.serial,inventory:ppForm.inventory,reg_plate:ppForm.reg_plate,engine_vol:parseFloat(ppForm.engine_vol)||null,commissioned:ppForm.commissioned,location:ppForm.location,avg_monthly:parseFloat(ppForm.avg_monthly)||null,total_hours:parseFloat(ppForm.total_hours)||null,fuel_rate:parseFloat(ppForm.fuel_rate)||null};
+      setPassports(prev=>({...prev,[a.id]:updated}));
+      upsertPassport(a.id, updated).catch(e=>console.warn('upsertPassport error:',e.message));
       setPassportEdit(false);
     }
 
@@ -8407,7 +8418,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
 function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, setKtgPlans, user, reps, rigs, T }) {
   const cats    = mechCats || DEFAULT_MECH_CATS;
   const today   = new Date().toISOString().slice(0,10);
-  const [tab,        setTab]        = useState("plan"); // "plan" | "fact"
+  const tab = "plan"; // always plan view
   const [selObjId,   setSelObjId]   = useState(objs[0]?.id || null);
   const [yearMonth,  setYearMonth]  = useState(today.slice(0,7));
   const [toast,      setToast]      = useState(null);
@@ -8854,18 +8865,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
       {ConfirmModal}
       {toast && <div style={{position:"fixed",top:70,right:24,zIndex:900,padding:"11px 18px",borderRadius:7,background:toast.type==="err"?"rgba(239,68,68,0.95)":"rgba(16,185,129,0.95)",color:"#fff",fontSize:13,fontWeight:600}}>{toast.msg}</div>}
 
-      {/* Tabs */}
-      <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,marginBottom:18}}>
-        {[["plan","КТГ-план"],["fact","Факт КТГ"]].map(([id,label])=>(
-          <div key={id} onClick={()=>setTab(id)}
-            style={{padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer",
-              color:tab===id?T.txt0:T.txt2,
-              borderBottom:tab===id?`2px solid ${T.txt0}`:"2px solid transparent",
-              marginBottom:-1,transition:"color .1s"}}>
-            {label}
-          </div>
-        ))}
-      </div>
+      {/* No tabs — single КТГ view */}
 
       {SharedHeader}
 
@@ -10831,8 +10831,25 @@ export default function App() {
           getReports(),
           getPlans(),
           getKtgPlans(),
+          getAssets().catch(() => null),
+          getPassports().catch(() => null),
+          getMaintRecords().catch(() => null),
         ]);
         if (dbObjs?.length)  setObjs(dbObjs);
+        if (dbAssets?.length) {
+          setNodes(prev => {
+            const nonAssets = prev.filter(n => n.type !== 'ASSET');
+            const dbAssetsNodes = dbAssets.map(r => ({
+              id: r.id, parentId: r.parent_id, name: r.name,
+              type: r.type, catType: r.cat_type, fuelRate: r.fuel_rate,
+              desc: r.desc || '', assigned_object_id: r.assigned_object_id,
+              createdBy: r.created_by, createdAt: r.created_at,
+            }));
+            return [...nonAssets, ...dbAssetsNodes];
+          });
+        }
+        if (dbPassports && Object.keys(dbPassports).length > 0) setPassports(dbPassports);
+        if (dbMaintRecords && Object.keys(dbMaintRecords).length > 0) setMaintRecords(dbMaintRecords);
         if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const localNames = new Set(prev.map(r => r.n + "_" + r.o)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id) && !localNames.has(r.n + "_" + r.o)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
         if (dbReps?.length)  setReps(prev => { const dbIds = new Set(dbReps.map(r => r.id)); const localOnly = prev.filter(r => !dbIds.has(r.id)); return [...localOnly, ...dbReps]; });
         if (dbPlans?.length) setPlans(dbPlans);
@@ -10943,12 +10960,28 @@ export default function App() {
         return updated;
       });
     }
-  }
+ 
+
+    // Persist updated passports to Supabase
+    if (edited.rigs) {
+      edited.rigs.forEach(rig => {
+        const matchNode = nodes.find(n => n.type === 'ASSET' && n.name === rig.n);
+        if (matchNode) {
+          setTimeout(() => {
+            setPassports(prev => {
+              const pp = prev[matchNode.id];
+              if (pp) upsertPassport(matchNode.id, pp).catch(e => console.warn('upsertPassport error:', e.message));
+              return prev;
+            });
+          }, 200);
+        }
+      });
+    } }
 
   const navCEO  = [["dash","Сводка"],["finance","Финансы"],["engineers","Команда"]];
   const navEng  = [["dash","Сводка"],["planning","Планирование"],["inbox","Входящие"],["users","Персонал"]];
   const navFor  = [["dash","Сводка"],["enter","Сменные отчёты"],["inventory","Склад"],["maint","ТО техники"]];
-  const navMech = [["assets","Активы"],["objects","Участки"],["ktgplan","КТГ-план"],["ktgfact","Факт КТГ"]];
+  const navMech = [["assets","Активы"],["objects","Участки"],["ktg","КТГ"]];
   const nav     = !user ? [] : user.role === "ceo" ? navCEO : user.role === "engineer" ? navEng : user.role === "mechanic" ? navMech : navFor;
 
   const vObjs = !user ? objs : user.role === "foreman" ? objs.filter((o) => user.oids === "all" || user.oids.includes(o.id)) : objs;
@@ -11020,11 +11053,10 @@ export default function App() {
     content = <InventoryPage storageUnits={storageUnits} setStorageUnits={setStorageUnits} invTxns={invTxns} setInvTxns={setInvTxns} objs={user.role==="foreman"?vObjs:objs} nodes={nodes} user={user} T={T} />;
   } else if (subPage === "maint" && user.role === "foreman") {
     content = <ForemanMaintenancePage user={user} objs={vObjs} rigs={rigs} maintRecords={maintRecords} setMaintRecords={setMaintRecords} passports={passports} setPassports={setPassports} meters={meters} T={T} />;
-  } else if (subPage === "ktgfact" && user.role === "mechanic") {
-    content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} meters={meters} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} reps={reps} rigs={rigs} T={T} />;
+  
   } else if (subPage === "finance") {
     content = <FinancePage T={T} />;
-  } else if (subPage === "ktgplan" && user.role === "mechanic") {
+  } else if (subPage === "ktg" && user.role === "mechanic") {
     content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} meters={meters} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} reps={reps} rigs={rigs} T={T} />;
   } else if (subPage === "assets" && user.role === "mechanic") {
     content = <MechanicAssetsPage nodes={nodes} setNodes={setNodes} objs={objs} reps={reps} assetClasses={assetClasses} mechCats={mechCats} setMechCats={setMechCats} passports={passports} setPassports={setPassports} maintRecords={maintRecords} setMaintRecords={setMaintRecords} user={user} T={T} />;
