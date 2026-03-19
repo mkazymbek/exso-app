@@ -1891,134 +1891,161 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   if (!obj) return null;
   const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
 
-  const tot = { df: 0, bf: 0, wh: 0, dh: 0, fuel: 0, overDrill: 0, calHrs: 0, techDH: 0 };
+  const tot = { df:0, bf:0, wh:0, dh:0, fuel:0, overDrill:0, calHrs:0, techDH:0 };
   approved.forEach((r) => {
     tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel;
-    tot.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
-    tot.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11) * (r.rigs?.length || 1);
-    const evs = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
+    tot.overDrill += (r.rigs||[]).reduce((s,rig)=>s+(toNum(rig.overDrill)||0),0);
+    tot.calHrs   += toNum(r.shiftDurationHours||r.shift_duration_hrs||11)*(r.rigs?.length||1);
+    const evs = r.downtime_events||r.rigEntries?.flatMap(e=>e.downtimes||[])||[];
     tot.techDH += techDowntimeHours(evs);
   });
-  const kv    = repsKtgKio(approved).ktg;
-  const kvKio = tot.calHrs > 0 ? Math.min(100, Math.round(tot.wh / tot.calHrs * 100)) : null;
-  const fuelPerM3 = tot.bf > 0 ? (tot.fuel / tot.bf).toFixed(2) : null;
-  const fuelPerDf = tot.df > 0 ? (tot.fuel / tot.df).toFixed(2) : null;
-  const colors = OBJ_COLORS(T);
-  const ac = colors[objs.findIndex((o) => o.id === objId) % colors.length];
-  const objRigs = rigs.filter((rg) => rg.o === objId);
+  const kv      = repsKtgKio(approved).ktg;
+  const kvKio   = repsKtgKio(approved).kio;
+  const orgDH   = Math.round(Math.max(0, tot.dh - tot.techDH));
+  const fuelPerDf = tot.df>0 ? (tot.fuel/tot.df).toFixed(2) : null;
+  const fuelPerM3 = tot.bf>0 ? (tot.fuel/tot.bf).toFixed(2) : null;
+  const colors  = OBJ_COLORS(T);
+  const ac      = colors[objs.findIndex((o)=>o.id===objId) % colors.length];
+  const objRigs = rigs.filter((rg)=>rg.o===objId);
+
+  const pctColor = (p) => p===null?T.txt2:p>=100?T.green:p>=80?T.amber:"#ef4444";
+  const pctBg    = (p) => p===null?"transparent":p>=100?`${T.green}18`:p>=80?`${T.amber}18`:"rgba(239,68,68,0.12)";
+
+  const S = ({ label, children }) => (
+    <div style={{ background:T.bg2, padding:"11px 14px", borderRight:`1px solid ${T.border}` }}>
+      <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:5 }}>{label}</div>
+      {children}
+    </div>
+  );
+  const Row = ({ l, v, vc }) => (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:3 }}>
+      <span style={{ fontSize:10, color:T.txt2 }}>{l}</span>
+      <span style={{ fontSize:13, fontWeight:600, color:vc||T.txt0 }}>{v}</span>
+    </div>
+  );
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "DASHBOARD", onClick: onBack }, { label: obj.name.toUpperCase() }]} T={T} />
-      <div style={{ fontSize: 28, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif", marginBottom: 18 }}>
-        {obj.name.toUpperCase()}
+      <Breadcrumb items={[{ label:"DASHBOARD", onClick:onBack }, { label:obj.name.toUpperCase() }]} T={T} />
+
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:4, height:32, borderRadius:3, background:ac, flexShrink:0 }} />
+          <div>
+            <div style={{ fontSize:22, fontWeight:600, color:T.txt0 }}>{obj.name}</div>
+            <div style={{ fontSize:11, color:T.txt2, marginTop:2 }}>{objRigs.length} станков · {approved.length} смен</div>
+          </div>
+        </div>
+        <div>
+          {kv!==null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, marginLeft:5, background:pctBg(kv), color:pctColor(kv) }}>КТГ {kv}%</span>}
+          {kvKio!==null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, marginLeft:5, background:pctBg(kvKio), color:pctColor(kvKio) }}>КИО {kvKio}%</span>}
+        </div>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(155px,1fr))", gap: 10, marginBottom: 24 }}>
-        {[
-          [T.red,    "Бурение", tot.df,   obj.dp, "п.м"],
-          [T.amber,  "Взрывы",  tot.bf,   obj.bp, "м³"],
-          [T.green,  "КТГ",     kv !== null ? `${kv}%` : "—", null, null],
-          [T.cyan,   "КИО",     kvKio !== null ? `${kvKio}%` : "—", null, null],
-          [T.violet, "ГСМ",     tot.fuel, null, "л"],
-          ...(fuelPerDf ? [[T.violet, "л/п.м.", parseFloat(fuelPerDf), null, "л/п.м."]] : []),
-          ...(fuelPerM3 ? [[T.violet, "л/м³",   parseFloat(fuelPerM3), null, "л/м³"]]  : []),
-          ["#ef4444","Простои", tot.dh,   null,   "ч"],
-        ].map(([color, lbl, fact, plan, unit]) => (
-          <Card key={lbl} accent={color} style={{ padding: "14px 16px" }} T={T}>
-            <div style={{ fontSize: 12, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>{lbl}</div>
-            {plan !== null
-              ? <ProgressBar fact={fact} plan={plan} T={T} />
-              : <div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{fact}</div>
-                  {unit && <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginTop: 3 }}>{unit}</div>}
-                </div>
-            }
-          </Card>
-        ))}
-        {/* Удельный ГСМ */}
-        {(fuelPerDf || fuelPerM3) && (
-          <Card accent={T.violet} style={{ padding: "14px 16px" }} T={T}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.violet, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>⛽ Уд. ГСМ</div>
-            {fuelPerDf && (
-              <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: T.red, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{fuelPerDf}</div>
-                <div style={{ fontSize: 11, color: T.txt2, marginTop: 2 }}>л / п.м.</div>
-              </div>
-            )}
-            {fuelPerM3 && (
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: T.amber, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{fuelPerM3}</div>
-                <div style={{ fontSize: 11, color: T.txt2, marginTop: 2 }}>л / м³</div>
-              </div>
-            )}
-          </Card>
-        )}
-        {/* Перебур (если есть) */}
-        {tot.overDrill > 0 && (
-          <Card accent={T.cyan} style={{ padding: "14px 16px" }} T={T}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.cyan, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 8 }}>📏 Перебур</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: T.cyan, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{tot.overDrill.toLocaleString()}</div>
-            <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginTop: 3 }}>м</div>
-          </Card>
-        )}
+      {/* Summary strip */}
+      <div style={{ display:"grid", gridTemplateColumns:"1.8fr 1.8fr 1fr 1fr 1fr", gap:1, background:T.border, border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden", marginBottom:14 }}>
+        <S label="⛏ Бурение">
+          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:6 }}>
+            <span style={{ fontSize:22, fontWeight:600, color:T.txt0 }}>{tot.df.toLocaleString()}<span style={{ fontSize:12, color:T.txt2, fontWeight:400, marginLeft:2 }}>п.м.</span></span>
+            {tot.df>0&&obj.dp>0 && <span style={{ fontSize:11, fontWeight:600, padding:"2px 7px", borderRadius:4, background:pctBg(Math.round(tot.df/obj.dp*100)), color:pctColor(Math.round(tot.df/obj.dp*100)) }}>{Math.round(tot.df/obj.dp*100)}%</span>}
+          </div>
+          <div style={{ height:3, borderRadius:2, background:T.cardSh, overflow:"hidden" }}><div style={{ height:3, borderRadius:2, background:T.red, width:`${Math.min(obj.dp>0?tot.df/obj.dp*100:0,100)}%` }} /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, fontSize:10, color:T.txt2 }}>
+            <span>план: <b style={{ color:T.txt0 }}>{obj.dp?.toLocaleString()||"—"}</b></span>
+          </div>
+        </S>
+        <S label="💥 Взрывы">
+          <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:6 }}>
+            <span style={{ fontSize:22, fontWeight:600, color:T.txt0 }}>{tot.bf.toLocaleString()}<span style={{ fontSize:12, color:T.txt2, fontWeight:400, marginLeft:2 }}>м³</span></span>
+            {tot.bf>0&&obj.bp>0 && <span style={{ fontSize:11, fontWeight:600, padding:"2px 7px", borderRadius:4, background:pctBg(Math.round(tot.bf/obj.bp*100)), color:pctColor(Math.round(tot.bf/obj.bp*100)) }}>{Math.round(tot.bf/obj.bp*100)}%</span>}
+          </div>
+          <div style={{ height:3, borderRadius:2, background:T.cardSh, overflow:"hidden" }}><div style={{ height:3, borderRadius:2, background:T.amber, width:`${Math.min(obj.bp>0?tot.bf/obj.bp*100:0,100)}%` }} /></div>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, fontSize:10, color:T.txt2 }}>
+            <span>план: <b style={{ color:T.txt0 }}>{obj.bp?.toLocaleString()||"—"}</b></span>
+          </div>
+        </S>
+        <S label="⚙ КТГ / КИО">
+          <Row l="КТГ" v={kv!==null?`${kv}%`:"—"} vc={kv!==null?pctColor(kv):null} />
+          <Row l="КИО" v={kvKio!==null?`${kvKio}%`:"—"} vc={kvKio!==null?pctColor(kvKio):null} />
+          <Row l="КВ, ч" v={tot.calHrs>0?tot.calHrs.toLocaleString():"—"} />
+        </S>
+        <S label="⛽ ГСМ">
+          <Row l="всего" v={`${tot.fuel.toLocaleString()} л`} />
+          <Row l="л/п.м." v={fuelPerDf||"—"} />
+          <Row l="л/м³" v={fuelPerM3||"—"} />
+        </S>
+        <div style={{ background:T.bg2, padding:"11px 14px" }}>
+          <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:5 }}>⏸ Простои</div>
+          <Row l="ОФР" v={orgDH>0?`${orgDH} ч`:"—"} vc={orgDH>0?T.amber:null} />
+          <Row l="тех." v={tot.techDH>0?`${Math.round(tot.techDH)} ч`:"—"} vc={tot.techDH>0?"#ef4444":null} />
+          <Row l="перебур" v={tot.overDrill>0?`${tot.overDrill.toLocaleString()} м`:"—"} vc={tot.overDrill>0?T.cyan:null} />
+        </div>
       </div>
 
-      {/* Rig cards */}
-      <div style={{ marginBottom: 6 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: T.red, textTransform: "uppercase", letterSpacing: ".25em", marginBottom: 4 }}>▌ Буровые станки</div>
-        <div style={{ fontSize: 12, color: T.txt2, marginBottom: 16 }}>Нажмите на станок для просмотра отчётов по сменам</div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12, marginBottom: 28 }}>
-        {objRigs.map((rg) => {
-          const df        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.df        || 0), 0);
-          const wh        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.wh        || 0), 0);
-          const dh        = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.dh        || 0), 0);
-          const fuel      = approved.reduce((s,r) => s + (r.rigs?.find(x=>x.id===rg.id)?.fuel      || 0), 0);
-          const overDrill = approved.reduce((s,r) => s + (toNum(r.rigs?.find(x=>x.id===rg.id)?.overDrill) || 0), 0);
-          // КТГ по станку: берём отчёты где этот станок участвовал
-          const rigRepsList = approved.filter(r => r.rigs?.find(x => x.id === rg.id));
-          const kv2  = repsKtgKio(rigRepsList).ktg;
-          const kc   = scoreColor(kv2, obj.kp, obj.kp - 12, T);
-          const repCount = approved.filter((r) => r.rigs?.find((x) => x.id === rg.id)).length;
-          return (
-            <div
-              key={rg.id}
-              onClick={() => onDrillRig(rg.id)}
-              style={{ background: T.bg2, borderRadius: 6, border: `2px solid ${T.border}`, cursor: "pointer", overflow: "hidden" }}
-            >
-              <div style={{ background: `linear-gradient(135deg,${ac}22,${ac}08)`, padding: "12px 14px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: T.txt0, fontFamily: "'Inter',sans-serif", letterSpacing: "1px" }}>{rg.n}</div>
-                  <div style={{ fontSize: 12, color: T.txt2, marginTop: 2 }}>{repCount} смен · <span style={{ color: ac }}>→ детали</span></div>
-                </div>
-                <KTGGauge v={kv2} plan={obj.kp} size={52} T={T} />
-              </div>
-              <div style={{ padding: "10px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {[[T.red,"Бурение",df,"п.м"],[T.blue,"Работа",wh,"ч"],["#ef4444","Простой",dh,"ч"]].map(([color,lbl,val,unit]) => (
-                  <div key={lbl} style={{ background: T.bg3, borderRadius: 4, padding: "7px 10px", border: `1px solid ${T.border}` }}>
-                    <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 2 }}>{lbl}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>
-                      {val.toLocaleString()} <span style={{ fontSize: 12, fontWeight: 400 }}>{unit}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: "0 14px 10px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 4 }}>
-                <div style={{ fontSize: 12, color: T.txt2 }}>ГСМ: <b style={{ color: T.violet }}>{fuel.toLocaleString()} л</b></div>
-                {overDrill > 0 && <div style={{ fontSize: 12, color: T.cyan, fontWeight: 700 }}>📏 Перебур: {overDrill.toLocaleString()} м</div>}
-                {dh > 0 && <div style={{ fontSize: 12, color: "#ef4444", fontWeight: 700 }}>⚠ {dh} ч простоя</div>}
-              </div>
-            </div>
-          );
-        })}
+      {/* Rig table */}
+      <div style={{ fontSize:11, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:8 }}>Буровые станки</div>
+      <div style={{ border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+          <thead>
+            <tr style={{ background:T.bg3 }}>
+              {["Станок","Бурение","% пл.","Работа, ч","Прост., ч","ГСМ, л","л/п.м.","Перебур","КТГ"].map((h,i) => (
+                <th key={h} style={{ padding:"7px 10px", fontSize:10, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".05em", borderBottom:`1px solid ${T.border}`, textAlign:i===0?"left":"right", whiteSpace:"nowrap", paddingLeft:i===0?14:10 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {objRigs.map((rg, idx) => {
+              const df2  = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.df||0),0);
+              const wh2  = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.wh||0),0);
+              const dh2  = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.dh||0),0);
+              const f2   = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.fuel||0),0);
+              const od2  = approved.reduce((s,r)=>s+(toNum(r.rigs?.find(x=>x.id===rg.id)?.overDrill)||0),0);
+              const rl   = approved.filter(r=>r.rigs?.find(x=>x.id===rg.id));
+              const ktg2 = repsKtgKio(rl).ktg;
+              const dfPct2 = obj.dp>0 ? Math.round(df2/(obj.dp/objRigs.length)*100) : null;
+              const isLast = idx===objRigs.length-1;
+              const Td = ({ children, align="right", col }) => (
+                <td style={{ padding:"9px 10px", borderBottom:isLast?"none":`1px solid ${T.border}`, textAlign:align, color:col||T.txt0, fontVariantNumeric:"tabular-nums" }}>{children}</td>
+              );
+              return (
+                <tr key={rg.id} onClick={()=>onDrillRig(rg.id)} style={{ cursor:"pointer" }}
+                  onMouseEnter={e=>Array.from(e.currentTarget.cells).forEach(c=>c.style.background=T.bg3)}
+                  onMouseLeave={e=>Array.from(e.currentTarget.cells).forEach(c=>c.style.background="")}>
+                  <Td align="left">
+                    <div style={{ fontSize:13, fontWeight:600, fontFamily:"'JetBrains Mono',monospace", color:T.txt0 }}>{rg.n}</div>
+                    <div style={{ fontSize:10, color:T.txt2, marginTop:1 }}>{rl.length} смен</div>
+                  </Td>
+                  <Td>{df2.toLocaleString()} <span style={{ fontSize:10, color:T.txt2 }}>п.м.</span></Td>
+                  <Td>{dfPct2!==null?<span style={{ fontSize:10, fontWeight:600, padding:"2px 6px", borderRadius:4, background:pctBg(dfPct2), color:pctColor(dfPct2) }}>{dfPct2}%</span>:"—"}</Td>
+                  <Td>{wh2}</Td>
+                  <Td col={dh2>0?T.amber:null}>{dh2>0?dh2:"—"}</Td>
+                  <Td>{f2>0?f2.toLocaleString():"—"}</Td>
+                  <Td>{f2>0&&df2>0?(f2/df2).toFixed(2):"—"}</Td>
+                  <Td col={od2>0?T.cyan:null}>{od2>0?`${od2.toLocaleString()} м`:"—"}</Td>
+                  <Td>{ktg2!==null?<span style={{ fontSize:10, fontWeight:600, padding:"2px 6px", borderRadius:4, background:pctBg(ktg2), color:pctColor(ktg2) }}>{ktg2}%</span>:"—"}</Td>
+                </tr>
+              );
+            })}
+            {/* Totals row */}
+            <tr style={{ background:T.bg3, borderTop:`1px solid ${T.border}` }}>
+              <td style={{ padding:"8px 14px", fontSize:11, fontWeight:600, color:T.txt2 }}>Итого</td>
+              <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.df.toLocaleString()}</td>
+              <td style={{ padding:"8px 10px", textAlign:"right" }}>—</td>
+              <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.wh}</td>
+              <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600, color:tot.dh>0?T.amber:T.txt0 }}>{tot.dh>0?tot.dh:"—"}</td>
+              <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.fuel>0?tot.fuel.toLocaleString():"—"}</td>
+              <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{fuelPerDf||"—"}</td>
+              <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600, color:tot.overDrill>0?T.cyan:T.txt0 }}>{tot.overDrill>0?`${tot.overDrill.toLocaleString()} м`:"—"}</td>
+              <td style={{ padding:"8px 10px", textAlign:"right" }}>{kv!==null?<span style={{ fontSize:10, fontWeight:600, padding:"2px 6px", borderRadius:4, background:pctBg(kv), color:pctColor(kv) }}>{kv}%</span>:"—"}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-// ─── RIG DETAIL ───────────────────────────────────────────────────────────────
 function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
   const rg  = rigs.find((r) => r.id === rigId);
   const obj = objs.find((o) => o.id === objId);
