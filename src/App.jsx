@@ -8416,24 +8416,25 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
 
 // ─── MECHANIC KTG PAGES (PLAN + FACT) ────────────────────────────────────────
 function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, setKtgPlans, user, reps, rigs, T }) {
-  const cats    = mechCats || DEFAULT_MECH_CATS;
   const today   = new Date().toISOString().slice(0,10);
-  const tab = "plan"; // always plan view
-  const [selObjId,   setSelObjId]   = useState(objs[0]?.id || null);
-  const [yearMonth,  setYearMonth]  = useState(today.slice(0,7));
-  const [toast,      setToast]      = useState(null);
-  const [paintHours, setPaintHours] = useState(22);
-  const [showBrushEdit, setShowBrushEdit] = useState(false);
-  const [brushPresets,  setBrushPresets]  = useState([
-    {id:"p1", label:"22ч", hours:22, color:T.green,  icon:"✓", locked:true},
-    {id:"p2", label:"ТО",  hours:20, color:T.blue,   icon:"🔧",locked:true},
-    {id:"p3", label:"0ч",  hours:0,  color:"#ef4444", icon:"✗", locked:true},
-  ]);
-  const [editPresets,   setEditPresets]   = useState([]);
-  const [activeBrush,   setActiveBrush]   = useState(null);
-  const [confirmModal,  setConfirmModal]  = useState(false);
-  const DAY_CAPACITY = 22;
+  const [tab,          setTab]          = useState("plan");
+  const [selObjId,     setSelObjId]     = useState(objs[0]?.id || null);
+  const [yearMonth,    setYearMonth]    = useState(today.slice(0,7));
+  const [toast,        setToast]        = useState(null);
+  const [paintHours,   setPaintHours]   = useState(22);
+  const [activeBrush,  setActiveBrush]  = useState(null);
+  const [showBrushEd,  setShowBrushEd]  = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
 
+  const DEFAULT_BRUSHES = [
+    {id:"b1", label:"22ч",  hours:22, color:"#3B6D11", bg:"#EAF3DE", icon:"✓", locked:true},
+    {id:"b2", label:"ТО",   hours:20, color:"#185FA5", bg:"#E6F1FB", icon:"🔧",locked:true},
+    {id:"b3", label:"0ч",   hours:0,  color:"#A32D2D", bg:"#FCEBEB", icon:"✗", locked:true},
+  ];
+  const [brushes, setBrushes] = useState(DEFAULT_BRUSHES);
+  const [editBrushes, setEditBrushes] = useState([]);
+
+  const DAY_CAPACITY = 22;
   const [yr, mo]    = yearMonth.split("-").map(Number);
   const daysInMonth = new Date(yr, mo, 0).getDate();
   const days        = Array.from({length:daysInMonth},(_,i)=>`${yearMonth}-${String(i+1).padStart(2,"0")}`);
@@ -8446,61 +8447,56 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
   const isLocked   = planStatus==="SUBMITTED" || planStatus==="ACCEPTED";
 
   function showToast(msg, type="ok") { setToast({msg,type}); setTimeout(()=>setToast(null),3000); }
-
-  function getHours(assetId, date) {
-    const v = plan?.items?.[assetId]?.[date];
-    return (v === undefined || v === null) ? null : Number(v);
-  }
+  function getHours(assetId, date) { const v=plan?.items?.[assetId]?.[date]; return (v===undefined||v===null)?null:Number(v); }
 
   function recalcTO(assetId, items, toInfo, colorInfo, pinnedDays) {
-    const pinned = pinnedDays || new Set();
-    const pp     = passports?.[assetId] || {};
-    const sched  = (pp.toSchedule?.length > 0) ? pp.toSchedule : [{name:"ТО-250",interval:250,duration_hrs:2}];
-    if (!items[assetId]) { items[assetId] = {}; days.forEach(d=>{ items[assetId][d]=DAY_CAPACITY; }); }
-    const oldTo = toInfo[assetId] || {};
-    Object.keys(oldTo).forEach(d=>{ if(!pinned.has(d)) items[assetId][d]=DAY_CAPACITY; });
-    const newTo={}, newClr={};
+    const pinned=pinnedDays||new Set();
+    const pp=passports?.[assetId]||{};
+    const sched=(pp.toSchedule?.length>0)?pp.toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}];
+    if(!items[assetId]){items[assetId]={};days.forEach(d=>{items[assetId][d]=DAY_CAPACITY;});}
+    const oldTo=toInfo[assetId]||{};
+    Object.keys(oldTo).forEach(d=>{if(!pinned.has(d))items[assetId][d]=DAY_CAPACITY;});
+    const newTo={},newClr={};
     sched.forEach(item=>{
-      const dur=item.duration_hrs||2, workHrsTO=Math.max(0,DAY_CAPACITY-dur);
+      const dur=item.duration_hrs||2,workHrsTO=Math.max(0,DAY_CAPACITY-dur);
       let hoursToNext=item.interval-((parseFloat(meters?.[assetId]?.current??pp.total_hours)||0)%item.interval);
-      if(hoursToNext===0) hoursToNext=item.interval;
+      if(hoursToNext===0)hoursToNext=item.interval;
       for(let i=0;i<daysInMonth;i++){
         const ds=days[i];
-        if(newTo[ds]) continue;
-        if(pinned.has(ds)){ hoursToNext-=Number(items[assetId][ds]??DAY_CAPACITY); continue; }
+        if(newTo[ds])continue;
+        if(pinned.has(ds)){hoursToNext-=Number(items[assetId][ds]??DAY_CAPACITY);continue;}
         const h=Number(items[assetId][ds]??DAY_CAPACITY);
         hoursToNext-=h;
         if(hoursToNext<=0){
-          newTo[ds]=item.name; newClr[ds]=item.color||T.blue;
-          items[assetId][ds]=workHrsTO;
-          hoursToNext+=item.interval;
+          newTo[ds]=item.name;newClr[ds]=item.color||T.blue;
+          items[assetId][ds]=workHrsTO;hoursToNext+=item.interval;
         }
       }
     });
     toInfo[assetId]=newTo;
-    if(!colorInfo[assetId]) colorInfo[assetId]={};
+    if(!colorInfo[assetId])colorInfo[assetId]={};
     Object.assign(colorInfo[assetId],newClr);
   }
 
   function updatePlan(updater) {
-    if(isLocked) return;
+    if(isLocked)return;
     setKtgPlans(prev=>{
       const existing=prev.find(p=>p.object_id===selObjId&&p.year_month===yearMonth);
       const base={id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:{},to_info:{},color_info:{}};
       const cur=existing?{...existing,items:JSON.parse(JSON.stringify(existing.items||{})),to_info:JSON.parse(JSON.stringify(existing.to_info||{})),color_info:JSON.parse(JSON.stringify(existing.color_info||{}))}:base;
       updater(cur);
-      if(existing) return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?cur:p);
+      if(existing)return prev.map(p=>p.object_id===selObjId&&p.year_month===yearMonth?cur:p);
       return [...prev,cur];
     });
   }
 
   function fillAll() {
-    if(isLocked) return;
+    if(isLocked)return;
     updatePlan(cur=>{
       objAssets.forEach(a=>{
-        cur.items[a.id]={}; cur.to_info[a.id]={};
-        if(cur.color_info[a.id]) days.forEach(d=>delete cur.color_info[a.id][d]);
-        days.forEach(d=>{ cur.items[a.id][d]=paintHours; });
+        cur.items[a.id]={};cur.to_info[a.id]={};
+        if(cur.color_info[a.id])days.forEach(d=>delete cur.color_info[a.id][d]);
+        days.forEach(d=>{cur.items[a.id][d]=paintHours;});
         recalcTO(a.id,cur.items,cur.to_info,cur.color_info);
       });
     });
@@ -8508,20 +8504,25 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
   }
 
   function paintCell(assetId, date) {
-    if(isLocked||activeBrush===null) return;
-    const preset=brushPresets.find(p=>p.id===activeBrush);
-    if(!preset) return;
+    if(isLocked||activeBrush===null)return;
+    const brush=brushes.find(b=>b.id===activeBrush);
+    if(!brush)return;
     updatePlan(cur=>{
-      if(!cur.items[assetId]) { cur.items[assetId]={}; days.forEach(d=>{ cur.items[assetId][d]=DAY_CAPACITY; }); }
-      cur.items[assetId][date]=preset.hours;
+      if(!cur.items[assetId]){cur.items[assetId]={};days.forEach(d=>{cur.items[assetId][d]=DAY_CAPACITY;});}
+      cur.items[assetId][date]=brush.hours;
+      // store custom color if not a TO brush
+      if(brush.id!=="b2"){
+        if(!cur.color_info[assetId])cur.color_info[assetId]={};
+        cur.color_info[assetId][date]=brush.bg;
+      }
       recalcTO(assetId,cur.items,cur.to_info,cur.color_info,new Set([date]));
     });
   }
 
   function saveDraft() {
     const base={id:"kp"+genId(),object_id:selObjId,year_month:yearMonth,status:"DRAFT",created_by:user.name,engineer_comment:"",submitted_at:null,decided_at:null,items:{},to_info:{}};
-    if(!plan) setKtgPlans(prev=>[...prev,base]);
-    saveKtgPlanToDB(plan||base).catch(e=>console.warn("KTG draft save error:",e.message));
+    if(!plan)setKtgPlans(prev=>[...prev,base]);
+    saveKtgPlanToDB(plan||base).catch(e=>console.warn("KTG save:",e.message));
     showToast("Черновик сохранён");
   }
 
@@ -8531,64 +8532,55 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
     showToast("КТГ-план отправлен инженеру!");
   }
 
-  // ── FACT KTG helpers ────────────────────────────────────────────────────────
-  const objRigs   = rigs ? rigs.filter(r=>Number(r.o)===Number(selObjId)) : [];
-  const monthReps = reps ? reps.filter(r=>r.status==="approved"&&Number(r.oid)===Number(selObjId)&&r.date?.startsWith(yearMonth)) : [];
+  // ── Fact helpers ──────────────────────────────────────────────────────────
+  const objRigs   = rigs?rigs.filter(r=>Number(r.o)===Number(selObjId)):[];
+  const monthReps = reps?reps.filter(r=>r.status==="approved"&&Number(r.oid)===Number(selObjId)&&r.date?.startsWith(yearMonth)):[];
 
   function getRigDayKtg(rigName, date) {
     const dayReps=monthReps.filter(r=>r.date===date);
-    if(!dayReps.length) return null;
+    if(!dayReps.length)return null;
     let wh=0,dh=0,found=false;
     dayReps.forEach(rep=>{
       const e=(rep.rigs||[]).find(r=>r.n===rigName);
-      if(e){ wh+=parseFloat(e.wh)||0; dh+=parseFloat(e.dh)||0; found=true; }
+      if(e){wh+=parseFloat(e.wh)||0;dh+=parseFloat(e.dh)||0;found=true;}
     });
-    if(!found) return null;
-    const shiftDur=toNum(dayReps[0]?.shiftDurationHours||11);
-    return shiftDur>0 ? Math.min(100,Math.round((shiftDur-0)/shiftDur*100)) : null;
+    if(!found)return null;
+    const total=wh+dh;
+    return total>0?Math.min(100,Math.round(wh/total*100)):null;
   }
-
   function getObjDayKtg(date) {
     const vals=objRigs.map(r=>getRigDayKtg(r.n,date)).filter(v=>v!==null);
-    return vals.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : null;
+    return vals.length?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length):null;
   }
+  const factVals  = days.map(d=>getObjDayKtg(d)).filter(v=>v!==null);
+  const factAvg   = factVals.length?Math.round(factVals.reduce((s,v)=>s+v,0)/factVals.length):null;
 
-  const factVals   = days.map(d=>getObjDayKtg(d)).filter(v=>v!==null);
-  const factAvg    = factVals.length ? Math.round(factVals.reduce((s,v)=>s+v,0)/factVals.length) : null;
-
-  // Plan KTG for comparison
-  const planKtgVal = (() => {
-    if(!plan||!objAssets.length) return null;
-    const totalWH=objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0);
-    const maxWH=objAssets.length*daysInMonth*DAY_CAPACITY;
-    return maxWH>0?Math.round(totalWH/maxWH*100):null;
+  const planKtgVal = (()=>{
+    if(!plan||!objAssets.length)return null;
+    const tw=objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0);
+    const mw=objAssets.length*daysInMonth*DAY_CAPACITY;
+    return mw>0?Math.round(tw/mw*100):null;
   })();
 
-  // Colors
-  const KC = (v) => v===null?T.txt2:v>=85?T.green:v>=70?T.amber:"#ef4444";
-  const KB = (v) => v===null?"transparent":v>=85?`${T.green}18`:v>=70?`${T.amber}18`:"rgba(239,68,68,0.12)";
+  const KC=(v)=>v===null?T.txt2:v>=85?T.green:v>=70?T.amber:"#ef4444";
+  const KB=(v)=>v===null?"transparent":v>=85?`${T.green}18`:v>=70?`${T.amber}18`:"rgba(239,68,68,0.12)";
 
-  // Cell style for plan
   function planCellStyle(assetId, date) {
-    const h=getHours(assetId,date);
     const isTO=plan?.to_info?.[assetId]?.[date];
-    if(isTO) return {bg:`${T.blue}18`,color:T.blue,text:"ТО"};
-    if(h===null) return {bg:T.bg3,color:T.txt2,text:"·"};
-    if(h===0)    return {bg:"rgba(239,68,68,0.12)",color:"#ef4444",text:"0"};
-    if(h>=20)    return {bg:`${T.green}18`,color:T.green,text:String(h)};
-    return {bg:`${T.amber}18`,color:T.amber,text:String(h)};
+    if(isTO)return{bg:`${T.blue}18`,color:T.blue,text:"ТО"};
+    const customBg=plan?.color_info?.[assetId]?.[date];
+    const h=getHours(assetId,date);
+    if(h===null)return{bg:T.bg3,color:T.txt2,text:"·"};
+    if(customBg)return{bg:customBg,color:T.txt0,text:String(h)};
+    if(h===0)return{bg:"rgba(239,68,68,0.12)",color:"#ef4444",text:"0"};
+    if(h>=20)return{bg:`${T.green}18`,color:T.green,text:String(h)};
+    return{bg:`${T.amber}18`,color:T.amber,text:String(h)};
   }
 
-  const stepCfg = {
-    DRAFT:     {label:"Черновик",   done:false},
-    SUBMITTED: {label:"На проверке",done:false},
-    ACCEPTED:  {label:"Принят",     done:true},
-    RETURNED:  {label:"Возвращён",  done:false},
-  };
-  const steps = ["DRAFT","SUBMITTED","ACCEPTED","RETURNED"];
-  const curStepIdx = steps.indexOf(planStatus);
+  // ── Shared header ─────────────────────────────────────────────────────────
+  function prevMonth(){const[y,m]=yearMonth.split("-").map(Number);const d=new Date(y,m-1,1);d.setMonth(d.getMonth()-1);setYearMonth(d.toISOString().slice(0,7));}
+  function nextMonth(){const[y,m]=yearMonth.split("-").map(Number);const d=new Date(y,m-1,1);d.setMonth(d.getMonth()+1);setYearMonth(d.toISOString().slice(0,7));}
 
-  // Header controls shared
   const SharedHeader = (
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -8597,34 +8589,133 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
           {objs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
         <div style={{display:"flex",alignItems:"center",gap:4}}>
-          <button onClick={()=>{const [y,m]=yearMonth.split("-").map(Number);const d=new Date(y,m-1,1);d.setMonth(d.getMonth()-1);setYearMonth(d.toISOString().slice(0,7));}}
-            style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:5,cursor:"pointer",fontSize:13,color:T.txt1}}>‹</button>
+          <button onClick={prevMonth} style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:5,cursor:"pointer",fontSize:13,color:T.txt1}}>‹</button>
           <div style={{padding:"0 14px",height:28,display:"flex",alignItems:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,fontSize:12,fontWeight:600,color:T.txt0,minWidth:120,justifyContent:"center"}}>{monthLabel}</div>
-          <button onClick={()=>{const [y,m]=yearMonth.split("-").map(Number);const d=new Date(y,m-1,1);d.setMonth(d.getMonth()+1);setYearMonth(d.toISOString().slice(0,7));}}
-            style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:5,cursor:"pointer",fontSize:13,color:T.txt1}}>›</button>
+          <button onClick={nextMonth} style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg3,border:`1px solid ${T.border}`,borderRadius:5,cursor:"pointer",fontSize:13,color:T.txt1}}>›</button>
         </div>
       </div>
       {tab==="plan" && (
         <div style={{display:"flex",gap:6}}>
           <button onClick={saveDraft} style={{padding:"5px 12px",border:`1px solid ${T.border}`,borderRadius:6,background:T.bg3,color:T.txt1,fontSize:12,cursor:"pointer"}}>💾 Черновик</button>
-          {!isLocked && <button onClick={()=>setConfirmModal(true)} style={{padding:"5px 12px",border:`1px solid ${T.green}`,borderRadius:6,background:`${T.green}18`,color:T.green,fontSize:12,fontWeight:600,cursor:"pointer"}}>📤 Отправить</button>}
+          {!isLocked&&<button onClick={()=>setConfirmModal(true)} style={{padding:"5px 12px",border:`1px solid ${T.green}`,borderRadius:6,background:`${T.green}18`,color:T.green,fontSize:12,fontWeight:600,cursor:"pointer"}}>📤 Отправить</button>}
         </div>
-      )}
-      {tab==="fact" && (
-        <div style={{fontSize:11,color:T.txt2}}>КТГ = (КВ − тех.простои) / КВ · из утверждённых отчётов</div>
       )}
     </div>
   );
 
-  // Summary strip
-  const PlanStrip = (
+  // ── Stepper ───────────────────────────────────────────────────────────────
+  const steps=[["DRAFT","Черновик"],["SUBMITTED","На проверке"],["ACCEPTED","Принят"],["RETURNED","Возвращён"]];
+  const curIdx=steps.findIndex(([s])=>s===planStatus);
+  const Stepper=(
+    <div style={{display:"flex",alignItems:"center",gap:4,padding:"8px 14px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,marginBottom:14,flexWrap:"wrap"}}>
+      {steps.map(([s,l],i)=>{
+        const isCur=planStatus===s,isDone=i<curIdx;
+        return(<div key={s} style={{display:"flex",alignItems:"center",gap:4}}>
+          {i>0&&<span style={{color:T.txt2,fontSize:11}}>→</span>}
+          <span style={{padding:"3px 10px",borderRadius:4,fontSize:11,fontWeight:isCur?600:400,
+            background:isCur?T.txt0:isDone?`${T.green}18`:"transparent",
+            color:isCur?T.bg1:isDone?T.green:T.txt2,
+            border:`1px solid ${isCur?T.txt0:isDone?T.green+"40":T.border}`}}>
+            {isDone?"✓ ":""}{l}
+          </span>
+        </div>);
+      })}
+    </div>
+  );
+
+  // ── Brush editor modal ────────────────────────────────────────────────────
+  function openBrushEd(){setEditBrushes(JSON.parse(JSON.stringify(brushes)));setShowBrushEd(true);}
+  function saveBrushEd(){setBrushes(editBrushes.filter(b=>b.label.trim()));setShowBrushEd(false);}
+  function addBrush(){setEditBrushes(prev=>[...prev,{id:"b"+genId(),label:"Новая",hours:11,color:T.violet,bg:`${T.violet}18`,icon:"⭐",locked:false}]);}
+  function updBrush(id,k,v){setEditBrushes(prev=>prev.map(b=>b.id===id?{...b,[k]:v}:b));}
+
+  const BrushEditorModal = showBrushEd && (
+    <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,width:"100%",maxWidth:520}}>
+        <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>Редактор кистей</div>
+          <button onClick={()=>setShowBrushEd(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
+        </div>
+        {/* Column headers */}
+        <div style={{display:"grid",gridTemplateColumns:"36px 1fr 80px 70px 32px",gap:8,padding:"6px 16px",background:T.bg3,borderBottom:`1px solid ${T.border}`,fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em"}}>
+          <div>Иконка</div><div>Название</div><div>Часы (0–22)</div><div>Цвет фона</div><div></div>
+        </div>
+        <div style={{maxHeight:320,overflowY:"auto"}}>
+          {editBrushes.map(b=>(
+            <div key={b.id} style={{display:"grid",gridTemplateColumns:"36px 1fr 80px 70px 32px",gap:8,padding:"8px 16px",borderBottom:`1px solid ${T.border}`,alignItems:"center"}}>
+              <input value={b.icon} onChange={e=>updBrush(b.id,"icon",e.target.value)}
+                disabled={b.locked}
+                style={{padding:"4px",border:`1px solid ${T.border}`,borderRadius:4,background:b.locked?T.bg3:T.inputBg,color:T.txt0,fontSize:14,textAlign:"center",width:"100%",opacity:b.locked?.6:1}}/>
+              <input value={b.label} onChange={e=>updBrush(b.id,"label",e.target.value)}
+                disabled={b.locked}
+                style={{padding:"5px 8px",border:`1px solid ${T.border}`,borderRadius:4,background:b.locked?T.bg3:T.inputBg,color:T.txt0,fontSize:12,width:"100%",opacity:b.locked?.6:1}}/>
+              <input type="number" min="0" max="22" value={b.hours} onChange={e=>updBrush(b.id,"hours",Number(e.target.value))}
+                disabled={b.locked}
+                style={{padding:"5px 8px",border:`1px solid ${T.border}`,borderRadius:4,background:b.locked?T.bg3:T.inputBg,color:T.txt0,fontSize:12,width:"100%",opacity:b.locked?.6:1}}/>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <div style={{width:28,height:28,borderRadius:5,background:b.bg,border:`1.5px solid ${b.color}`,cursor:b.locked?"default":"pointer",flexShrink:0}}
+                  title={b.locked?"Системная кисть":b.bg}/>
+                {!b.locked && (
+                  <input type="color" value={b.bg.length===7?b.bg:"#e8f5e9"} onChange={e=>{updBrush(b.id,"bg",e.target.value);updBrush(b.id,"color",e.target.value);}}
+                    style={{width:0,height:0,opacity:0,position:"absolute"}}
+                    id={`cp_${b.id}`}/>
+                )}
+              </div>
+              {b.locked
+                ? <div style={{fontSize:11,color:T.txt2,textAlign:"center"}}>🔒</div>
+                : <button onClick={()=>setEditBrushes(prev=>prev.filter(x=>x.id!==b.id))}
+                    style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${T.border}`,borderRadius:4,background:T.bg3,cursor:"pointer",color:"#ef4444",fontSize:14}}>✕</button>
+              }
+            </div>
+          ))}
+        </div>
+        <div style={{padding:"10px 16px",borderTop:`1px solid ${T.border}`,display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={addBrush} style={{padding:"6px 14px",border:`1px dashed ${T.border}`,borderRadius:6,background:"transparent",color:T.txt2,fontSize:12,cursor:"pointer",flex:1}}>+ Добавить кисть</button>
+          <Btn variant="success" onClick={saveBrushEd} T={T}>✓ Сохранить</Btn>
+          <Btn variant="ghost" onClick={()=>setShowBrushEd(false)} T={T}>Отмена</Btn>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Toolbar ───────────────────────────────────────────────────────────────
+  const Toolbar = !isLocked && (
+    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,marginBottom:12,flexWrap:"wrap"}}>
+      <span style={{fontSize:11,color:T.txt2}}>Заполнить всё:</span>
+      <div style={{display:"flex",alignItems:"center",gap:3}}>
+        <button onClick={()=>setPaintHours(h=>Math.max(0,h-1))} style={{width:24,height:24,border:`1px solid ${T.border}`,borderRadius:4,background:T.bg3,color:T.txt1,cursor:"pointer",fontSize:13}}>−</button>
+        <div style={{width:30,textAlign:"center",fontSize:13,fontWeight:600,color:T.txt0}}>{paintHours}</div>
+        <button onClick={()=>setPaintHours(h=>Math.min(22,h+1))} style={{width:24,height:24,border:`1px solid ${T.border}`,borderRadius:4,background:T.bg3,color:T.txt1,cursor:"pointer",fontSize:13}}>+</button>
+      </div>
+      <button onClick={fillAll} style={{padding:"5px 12px",border:"none",borderRadius:5,background:T.txt0,color:T.bg1,fontSize:11,fontWeight:600,cursor:"pointer"}}>▶ Заполнить</button>
+      <div style={{width:1,height:18,background:T.border}}/>
+      <span style={{fontSize:11,color:T.txt2}}>Кисть:</span>
+      {brushes.map(b=>(
+        <div key={b.id} onClick={()=>setActiveBrush(activeBrush===b.id?null:b.id)}
+          style={{display:"flex",alignItems:"center",gap:4,padding:"3px 10px 3px 7px",borderRadius:5,
+            fontSize:11,fontWeight:600,cursor:"pointer",
+            background:b.bg,color:b.color,
+            outline:activeBrush===b.id?`2px solid ${b.color}`:"none",
+            outlineOffset:1,border:`1.5px solid ${b.color}50`}}>
+          <span>{b.icon}</span><span>{b.label}</span>
+        </div>
+      ))}
+      {activeBrush && <span style={{fontSize:11,color:T.amber,marginLeft:4}}>✏ Кисть активна</span>}
+      <div style={{marginLeft:"auto"}}>
+        <button onClick={openBrushEd} style={{padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:5,background:T.bg3,color:T.txt2,fontSize:11,cursor:"pointer"}}>⚙ Кисти</button>
+      </div>
+    </div>
+  );
+
+  // ── Plan strip ────────────────────────────────────────────────────────────
+  const PlanStrip=(
     <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:14}}>
       {[
-        {l:"Техника",       v:objAssets.length,                                              s:"ед. на объекте"},
-        {l:"Плановый КТГ",  v:planKtgVal!==null?`${planKtgVal}%`:"—",                       s:"по плану",      c:planKtgVal!==null?KC(planKtgVal):null},
-        {l:"КВ план",       v:objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0).toLocaleString(), s:"мч за месяц"},
-        {l:"ТО в плане",    v:Object.values(plan?.to_info||{}).reduce((s,v)=>s+Object.keys(v).length,0), s:"ячеек ТО",       c:T.blue},
-        {l:"Статус",        v:{DRAFT:"Черновик",SUBMITTED:"Проверка",ACCEPTED:"Принят",RETURNED:"Возвращён"}[planStatus], s:planStatus, c:KC(planKtgVal)},
+        {l:"Техника",     v:objAssets.length,                              s:"ед. на объекте"},
+        {l:"КТГ план",    v:planKtgVal!=null?`${planKtgVal}%`:"—",         s:"расчётный",      c:planKtgVal!=null?KC(planKtgVal):null},
+        {l:"КВ план",     v:objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0).toLocaleString(), s:"мч за месяц"},
+        {l:"ТО в плане",  v:Object.values(plan?.to_info||{}).reduce((s,v)=>s+Object.keys(v).length,0), s:"ячеек",           c:T.blue},
+        {l:"Статус",      v:{DRAFT:"Черновик",SUBMITTED:"Проверка",ACCEPTED:"Принят",RETURNED:"Возвращён"}[planStatus], s:"плана"},
       ].map(({l,v,s,c})=>(
         <div key={l} style={{background:T.bg2,padding:"10px 14px"}}>
           <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
@@ -8635,14 +8726,16 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
     </div>
   );
 
-  const FactStrip = (
+  // ── Fact strip ────────────────────────────────────────────────────────────
+  const kio = repsKtgKio(monthReps);
+  const FactStrip=(
     <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:14}}>
       {[
-        {l:"КТГ факт",        v:factAvg!==null?`${factAvg}%`:"—",         c:factAvg!==null?KC(factAvg):null},
-        {l:"КТГ план",        v:planKtgVal!==null?`${planKtgVal}%`:"—",    c:T.txt0},
-        {l:"КИО",             v:repsKtgKio(monthReps).kio!==null?`${repsKtgKio(monthReps).kio}%`:"—", c:repsKtgKio(monthReps).kio!==null?KC(repsKtgKio(monthReps).kio):null},
-        {l:"Отчётов",         v:monthReps.length,                           c:T.txt0},
-        {l:"Дней с данными",  v:`${factVals.length} / ${daysInMonth}`,      c:T.txt0},
+        {l:"КТГ факт",       v:factAvg!=null?`${factAvg}%`:"—",         c:factAvg!=null?KC(factAvg):null},
+        {l:"КТГ план",       v:planKtgVal!=null?`${planKtgVal}%`:"—",    c:T.txt0},
+        {l:"КИО",            v:kio.kio!=null?`${kio.kio}%`:"—",          c:kio.kio!=null?KC(kio.kio):null},
+        {l:"Отчётов",        v:monthReps.length,                          c:T.txt0},
+        {l:"Дней с данными", v:`${factVals.length} / ${daysInMonth}`,     c:T.txt0},
       ].map(({l,v,c})=>(
         <div key={l} style={{background:T.bg2,padding:"10px 14px"}}>
           <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
@@ -8652,178 +8745,76 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
     </div>
   );
 
-  // Stepper
-  const Stepper = (
-    <div style={{display:"flex",alignItems:"center",gap:4,padding:"8px 14px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,marginBottom:14,flexWrap:"wrap"}}>
-      {steps.map((s,i)=>{
-        const isCur=planStatus===s;
-        const isDone=i<curStepIdx;
-        return (
-          <div key={s} style={{display:"flex",alignItems:"center",gap:4}}>
-            {i>0 && <span style={{color:T.txt2,fontSize:11}}>→</span>}
-            <span style={{padding:"3px 10px",borderRadius:4,fontSize:11,fontWeight:isCur?600:400,
-              background:isCur?T.txt0:isDone?`${T.green}18`:"transparent",
-              color:isCur?T.bg1:isDone?T.green:T.txt2,
-              border:`1px solid ${isCur?T.txt0:isDone?T.green+"40":T.border}`}}>
-              {isDone?"✓ ":""}{stepCfg[s].label}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  // Legend
-  const PlanLegend = (
+  // ── Legend ────────────────────────────────────────────────────────────────
+  const PlanLegend=(
     <div style={{display:"flex",gap:12,fontSize:11,color:T.txt2,marginBottom:10,flexWrap:"wrap"}}>
-      {[[`${T.green}18`,T.green,"22ч — полная смена"],[`${T.blue}18`,T.blue,"ТО — техобслуживание"],["rgba(239,68,68,0.12)","#ef4444","0ч — простой"],[T.bg3,T.txt2,"· — нет данных"]].map(([bg,c,l])=>(
-        <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
-          <div style={{width:10,height:10,borderRadius:2,background:bg,border:`1px solid ${c}40`,flexShrink:0}}/>
-          <span>{l}</span>
+      {brushes.map(b=>(
+        <div key={b.id} style={{display:"flex",alignItems:"center",gap:4}}>
+          <div style={{width:10,height:10,borderRadius:2,background:b.bg,border:`1px solid ${b.color}50`,flexShrink:0}}/>
+          <span>{b.icon} {b.label}</span>
         </div>
       ))}
-    </div>
-  );
-
-  const FactLegend = (
-    <div style={{display:"flex",gap:12,fontSize:11,color:T.txt2,marginBottom:10,flexWrap:"wrap"}}>
-      {[[`${T.green}18`,T.green,"≥85% — норма"],[`${T.amber}18`,T.amber,"70–84% — внимание"],["rgba(239,68,68,0.12)","#ef4444","<70% — нарушение"],[T.bg3,T.txt2,"· — нет данных"]].map(([bg,c,l])=>(
-        <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
-          <div style={{width:10,height:10,borderRadius:2,background:bg,border:`1px solid ${c}40`,flexShrink:0}}/>
-          <span>{l}</span>
-        </div>
-      ))}
-    </div>
-  );
-
-  // Toolbar for plan
-  const Toolbar = !isLocked && (
-    <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,marginBottom:12,flexWrap:"wrap"}}>
-      <span style={{fontSize:11,color:T.txt2}}>Заполнить всё:</span>
-      <div style={{display:"flex",alignItems:"center",gap:3}}>
-        <button onClick={()=>setPaintHours(h=>Math.max(0,h-1))} style={{width:24,height:24,border:`1px solid ${T.border}`,borderRadius:4,background:T.bg3,color:T.txt1,cursor:"pointer",fontSize:13,lineHeight:1}}>−</button>
-        <div style={{width:32,textAlign:"center",fontSize:13,fontWeight:600,color:T.txt0}}>{paintHours}</div>
-        <button onClick={()=>setPaintHours(h=>Math.min(22,h+1))} style={{width:24,height:24,border:`1px solid ${T.border}`,borderRadius:4,background:T.bg3,color:T.txt1,cursor:"pointer",fontSize:13,lineHeight:1}}>+</button>
+      <div style={{display:"flex",alignItems:"center",gap:4}}>
+        <div style={{width:10,height:10,borderRadius:2,background:T.bg3,flexShrink:0}}/>
+        <span>· нет данных</span>
       </div>
-      <button onClick={fillAll} style={{padding:"5px 12px",border:`1px solid ${T.border}`,borderRadius:5,background:T.txt0,color:T.bg1,fontSize:11,fontWeight:600,cursor:"pointer"}}>▶ Заполнить</button>
-      <div style={{width:1,height:18,background:T.border}}/>
-      <span style={{fontSize:11,color:T.txt2}}>Кисть:</span>
-      {brushPresets.map(p=>(
-        <button key={p.id} onClick={()=>setActiveBrush(activeBrush===p.id?null:p.id)}
-          style={{padding:"3px 10px",borderRadius:4,fontSize:11,fontWeight:600,cursor:"pointer",
-            background:activeBrush===p.id?p.color:`${p.color}15`,
-            color:activeBrush===p.id?"#fff":p.color,
-            border:`1px solid ${p.color}50`}}>
-          {p.icon} {p.label}
-        </button>
-      ))}
-      {activeBrush && <span style={{fontSize:11,color:T.amber}}>✏ Кисть активна — кликай по ячейкам</span>}
     </div>
   );
 
-  // Heatmap table shared
-  function HeatmapTable({isPlan}) {
-    const rows = isPlan ? objAssets : objRigs;
-    if(!rows.length) return (
+  const FactLegend=(
+    <div style={{display:"flex",gap:12,fontSize:11,color:T.txt2,marginBottom:10,flexWrap:"wrap"}}>
+      {[[`${T.green}18`,T.green,"≥85%"],[`${T.amber}18`,T.amber,"70–84%"],["rgba(239,68,68,0.12)","#ef4444","<70%"],[T.bg3,T.txt2,"· нет данных"]].map(([bg,c,l])=>(
+        <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
+          <div style={{width:10,height:10,borderRadius:2,background:bg,border:`1px solid ${c}40`,flexShrink:0}}/>
+          <span>{l}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── Heatmap ───────────────────────────────────────────────────────────────
+  function PlanHeatmap() {
+    if(!objAssets.length) return(
       <div style={{padding:32,textAlign:"center",fontSize:12,color:T.txt2,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10}}>
-        {isPlan ? "Нет техники на объекте" : "Нет буровых станков или отчётов"}
+        <div style={{fontSize:28,marginBottom:10}}>🏗</div>Нет техники на объекте. Добавьте активы в разделе «Участки».
       </div>
     );
-    const today_d = today;
-    return (
+    return(
       <div style={{border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
         <div style={{overflowX:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,minWidth:Math.max(700,daysInMonth*30+180)}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,minWidth:Math.max(700,daysInMonth*28+180)}}>
             <thead>
               <tr style={{background:T.bg3}}>
-                <th style={{padding:"6px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em",borderBottom:`1px solid ${T.border}`,position:"sticky",left:0,background:T.bg3,zIndex:2,minWidth:140}}>
-                  {isPlan ? "Техника" : "Станок"}
-                </th>
-                {days.map(d=>{
-                  const dn=parseInt(d.slice(8),10);
-                  const dow=new Date(d).getDay();
-                  const isWe=dow===0||dow===6;
-                  const isFuture=!isPlan&&d>today_d;
-                  return (
-                    <th key={d} style={{padding:"3px 1px",textAlign:"center",fontSize:10,borderBottom:`1px solid ${T.border}`,minWidth:28,color:isFuture?T.border:isWe?T.amber:T.txt2,fontWeight:isWe?600:400}}>
-                      {dn}
-                    </th>
-                  );
-                })}
-                <th style={{padding:"6px 8px",textAlign:"center",fontSize:10,fontWeight:600,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:50,whiteSpace:"nowrap"}}>
-                  {isPlan ? "КТГ" : "КТГ"}
-                </th>
+                <th style={{padding:"6px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em",borderBottom:`1px solid ${T.border}`,position:"sticky",left:0,background:T.bg3,zIndex:2,minWidth:140}}>Техника</th>
+                {days.map(d=>{const dn=parseInt(d.slice(8),10);const dow=new Date(d).getDay();const isWe=dow===0||dow===6;
+                  return<th key={d} style={{padding:"3px 1px",textAlign:"center",fontSize:10,borderBottom:`1px solid ${T.border}`,minWidth:26,color:isWe?T.amber:T.txt2,fontWeight:isWe?600:400}}>{dn}</th>;})}
+                <th style={{padding:"6px 8px",textAlign:"center",fontSize:10,fontWeight:600,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:46,whiteSpace:"nowrap"}}>КТГ</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((item, ri) => {
-                const rowId   = isPlan ? item.id : item.id;
-                const rowName = isPlan ? item.name : item.n;
-                const rowVals = isPlan
-                  ? days.map(d=>{const h=getHours(item.id,d);return h!==null?Math.round(h/DAY_CAPACITY*100):null;}).filter(v=>v!==null)
-                  : days.map(d=>getRigDayKtg(rowName,d)).filter(v=>v!==null);
-                const rowAvg  = rowVals.length ? Math.round(rowVals.reduce((s,v)=>s+v,0)/rowVals.length) : null;
-
-                return (
-                  <tr key={rowId} style={{background:ri%2===1?T.rowAlt:"transparent"}}>
-                    <td style={{padding:"4px 12px",fontSize:12,fontWeight:500,color:T.txt0,position:"sticky",left:0,background:ri%2===1?T.rowAlt:T.bg2,zIndex:1,borderRight:`1px solid ${T.border}`,fontFamily:"'JetBrains Mono',monospace"}}>
-                      {rowName}
-                    </td>
-                    {days.map(d=>{
-                      const isFuture=!isPlan&&d>today_d;
-                      if(isPlan){
-                        const cs=planCellStyle(item.id,d);
-                        return (
-                          <td key={d} style={{padding:"1px"}} onClick={()=>activeBrush&&paintCell(item.id,d)}>
-                            <div style={{width:26,height:24,borderRadius:3,margin:"0 auto",background:cs.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:cs.color,cursor:activeBrush?"pointer":"default"}}>
-                              {cs.text}
-                            </div>
-                          </td>
-                        );
-                      } else {
-                        const v=isFuture?null:getRigDayKtg(rowName,d);
-                        return (
-                          <td key={d} style={{padding:"1px"}}>
-                            <div style={{width:26,height:24,borderRadius:3,margin:"0 auto",background:isFuture?T.bg3:KB(v),display:"flex",alignItems:"center",justifyContent:"center",fontSize:v!==null?9:11,fontWeight:700,color:isFuture?T.border:KC(v)}}>
-                              {isFuture?"":v!==null?`${v}%`:"·"}
-                            </div>
-                          </td>
-                        );
-                      }
+              {objAssets.map((a,ri)=>{
+                const rowVals=days.map(d=>{const h=getHours(a.id,d);return h!=null?Math.round(h/DAY_CAPACITY*100):null;}).filter(v=>v!=null);
+                const rowAvg=rowVals.length?Math.round(rowVals.reduce((s,v)=>s+v,0)/rowVals.length):null;
+                return(
+                  <tr key={a.id} style={{background:ri%2===1?T.rowAlt:"transparent"}}>
+                    <td style={{padding:"4px 12px",fontSize:12,fontWeight:500,color:T.txt0,position:"sticky",left:0,background:ri%2===1?T.rowAlt:T.bg2,zIndex:1,borderRight:`1px solid ${T.border}`,fontFamily:"'JetBrains Mono',monospace"}}>{a.name}</td>
+                    {days.map(d=>{const cs=planCellStyle(a.id,d);return(
+                      <td key={d} style={{padding:"1px"}} onClick={()=>activeBrush&&paintCell(a.id,d)}>
+                        <div style={{width:24,height:22,borderRadius:3,margin:"0 auto",background:cs.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:cs.color,cursor:activeBrush?"pointer":"default"}}>{cs.text}</div>
+                      </td>);
                     })}
-                    <td style={{padding:"4px 8px",textAlign:"center",fontSize:13,fontWeight:600,color:KC(rowAvg)}}>
-                      {rowAvg!==null?`${rowAvg}%`:"—"}
-                    </td>
+                    <td style={{padding:"4px 8px",textAlign:"center",fontSize:13,fontWeight:600,color:KC(rowAvg)}}>{rowAvg!=null?`${rowAvg}%`:"—"}</td>
                   </tr>
                 );
               })}
-              {/* Итоговая строка */}
               <tr style={{borderTop:`1px solid ${T.border}`,background:T.bg3}}>
-                <td style={{padding:"5px 12px",fontSize:11,fontWeight:600,color:T.txt2,position:"sticky",left:0,background:T.bg3,zIndex:1,borderRight:`1px solid ${T.border}`}}>
-                  ⚙ {isPlan?"КТГ план":"КТГ факт"}
-                </td>
+                <td style={{padding:"5px 12px",fontSize:11,fontWeight:600,color:T.txt2,position:"sticky",left:0,background:T.bg3,zIndex:1,borderRight:`1px solid ${T.border}`}}>⚙ КТГ объекта</td>
                 {days.map(d=>{
-                  const isFuture=!isPlan&&d>today_d;
-                  let v=null;
-                  if(isPlan){
-                    if(objAssets.length){
-                      const vals=objAssets.map(a=>{const h=getHours(a.id,d);return h!==null?Math.round(h/DAY_CAPACITY*100):null;}).filter(x=>x!==null);
-                      v=vals.length?Math.round(vals.reduce((s,x)=>s+x,0)/vals.length):null;
-                    }
-                  } else {
-                    v=isFuture?null:getObjDayKtg(d);
-                  }
-                  return (
-                    <td key={d} style={{padding:"1px"}}>
-                      <div style={{width:26,height:24,borderRadius:3,margin:"0 auto",background:isFuture?T.bg3:KB(v),display:"flex",alignItems:"center",justifyContent:"center",fontSize:v!==null?8:11,fontWeight:700,color:isFuture?T.border:KC(v)}}>
-                        {isFuture?"":v!==null?`${v}%`:"·"}
-                      </div>
-                    </td>
-                  );
+                  const vals=objAssets.map(a=>{const h=getHours(a.id,d);return h!=null?Math.round(h/DAY_CAPACITY*100):null;}).filter(v=>v!=null);
+                  const v=vals.length?Math.round(vals.reduce((s,x)=>s+x,0)/vals.length):null;
+                  return<td key={d} style={{padding:"1px"}}><div style={{width:24,height:22,borderRadius:3,margin:"0 auto",background:KB(v),display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:KC(v)}}>{v!=null?`${v}%`:"·"}</div></td>;
                 })}
-                <td style={{padding:"5px 8px",textAlign:"center",fontSize:14,fontWeight:700,color:KC(isPlan?planKtgVal:factAvg)}}>
-                  {isPlan?(planKtgVal!==null?`${planKtgVal}%`:"—"):(factAvg!==null?`${factAvg}%`:"—")}
-                </td>
+                <td style={{padding:"5px 8px",textAlign:"center",fontSize:14,fontWeight:700,color:KC(planKtgVal)}}>{planKtgVal!=null?`${planKtgVal}%`:"—"}</td>
               </tr>
             </tbody>
           </table>
@@ -8832,19 +8823,65 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
     );
   }
 
-  // Confirm submit modal
-  const ConfirmModal = confirmModal && (() => {
-    const totalWH=objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0);
-    const maxWH=objAssets.length*daysInMonth*DAY_CAPACITY;
-    const pKtg=maxWH>0?Math.round(totalWH/maxWH*100):0;
+  function FactHeatmap() {
+    if(!objRigs.length) return(
+      <div style={{padding:32,textAlign:"center",fontSize:12,color:T.txt2,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10}}>
+        <div style={{fontSize:28,marginBottom:10}}>📋</div>Нет буровых станков на объекте.
+      </div>
+    );
+    return(
+      <div style={{border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
+        <div style={{overflowX:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,minWidth:Math.max(700,daysInMonth*28+180)}}>
+            <thead>
+              <tr style={{background:T.bg3}}>
+                <th style={{padding:"6px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em",borderBottom:`1px solid ${T.border}`,position:"sticky",left:0,background:T.bg3,zIndex:2,minWidth:140}}>Станок</th>
+                {days.map(d=>{const dn=parseInt(d.slice(8),10);const dow=new Date(d).getDay();const isWe=dow===0||dow===6;const isFut=d>today;
+                  return<th key={d} style={{padding:"3px 1px",textAlign:"center",fontSize:10,borderBottom:`1px solid ${T.border}`,minWidth:26,color:isFut?T.border:isWe?T.amber:T.txt2,fontWeight:isWe&&!isFut?600:400}}>{dn}</th>;})}
+                <th style={{padding:"6px 8px",textAlign:"center",fontSize:10,fontWeight:600,color:T.txt2,borderBottom:`1px solid ${T.border}`,minWidth:46}}>КТГ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {objRigs.map((rig,ri)=>{
+                const rigVals=days.filter(d=>d<=today).map(d=>getRigDayKtg(rig.n,d)).filter(v=>v!=null);
+                const rigAvg=rigVals.length?Math.round(rigVals.reduce((s,v)=>s+v,0)/rigVals.length):null;
+                return(
+                  <tr key={rig.id} style={{background:ri%2===1?T.rowAlt:"transparent"}}>
+                    <td style={{padding:"4px 12px",fontSize:12,fontWeight:500,color:T.txt0,position:"sticky",left:0,background:ri%2===1?T.rowAlt:T.bg2,zIndex:1,borderRight:`1px solid ${T.border}`,fontFamily:"'JetBrains Mono',monospace"}}>{rig.n}</td>
+                    {days.map(d=>{const isFut=d>today;const v=isFut?null:getRigDayKtg(rig.n,d);return(
+                      <td key={d} style={{padding:"1px"}}>
+                        <div style={{width:24,height:22,borderRadius:3,margin:"0 auto",background:isFut?T.bg3:KB(v),display:"flex",alignItems:"center",justifyContent:"center",fontSize:v!=null?8:11,fontWeight:700,color:isFut?T.border:KC(v)}}>{isFut?"":v!=null?`${v}%`:"·"}</div>
+                      </td>);})}
+                    <td style={{padding:"4px 8px",textAlign:"center",fontSize:13,fontWeight:600,color:KC(rigAvg)}}>{rigAvg!=null?`${rigAvg}%`:"—"}</td>
+                  </tr>
+                );
+              })}
+              <tr style={{borderTop:`1px solid ${T.border}`,background:T.bg3}}>
+                <td style={{padding:"5px 12px",fontSize:11,fontWeight:600,color:T.txt2,position:"sticky",left:0,background:T.bg3,zIndex:1,borderRight:`1px solid ${T.border}`}}>⚙ КТГ объекта</td>
+                {days.map(d=>{const isFut=d>today;const v=isFut?null:getObjDayKtg(d);return(
+                  <td key={d} style={{padding:"1px"}}><div style={{width:24,height:22,borderRadius:3,margin:"0 auto",background:isFut?T.bg3:KB(v),display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:isFut?T.border:KC(v)}}>{isFut?"":v!=null?`${v}%`:"·"}</div></td>);})}
+                <td style={{padding:"5px 8px",textAlign:"center",fontSize:14,fontWeight:700,color:KC(factAvg)}}>{factAvg!=null?`${factAvg}%`:"—"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Confirm modal ─────────────────────────────────────────────────────────
+  const ConfirmModal = confirmModal&&(()=>{
+    const tw=objAssets.reduce((s,a)=>s+days.reduce((ss,d)=>ss+(getHours(a.id,d)||0),0),0);
+    const mw=objAssets.length*daysInMonth*DAY_CAPACITY;
+    const pKtg=mw>0?Math.round(tw/mw*100):0;
     const toCount=Object.values(plan?.to_info||{}).reduce((s,v)=>s+Object.keys(v).length,0);
-    return (
+    return(
       <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
         <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${T.green}`,borderRadius:10,width:"100%",maxWidth:420,padding:26}}>
           <div style={{fontSize:15,fontWeight:600,color:T.txt0,marginBottom:4}}>Отправить КТГ-план?</div>
           <div style={{fontSize:12,color:T.txt2,marginBottom:18}}>После отправки план нельзя редактировать до возврата инженером.</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:18}}>
-            {[["Объект",objs.find(o=>o.id===selObjId)?.name||"—"],["Период",monthLabel],["Техника",`${objAssets.length} ед.`],["Ср. КТГ",`${pKtg}%`],["Заполнено",`${[...new Set(days.filter(d=>objAssets.some(a=>getHours(a.id,d)!==null)))].length} / ${daysInMonth} дней`],["ТО",toCount?`${toCount} ячеек`:"—"]].map(([l,v])=>(
+            {[["Объект",objs.find(o=>o.id===selObjId)?.name||"—"],["Период",monthLabel],["Техника",`${objAssets.length} ед.`],["КТГ план",`${pKtg}%`],["Дней заполнено",`${[...new Set(days.filter(d=>objAssets.some(a=>getHours(a.id,d)!==null)))].length} / ${daysInMonth}`],["ТО ячеек",toCount||"—"]].map(([l,v])=>(
               <div key={l} style={{padding:"7px 10px",background:T.bg3,borderRadius:6,border:`1px solid ${T.border}`}}>
                 <div style={{fontSize:11,color:T.txt2,marginBottom:2}}>{l}</div>
                 <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>{v}</div>
@@ -8860,12 +8897,24 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
     );
   })();
 
-  return (
+  return(
     <div>
+      {BrushEditorModal}
       {ConfirmModal}
-      {toast && <div style={{position:"fixed",top:70,right:24,zIndex:900,padding:"11px 18px",borderRadius:7,background:toast.type==="err"?"rgba(239,68,68,0.95)":"rgba(16,185,129,0.95)",color:"#fff",fontSize:13,fontWeight:600}}>{toast.msg}</div>}
+      {toast&&<div style={{position:"fixed",top:70,right:24,zIndex:900,padding:"11px 18px",borderRadius:7,background:toast.type==="err"?"rgba(239,68,68,0.95)":"rgba(16,185,129,0.95)",color:"#fff",fontSize:13,fontWeight:600,boxShadow:"0 4px 20px rgba(0,0,0,.3)"}}>{toast.msg}</div>}
 
-      {/* No tabs — single КТГ view */}
+      {/* Tabs */}
+      <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,marginBottom:18}}>
+        {[["plan","План"],["fact","Факт"]].map(([id,label])=>(
+          <div key={id} onClick={()=>setTab(id)}
+            style={{padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer",
+              color:tab===id?T.txt0:T.txt2,
+              borderBottom:tab===id?`2px solid ${T.txt0}`:"2px solid transparent",
+              marginBottom:-1,transition:"color .1s"}}>
+            {label}
+          </div>
+        ))}
+      </div>
 
       {SharedHeader}
 
@@ -8874,8 +8923,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
         {PlanStrip}
         {Toolbar}
         {PlanLegend}
-        <HeatmapTable isPlan={true}/>
-        {/* Returned comment */}
+        <PlanHeatmap/>
         {planStatus==="RETURNED"&&plan?.engineer_comment&&(
           <div style={{marginTop:12,padding:"10px 14px",background:`${T.amber}10`,border:`1px solid ${T.amber}30`,borderRadius:8,fontSize:12,color:T.amber}}>
             ↩ Комментарий инженера: <b style={{color:T.txt0}}>{plan.engineer_comment}</b>
@@ -8886,11 +8934,12 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
       {tab==="fact" && <>
         {FactStrip}
         {FactLegend}
-        <HeatmapTable isPlan={false}/>
+        <FactHeatmap/>
       </>}
     </div>
   );
 }
+
 
 function MechanicKTGFactPage({ nodes, objs, reps, rigs, passports, T }) {
   return null; // Merged into MechanicKTGPage
