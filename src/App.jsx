@@ -2051,95 +2051,149 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
   const obj = objs.find((o) => o.id === objId);
   if (!rg || !obj) return null;
 
-  const colors = OBJ_COLORS(T);
-  const ac = colors[objs.findIndex((o) => o.id === objId) % colors.length];
+  const colors  = OBJ_COLORS(T);
+  const ac      = colors[objs.findIndex((o) => o.id === objId) % colors.length];
   const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
   const rigReps  = approved
     .filter((r) => r.rigs?.find((x) => x.id === rigId))
-    .map((r)   => ({ rep: r, rd: r.rigs.find((x) => x.id === rigId) }));
+    .map((r) => ({ rep: r, rd: r.rigs.find((x) => x.id === rigId) }))
+    .sort((a, b) => a.rep.date > b.rep.date ? -1 : 1);
 
   const tot = {
     df:   rigReps.reduce((s, { rd }) => s + rd.df,   0),
-
     wh:   rigReps.reduce((s, { rd }) => s + rd.wh,   0),
     dh:   rigReps.reduce((s, { rd }) => s + rd.dh,   0),
     fuel: rigReps.reduce((s, { rd }) => s + rd.fuel, 0),
+    overDrill: rigReps.reduce((s, { rd }) => s + (toNum(rd.overDrill)||0), 0),
   };
-  const kv = repsKtgKio(approved).ktg;
-  const kc = scoreColor(kv, obj.kp, obj.kp - 12, T);
+  const fuelPerDf = tot.df > 0 && tot.fuel > 0 ? (tot.fuel / tot.df).toFixed(2) : null;
+  const { ktg: rigKtg, kio: rigKio } = repsKtgKio(rigReps.map(x=>x.rep).filter(r=>r.rigs?.find(x=>x.id===rigId)));
+
+  const ktgColor = (k) => k===null ? T.txt2 : k>=85 ? T.green : k>=70 ? T.amber : "#ef4444";
+  const ktgBg    = (k) => k===null ? "transparent" : k>=85 ? `${T.green}18` : k>=70 ? `${T.amber}18` : "rgba(239,68,68,0.12)";
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "DASHBOARD", onClick: onBack }, { label: obj.name.toUpperCase(), onClick: onBackToObj }, { label: rg.n }]} T={T} />
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-        <div style={{ padding: "8px 18px", background: `linear-gradient(135deg,${ac}25,${ac}10)`, border: `2px solid ${ac}`, borderRadius: 6 }}>
-          <div style={{ fontSize: 12, color: ac, textTransform: "uppercase", letterSpacing: ".15em", marginBottom: 2 }}>Буровой станок</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: T.txt0, fontFamily: "'Inter',sans-serif", letterSpacing: "2px" }}>{rg.n}</div>
-          <div style={{ fontSize: 12, color: T.txt2, marginTop: 2 }}>{obj.name} · {rigReps.length} смен</div>
+      <Breadcrumb items={[{ label:"DASHBOARD", onClick:onBack }, { label:obj.name.toUpperCase(), onClick:onBackToObj }, { label:rg.n }]} T={T} />
+
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:4, height:32, borderRadius:3, background:ac, flexShrink:0 }} />
+          <div>
+            <div style={{ fontSize:22, fontWeight:600, color:T.txt0, fontFamily:"'JetBrains Mono',monospace" }}>{rg.n}</div>
+            <div style={{ fontSize:11, color:T.txt2, marginTop:2 }}>{obj.name} · {rigReps.length} смен</div>
+          </div>
         </div>
-        <div style={{ textAlign: "center" }}>
-          <KTGGauge v={kv} plan={obj.kp} size={80} T={T} />
-          <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginTop: 2 }}>КТГ</div>
+        <div>
+          {rigKtg !== null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, background:ktgBg(rigKtg), color:ktgColor(rigKtg), marginLeft:5 }}>КТГ {rigKtg}%</span>}
+          {rigKio !== null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, background: rigKio>=75?`${T.green}18`:rigKio>=50?`${T.amber}18`:"rgba(239,68,68,0.12)", color: rigKio>=75?T.green:rigKio>=50?T.amber:"#ef4444", marginLeft:5 }}>КИО {rigKio}%</span>}
         </div>
       </div>
 
-      {/* Rig totals */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 24 }}>
-        {[[T.red,"Бурение",tot.df,"п.м"],[T.blue,"Работа",tot.wh,"ч"],["#ef4444","⏸ Простой",tot.dh,"ч"],[T.violet,"⛽ ГСМ",tot.fuel,"л"]].map(([color,lbl,val,unit]) => (
-          <Card key={lbl} accent={color} style={{ padding: "14px 16px" }} T={T}>
-            <div style={{ fontSize: 12, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 6 }}>{lbl}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{val.toLocaleString()}</div>
-            <div style={{ fontSize: 12, color: T.txt2, marginTop: 3, textTransform: "uppercase" }}>{unit}</div>
-          </Card>
+      {/* Summary strip */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:1, background:T.border, border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden", marginBottom:14 }}>
+        {[
+          { label:"⛏ Бурение",  val:tot.df,   unit:"п.м.", color:T.red },
+          { label:"⏱ Работа",   val:tot.wh,   unit:"ч",    color:T.blue },
+          { label:"⏸ Простои",  val:tot.dh,   unit:"ч",    color: tot.dh>0?T.amber:T.txt2 },
+          { label:"⛽ ГСМ",      val:tot.fuel, unit:"л",    color:T.violet },
+          { label:"⛽ л/п.м.",   val:fuelPerDf||"—", unit: fuelPerDf?"":"", color:T.txt0 },
+        ].map(({ label, val, unit, color }) => (
+          <div key={label} style={{ background:T.bg2, padding:"11px 14px" }}>
+            <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:5 }}>{label}</div>
+            <div style={{ fontSize:20, fontWeight:600, color, lineHeight:1 }}>
+              {typeof val === "number" ? val.toLocaleString() : val}
+            </div>
+            {unit && <div style={{ fontSize:11, color:T.txt2, marginTop:4 }}>{unit}</div>}
+          </div>
         ))}
       </div>
 
-      {/* Per-shift list */}
-      <SectionTitle label={`Отчёты по сменам (${rigReps.length})`} T={T} />
+      {/* Shifts table */}
+      <div style={{ fontSize:11, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".07em", marginBottom:8 }}>
+        Отчёты по сменам — {rigReps.length}
+      </div>
       {rigReps.length === 0
-        ? <Card style={{ padding: 24, textAlign: "center" }} T={T}><div style={{ fontSize: 12, color: T.txt2 }}>Нет утверждённых отчётов</div></Card>
+        ? <div style={{ padding:24, textAlign:"center", fontSize:12, color:T.txt2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:10 }}>Нет утверждённых отчётов</div>
         : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {rigReps.map(({ rep, rd }) => {
-              const kv2 = repKtg(rd);
-              return (
-                <Card key={rep.id} accent={ac} style={{ padding: "14px 16px" }} T={T}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: T.txt0, fontFamily: "'Inter',sans-serif" }}>
-                        {rep.date} · {rep.sh === "day" ? "☀ Дневная" : "☾ Ночная"}
-                      </div>
-                      <div style={{ fontSize: 12, color: T.txt2, marginTop: 2 }}>{rep.by}</div>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      {kv2 !== null && (
-                        <span style={{ padding: "3px 10px", borderRadius: 3, fontSize: 12, fontWeight: 700, background: `${kc}18`, color: kc, border: `1px solid ${kc}30` }}>
-                          КТГ {kv2}%
-                        </span>
-                      )}
-                      <StatusBadge status={rep.status} />
-                    </div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6 }}>
-                    {[[T.red,"Бурение",rd.df,"п.м"],[T.blue,"Работа",rd.wh,"ч"],["#ef4444","Простой",rd.dh,"ч"],[T.violet,"ГСМ",rd.fuel,"л"]].map(([color,lbl,val,unit]) => (
-                      <div key={lbl} style={{ background: T.bg3, borderRadius: 4, padding: "8px 10px", border: `1px solid ${T.border}`, textAlign: "center" }}>
-                        <div style={{ fontSize: 12, color: T.txt2, textTransform: "uppercase", marginBottom: 3 }}>{lbl}</div>
-                        <div style={{ fontSize: 17, fontWeight: 700, color, fontFamily: "'Inter',sans-serif", lineHeight: 1 }}>{val}</div>
-                        <div style={{ fontSize: 12, color: T.txt2, marginTop: 2 }}>{unit}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {rd.dt && rd.dt !== "—" && (
-                    <div style={{ marginTop: 10, padding: "7px 12px", background: `${T.amber}10`, border: `1px solid ${T.amber}25`, borderRadius: 4, fontSize: 12, color: T.amber }}>
-                      ⚠ {rd.dt}
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
+          <div style={{ border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+              <thead>
+                <tr style={{ background:T.bg3 }}>
+                  {["Дата / Смена","Оператор","Бурение","Работа, ч","Простой, ч","ГСМ, л","л/п.м.","Перебур","КТГ","Статус"].map((h,i) => (
+                    <th key={h} style={{ padding:"7px 10px", fontSize:10, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".05em", borderBottom:`1px solid ${T.border}`, textAlign:i<2?"left":"right", paddingLeft:i===0?14:10, whiteSpace:"nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rigReps.map(({ rep, rd }, idx) => {
+                  const shiftDur = toNum(rep.shiftDurationHours || 11);
+                  const rigKtg2  = shiftDur > 0 ? Math.min(100, Math.round((shiftDur - 0) / shiftDur * 100)) : null;
+                  const fpd2     = rd.df > 0 && rd.fuel > 0 ? (rd.fuel / rd.df).toFixed(2) : null;
+                  const isLast   = idx === rigReps.length - 1;
+                  const downNote = rd.dt && rd.dt !== "—" ? rd.dt : null;
+                  return (
+                    <tr key={rep.id} style={{ borderBottom: isLast ? "none" : `1px solid ${T.border}` }}
+                      onMouseEnter={e => e.currentTarget.querySelectorAll("td").forEach(td => td.style.background=T.bg3)}
+                      onMouseLeave={e => e.currentTarget.querySelectorAll("td").forEach(td => td.style.background="")}>
+                      <td style={{ padding:"9px 14px" }}>
+                        <div style={{ fontSize:13, fontWeight:500, color:T.txt0 }}>{rep.date}</div>
+                        <div style={{ fontSize:10, color:T.txt2, marginTop:1 }}>{rep.sh==="day"?"☀ Дневная":"☾ Ночная"}</div>
+                      </td>
+                      <td style={{ padding:"9px 10px", fontSize:11, color:T.txt2 }}>
+                        {rd.operator || rep.by || "—"}
+                      </td>
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>
+                        <span style={{ fontWeight:500 }}>{rd.df?.toLocaleString()||"—"}</span>
+                        <span style={{ fontSize:10, color:T.txt2, marginLeft:2 }}>п.м.</span>
+                      </td>
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>{rd.wh||"—"}</td>
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>
+                        {rd.dh > 0
+                          ? <span>
+                              <span style={{ color:T.amber, fontWeight:500 }}>{rd.dh}</span>
+                              {downNote && <div style={{ fontSize:10, color:T.txt2, marginTop:1, maxWidth:100, textAlign:"right" }}>{downNote}</div>}
+                            </span>
+                          : "—"}
+                      </td>
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>{rd.fuel>0?rd.fuel.toLocaleString():"—"}</td>
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>{fpd2||"—"}</td>
+                      <td style={{ padding:"9px 10px", textAlign:"right", color: rd.overDrill>0?T.cyan:T.txt2, fontWeight: rd.overDrill>0?500:400 }}>
+                        {rd.overDrill>0?`${rd.overDrill} м`:"—"}
+                      </td>
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>
+                        {rigKtg2 !== null
+                          ? <span style={{ fontSize:10, fontWeight:600, padding:"2px 6px", borderRadius:4, background:ktgBg(rigKtg2), color:ktgColor(rigKtg2) }}>{rigKtg2}%</span>
+                          : "—"}
+                      </td>
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>
+                        <StatusBadge status={rep.status} />
+                      </td>
+                    </tr>
+                  );
+                })}
+                {/* Totals */}
+                <tr style={{ background:T.bg3, borderTop:`1px solid ${T.border}` }}>
+                  <td style={{ padding:"8px 14px", fontSize:11, fontWeight:600, color:T.txt2 }}>Итого</td>
+                  <td style={{ padding:"8px 10px" }}>—</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.df.toLocaleString()} <span style={{ fontSize:10, color:T.txt2, fontWeight:400 }}>п.м.</span></td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.wh||"—"}</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600, color:tot.dh>0?T.amber:T.txt0 }}>{tot.dh>0?tot.dh:"—"}</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.fuel>0?tot.fuel.toLocaleString():"—"}</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{fuelPerDf||"—"}</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600, color:tot.overDrill>0?T.cyan:T.txt0 }}>{tot.overDrill>0?`${tot.overDrill.toLocaleString()} м`:"—"}</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right" }}>
+                    {rigKtg !== null
+                      ? <span style={{ fontSize:10, fontWeight:600, padding:"2px 6px", borderRadius:4, background:ktgBg(rigKtg), color:ktgColor(rigKtg) }}>{rigKtg}%</span>
+                      : "—"}
+                  </td>
+                  <td style={{ padding:"8px 10px" }}>—</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        )
-      }
+        )}
     </div>
   );
 }
