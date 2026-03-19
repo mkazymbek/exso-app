@@ -533,7 +533,7 @@ export async function upsertAsset(asset) {
     type:               asset.type,
     cat_type:           asset.catType,
     fuel_rate:          asset.fuelRate,
-    desc:               asset.desc || '',
+    description:        asset.desc || '',
     assigned_object_id: asset.assigned_object_id ?? null,
     created_by:         asset.createdBy || 'system',
   };
