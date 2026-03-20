@@ -1421,7 +1421,7 @@ function repDateToIso(dateStr, anchorYear) {
   return dateStr;
 }
 
-function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) {
+function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], invTxns=[], passports={}, onDrillObj, T }) {
 
   // ── Period state ──────────────────────────────────────────────────────────
   const [mode, setMode] = useState("month");    // month-only Dashboard
@@ -1884,6 +1884,101 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, onDrillObj, T }) 
             </div>
           );
         })}
+
+      {/* ══ ГСМ СВОДКА ══════════════════════════════════════════════════════ */}
+      <div style={{ marginTop:28 }}>
+        <div style={{ fontSize:11, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:12 }}>
+          ⛽ Остатки ГСМ по объектам
+        </div>
+        {(() => {
+          // Calc balance per storage unit
+          function calcBal(suId) {
+            return (invTxns||[]).filter(t=>t.su_id===suId).reduce((s,t)=>{
+              if(t.txn_type==="ADJUSTMENT") return Number(t.qty);
+              return s + (t.txn_type==="IN"?1:-1)*Number(t.qty);
+            },0);
+          }
+          // Last 7 days avg daily consumption per oid
+          function avgDaily(oid) {
+            const today = new Date().toISOString().slice(0,10);
+            const d7 = new Date(); d7.setDate(d7.getDate()-7);
+            const d7s = d7.toISOString().slice(0,10);
+            const outTxns = (invTxns||[]).filter(t=>{
+              if(t.txn_type!=="OUT") return false;
+              const su = (storageUnits||[]).find(u=>u.id===t.su_id);
+              return su && su.oid===oid && su.item_type==="FUEL" && t.date>=d7s;
+            });
+            const total = outTxns.reduce((s,t)=>s+Number(t.qty),0);
+            return total/7;
+          }
+          const fuelByObj = objs.map(o=>{
+            const fuelUnits = (storageUnits||[]).filter(u=>u.item_type==="FUEL"&&u.oid===o.id);
+            const bal = fuelUnits.reduce((s,u)=>s+Math.max(0,calcBal(u.id)),0);
+            const cap = fuelUnits.reduce((s,u)=>s+u.capacity,0);
+            const pct = cap>0?Math.round(bal/cap*100):0;
+            const daily = avgDaily(o.id);
+            const daysLeft = daily>0 ? Math.round(bal/daily) : null;
+            // Monthly consumption from reps
+            const monthReps = (reps||[]).filter(r=>r.status==="approved"&&r.oid===o.id&&r.date&&r.date.slice(0,7)===anchor.slice(0,7));
+            const monthFuel = monthReps.reduce((s,r)=>s+(r.fuel||0),0);
+            return { o, bal, cap, pct, daysLeft, monthFuel, fuelUnits };
+          }).filter(x=>x.cap>0);
+
+          if(!fuelByObj.length) return (
+            <div style={{padding:"16px 20px",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,fontSize:12,color:T.txt2,textAlign:"center"}}>
+              Нет данных по складам ГСМ
+            </div>
+          );
+
+          return (
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:10}}>
+              {fuelByObj.map(({o,bal,cap,pct,daysLeft,monthFuel})=>{
+                const isLow = pct < 20;
+                const isOk  = pct >= 50;
+                const barColor = pct>100?"#7c3aed":isLow?T.red:isOk?T.green:T.amber;
+                const pctBg = pct>100?"rgba(124,58,237,0.12)":isLow?`${T.red}18`:isOk?`${T.green}18`:`${T.amber}18`;
+                return (
+                  <div key={o.id} style={{background:T.bg2,border:`1px solid ${isLow?"rgba(239,68,68,0.4)":T.border}`,borderRadius:10,overflow:"hidden"}}>
+                    <div style={{display:"flex",alignItems:"stretch"}}>
+                      <div style={{width:3,background:barColor,flexShrink:0}}/>
+                      <div style={{flex:1,padding:"11px 13px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                          <div>
+                            <div style={{fontSize:12,fontWeight:600,color:T.txt0}}>{o.name}</div>
+                            <div style={{fontSize:10,color:T.txt2,marginTop:1}}>Дизельное топливо</div>
+                          </div>
+                          <span style={{fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:4,background:pctBg,color:barColor}}>{pct}%</span>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5,marginBottom:8}}>
+                          <div style={{background:T.bg3,borderRadius:5,padding:"5px 8px"}}>
+                            <div style={{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:1}}>Остаток</div>
+                            <div style={{fontSize:13,fontWeight:700,color:isLow?T.red:T.txt0}}>{bal.toLocaleString()} л</div>
+                          </div>
+                          <div style={{background:T.bg3,borderRadius:5,padding:"5px 8px"}}>
+                            <div style={{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:1}}>Расход мес.</div>
+                            <div style={{fontSize:13,fontWeight:700,color:T.txt0}}>{monthFuel.toLocaleString()} л</div>
+                          </div>
+                        </div>
+                        {daysLeft!==null && (
+                          <div style={{fontSize:11,color:daysLeft<7?T.red:daysLeft<14?T.amber:T.txt2,fontWeight:daysLeft<7?700:400}}>
+                            {daysLeft<1?"⚠ Заканчивается":daysLeft<7?`⚠ Осталось ~${daysLeft} дн.`:daysLeft<14?`⏱ ~${daysLeft} дней`:daysLeft<30?`✓ ~${daysLeft} дней`:`✓ >${Math.round(daysLeft/30)} мес.`}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{padding:"5px 13px",borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{flex:1,height:3,borderRadius:2,background:T.cardSh,overflow:"hidden"}}>
+                        <div style={{height:3,borderRadius:2,background:barColor,width:`${Math.min(pct,100)}%`,transition:"width .4s"}}/>
+                      </div>
+                      <span style={{fontSize:9,color:T.txt2,whiteSpace:"nowrap"}}>{cap.toLocaleString()} л</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>
       </div>
     </div>
   );
@@ -9913,25 +10008,25 @@ function MaintenanceFormModal({ initial, rigs, passports, onSave, onClose, T }) 
 
 // ─── INVENTORY: STORAGE UNITS & TRANSACTIONS ─────────────────────────────────
 const INIT_STORAGE_UNITS = [
-  // Борлы (oid:1)
-  { id:"su1",  oid:1, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:15000, min_level:1000 },
-  { id:"su2",  oid:1, name:"Резервуар ДТ-2",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:10000, min_level:500  },
-  { id:"su3",  oid:1, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:20000, min_level:500  },
-  { id:"su4",  oid:1, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:10000, min_level:200  },
-  // Коскудук (oid:2)
-  { id:"su5",  oid:2, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:12000, min_level:800  },
-  { id:"su6",  oid:2, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:15000, min_level:400  },
-  { id:"su7",  oid:2, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:8000,  min_level:200  },
-  // Бактай (oid:3)
-  { id:"su8",  oid:3, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:12000, min_level:800  },
-  { id:"su9",  oid:3, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:18000, min_level:500  },
-  { id:"su10", oid:3, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:8000,  min_level:200  },
-  // Жолымбет (oid:4)
-  { id:"su11", oid:4, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:10000, min_level:600  },
-  { id:"su12", oid:4, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:12000, min_level:300  },
+  // Борлы (oid:1) — ~5 000 л/мес расход
+  { id:"su1",  oid:1, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:25000, min_level:2000 },
+  { id:"su2",  oid:1, name:"Резервуар ДТ-2",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:25000, min_level:2000 },
+  { id:"su3",  oid:1, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:30000, min_level:1000 },
+  { id:"su4",  oid:1, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:15000, min_level:500  },
+  // Коскудук (oid:2) — ~20 000 л/мес расход
+  { id:"su5",  oid:2, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:80000, min_level:5000 },
+  { id:"su6",  oid:2, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:25000, min_level:1000 },
+  { id:"su7",  oid:2, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:15000, min_level:500  },
+  // Бактай (oid:3) — ~14 000 л/мес расход
+  { id:"su8",  oid:3, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:80000, min_level:5000 },
+  { id:"su9",  oid:3, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:30000, min_level:1000 },
+  { id:"su10", oid:3, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:15000, min_level:500  },
+  // Жолымбет (oid:4) — ~21 000 л/мес расход
+  { id:"su11", oid:4, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:80000, min_level:5000 },
+  { id:"su12", oid:4, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:25000, min_level:1000 },
   // Шыганак (oid:5)
-  { id:"su13", oid:5, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:8000,  min_level:500  },
-  { id:"su14", oid:5, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:10000, min_level:300  },
+  { id:"su13", oid:5, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:30000, min_level:2000 },
+  { id:"su14", oid:5, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:15000, min_level:500  },
 ];
 
 const INIT_INV_TXNS = [
@@ -10042,7 +10137,7 @@ const INV_TXN_CFG = {
   ADJUSTMENT: { label:"Корректировка",color:"#7050e0", sign:0  },
 };
 
-function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, objs, nodes, user, T }) {
+function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, objs, nodes, passports={}, reps=[], user, T }) {
   const [tab,        setTab]        = useState("units");
   const [filterType, setFilterType] = useState("all");
   const [txnModal,   setTxnModal]   = useState(null);
@@ -10264,7 +10359,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
 
       {/* Tabs */}
       <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,marginBottom:14}}>
-        {[["units","Остатки"],["journal","Журнал"]].map(([id,label])=>(
+        {[["units","Остатки"],["journal","Журнал"],["analytics","Аналитика"]].map(([id,label])=>(
           <div key={id} onClick={()=>setTab(id)}
             style={{padding:"7px 16px",fontSize:13,fontWeight:500,cursor:"pointer",
               color:tab===id?T.txt0:T.txt2,
@@ -10410,6 +10505,187 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
           }
         </div>
       )}
+
+      {/* АНАЛИТИКА */}
+      {tab === "analytics" && (() => {
+        // Build daily consumption data (last 30 days)
+        const today = new Date();
+        const days30 = Array.from({length:30}, (_,i)=>{
+          const d = new Date(today); d.setDate(d.getDate()-29+i);
+          return d.toISOString().slice(0,10);
+        });
+
+        // Fuel balance over time per visible object
+        const fuelUnitsVisible = filteredUnits.filter(u=>u.item_type==="FUEL");
+
+        // Daily net change
+        const dailyByDate = {};
+        days30.forEach(d=>{ dailyByDate[d]={in:0,out:0}; });
+        invTxns.forEach(t=>{
+          const su = storageUnits.find(u=>u.id===t.su_id);
+          if(!su||!visibleOids.includes(su.oid)||su.item_type!=="FUEL") return;
+          if(!dailyByDate[t.date]) return;
+          if(t.txn_type==="IN")  dailyByDate[t.date].in  += Number(t.qty);
+          if(t.txn_type==="OUT") dailyByDate[t.date].out += Number(t.qty);
+        });
+
+        // Running balance
+        const currentBal = fuelUnitsVisible.reduce((s,u)=>s+Math.max(0,calcBalance(u.id)),0);
+        let runBal = currentBal;
+        const balByDay = {};
+        [...days30].reverse().forEach(d=>{
+          runBal -= dailyByDate[d].in;
+          runBal += dailyByDate[d].out;
+          balByDay[d] = Math.max(0, runBal);
+        });
+        balByDay[days30[days30.length-1]] = currentBal;
+        const balArr = days30.map(d=>balByDay[d]||0);
+        const maxBal = Math.max(...balArr, 1);
+
+        // Avg daily consumption last 7 days
+        const last7Out = days30.slice(-7).reduce((s,d)=>s+(dailyByDate[d]?.out||0),0);
+        const avgDaily = Math.round(last7Out/7);
+        const capTotal = fuelUnitsVisible.reduce((s,u)=>s+u.capacity,0);
+        const daysLeft = avgDaily>0 ? Math.round(currentBal/avgDaily) : null;
+
+        // Norm vs fact per rig
+        const rigStats = nodes.filter(n=>n.type==="ASSET"&&visibleOids.includes(Number(n.assigned_object_id))).map(a=>{
+          const pp = (passports&&passports[a.id])||{};
+          const normRate = pp.fuel_rate||0; // л/мч
+          // Actual: sum fuel from reports for this rig last 30 days
+          let factFuel = 0, factWh = 0;
+          const start30 = days30[0];
+          (nodes||[]);
+          // From invTxns with asset_id
+          invTxns.filter(t=>t.asset_id===a.id&&t.txn_type==="OUT"&&t.date>=start30)
+            .forEach(t=>factFuel+=Number(t.qty));
+          // WH from passports log
+          (pp.moto_hours_log||[]).filter(l=>l.date>=start30).forEach(l=>factWh+=l.wh||0);
+          const factRate = factWh>0 ? Math.round(factFuel/factWh*10)/10 : null;
+          const deviation = (normRate>0&&factRate!==null) ? Math.round((factRate-normRate)/normRate*100) : null;
+          return { a, pp, normRate, factRate, factFuel, factWh, deviation };
+        }).filter(x=>x.normRate>0||x.factFuel>0);
+
+        // Monthly totals
+        const monthIn  = invTxns.filter(t=>{
+          const su=storageUnits.find(u=>u.id===t.su_id);
+          return su&&visibleOids.includes(su.oid)&&su.item_type==="FUEL"&&t.txn_type==="IN"&&t.date&&t.date.slice(0,7)===new Date().toISOString().slice(0,7);
+        }).reduce((s,t)=>s+Number(t.qty),0);
+        const monthOut = invTxns.filter(t=>{
+          const su=storageUnits.find(u=>u.id===t.su_id);
+          return su&&visibleOids.includes(su.oid)&&su.item_type==="FUEL"&&t.txn_type==="OUT"&&t.date&&t.date.slice(0,7)===new Date().toISOString().slice(0,7);
+        }).reduce((s,t)=>s+Number(t.qty),0);
+
+        return (
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {/* KPI strip */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
+              {[
+                {l:"Текущий остаток", v:`${currentBal.toLocaleString()} л`,     c:currentBal<5000?T.red:T.txt0},
+                {l:"Расход / день",   v:avgDaily>0?`${avgDaily.toLocaleString()} л`:"—", c:T.txt0},
+                {l:"Прогноз (дней)",  v:daysLeft!==null?`${daysLeft} дн.`:"—",  c:daysLeft!==null&&daysLeft<14?T.red:daysLeft!==null&&daysLeft<30?T.amber:T.green},
+                {l:"Приход мес.",     v:`${monthIn.toLocaleString()} л`,          c:T.txt0},
+              ].map(({l,v,c})=>(
+                <div key={l} style={{background:T.bg2,padding:"10px 14px"}}>
+                  <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
+                  <div style={{fontSize:19,fontWeight:700,color:c,lineHeight:1}}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Balance chart */}
+            <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
+              <div style={{fontSize:11,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>
+                Динамика остатка ДТ — последние 30 дней
+              </div>
+              <div style={{display:"flex",alignItems:"flex-end",gap:2,height:80,marginBottom:4}}>
+                {balArr.map((v,i)=>{
+                  const pct = Math.round(v/maxBal*100);
+                  const d = days30[i];
+                  const hasIn  = (dailyByDate[d]?.in||0)>0;
+                  const hasOut = (dailyByDate[d]?.out||0)>0;
+                  const color  = v<5000?"#ef4444":v<20000?T.amber:"#185FA5";
+                  return (
+                    <div key={i} title={`${d}: ${v.toLocaleString()} л`}
+                      style={{flex:1,minWidth:4,borderRadius:"2px 2px 0 0",
+                        background:hasIn?T.green:color,
+                        height:`${Math.max(3,pct)}%`,
+                        opacity:hasIn?1:0.75,
+                        cursor:"default"}}>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:T.txt2}}>
+                <span>{days30[0].slice(5)}</span>
+                <span style={{color:T.green}}>▮ зелёный = день прихода</span>
+                <span>{days30[29].slice(5)}</span>
+              </div>
+            </div>
+
+            {/* Norm vs Fact per rig */}
+            {rigStats.length>0 && (
+              <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
+                <div style={{padding:"9px 14px",borderBottom:`1px solid ${T.border}`,fontSize:11,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".07em"}}>
+                  Норма vs Факт расхода ГСМ по станкам
+                </div>
+                <div style={{overflowX:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                    <thead>
+                      <tr style={{background:T.bg3}}>
+                        {["Станок","Норма л/мч","Факт л/мч","Откл.","Расход (30д)","Наработка"].map(h=>(
+                          <th key={h} style={{padding:"6px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em",borderBottom:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rigStats.map(({a,normRate,factRate,factFuel,factWh,deviation},i)=>{
+                        const devColor = deviation===null?"":deviation>10?T.red:deviation>0?T.amber:T.green;
+                        return (
+                          <tr key={a.id} style={{background:i%2?T.rowAlt:"transparent"}}>
+                            <td style={{padding:"7px 12px",fontWeight:500,color:T.txt0,fontFamily:"'JetBrains Mono',monospace"}}>{a.name}</td>
+                            <td style={{padding:"7px 12px",color:T.txt2}}>{normRate>0?`${normRate} л/мч`:"—"}</td>
+                            <td style={{padding:"7px 12px",color:T.txt0,fontWeight:500}}>{factRate!==null?`${factRate} л/мч`:"—"}</td>
+                            <td style={{padding:"7px 12px"}}>
+                              {deviation!==null?(
+                                <span style={{fontSize:11,fontWeight:600,padding:"1px 6px",borderRadius:3,background:`${devColor}18`,color:devColor}}>
+                                  {deviation>0?"+":""}{deviation}%
+                                </span>
+                              ):"—"}
+                            </td>
+                            <td style={{padding:"7px 12px",color:T.txt1}}>{factFuel>0?`${factFuel.toLocaleString()} л`:"—"}</td>
+                            <td style={{padding:"7px 12px",color:T.txt2}}>{factWh>0?`${factWh} мч`:"—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Monthly in/out */}
+            <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
+              <div style={{fontSize:11,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>
+                Баланс ГСМ — текущий месяц
+              </div>
+              <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+                {[
+                  {l:"Приход",   v:monthIn,  c:T.green, sign:"+"},
+                  {l:"Расход",   v:monthOut, c:T.red,   sign:"−"},
+                  {l:"Нетто",    v:monthIn-monthOut, c:monthIn>=monthOut?T.green:T.red, sign:""},
+                ].map(({l,v,c,sign})=>(
+                  <div key={l} style={{textAlign:"center",minWidth:100}}>
+                    <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>{l}</div>
+                    <div style={{fontSize:22,fontWeight:700,color:c}}>{sign}{Math.abs(v).toLocaleString()}</div>
+                    <div style={{fontSize:10,color:T.txt2}}>литров</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -10876,31 +11152,34 @@ export default function App() {
 
     // ── Авто-списание ГСМ со склада ──────────────────────────────
     const fuelTotal = parseFloat(edited.fuel) || 0;
+    const fuelKgTotal = parseFloat(edited.fuel_kg) || 0;
+    // ДТ
     if (fuelTotal > 0) {
-      // Найти резервуар ДТ для данного объекта
-      setStorageUnits(prev => {
-        const fuelUnits = prev.filter(u => u.item_type === "FUEL" && u.oid === edited.oid);
-        if (!fuelUnits.length) return prev;
-        const su = fuelUnits[0];
-        const txn = {
-          id: "txn_auto_" + id,
-          su_id: su.id,
-          txn_type: "OUT",
-          qty: fuelTotal,
-          date: edited.date,
-          doc_ref: "",
-          note: `Авто-списание по отчёту смены ${edited.date}`,
-          asset_id: null,
-          recorded_by: "Система",
-        };
-        setInvTxns(p => {
-          // Не дублировать если уже есть
-          if (p.some(t => t.id === txn.id)) return p;
+      const fuelSu = storageUnits.filter(u => u.item_type === "FUEL" && u.oid === Number(edited.oid))[0];
+      if (fuelSu) {
+        const txnId = "txn_auto_" + id;
+        setInvTxns(prev => {
+          if (prev.some(t => t.id === txnId)) return prev;
+          const txn = { id: txnId, su_id: fuelSu.id, txn_type: "OUT", qty: fuelTotal,
+            date: edited.date, doc_ref: "", note: `Авто-списание ДТ по отчёту ${edited.date}`, recorded_by: "Система" };
           addInvTxn(txn).catch(e => console.warn("auto fuel deduct:", e.message));
-          return [txn, ...p];
+          return [txn, ...prev];
         });
-        return prev;
-      });
+      }
+    }
+    // ВВ (fuel_kg)
+    if (fuelKgTotal > 0) {
+      const expSu = storageUnits.filter(u => u.item_type === "EXPLOSIVE" && u.item_name?.includes("АНФО") && u.oid === Number(edited.oid))[0];
+      if (expSu) {
+        const txnId = "txn_auto_vv_" + id;
+        setInvTxns(prev => {
+          if (prev.some(t => t.id === txnId)) return prev;
+          const txn = { id: txnId, su_id: expSu.id, txn_type: "OUT", qty: fuelKgTotal,
+            date: edited.date, doc_ref: "", note: `Авто-списание ВВ по отчёту ${edited.date}`, recorded_by: "Система" };
+          addInvTxn(txn).catch(e => console.warn("auto vv deduct:", e.message));
+          return [txn, ...prev];
+        });
+      }
     }
   }
 
@@ -10958,7 +11237,7 @@ export default function App() {
   } else if (subPage === "dash") {
     content = user.role === "foreman"
       ? <ForemanDash user={user} objs={vObjs} rigs={rigs} reps={vReps} plans={plans} T={T} />
-      : <Dashboard objs={objs} rigs={rigs} reps={reps} plans={plans} ktgPlans={ktgPlans} nodes={nodes} onDrillObj={(id) => setView({ type: "obj", objId: id })} T={T} />;
+      : <Dashboard objs={objs} rigs={rigs} reps={reps} plans={plans} ktgPlans={ktgPlans} nodes={nodes} storageUnits={storageUnits} invTxns={invTxns} passports={passports} onDrillObj={(id) => setView({ type: "obj", objId: id })} T={T} />;
   } else if (subPage === "enter") {
     content = <ForemanForm user={user} objs={vObjs} rigs={rigs} reps={vReps} onSubmit={handleSubmitReport} onUpdate={handleUpdateReport} setExplosives={setExplosives} downtimeLog={downtimeLog} setDowntimeLog={setDowntimeLog} T={T} />;
   } else if (subPage === "planning") {
@@ -10976,7 +11255,7 @@ export default function App() {
   } else if (subPage === "explosives") {
     content = <ExplosivesPage explosives={explosives} setExplosives={setExplosives} objs={objs} reps={reps} user={user} T={T} />;
   } else if (subPage === "inventory") {
-    content = <InventoryPage storageUnits={storageUnits} setStorageUnits={setStorageUnits} invTxns={invTxns} setInvTxns={setInvTxns} objs={user.role==="foreman"?vObjs:objs} nodes={nodes} user={user} T={T} />;
+    content = <InventoryPage storageUnits={storageUnits} setStorageUnits={setStorageUnits} invTxns={invTxns} setInvTxns={setInvTxns} objs={user.role==="foreman"?vObjs:objs} nodes={nodes} passports={passports} reps={vReps} user={user} T={T} />;
   } else if (subPage === "maint" && user.role === "foreman") {
     content = <ForemanMaintenancePage user={user} objs={vObjs} rigs={rigs} nodes={nodes} maintRecords={maintRecords} setMaintRecords={setMaintRecords} passports={passports} setPassports={setPassports} meters={meters} T={T} />;
   
