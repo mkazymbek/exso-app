@@ -10200,7 +10200,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
             {l}
           </button>
         ))}
-        {user?.role !== "foreman" && (
+        {(
           <button onClick={openAddUnit}
             style={{marginLeft:"auto",padding:"4px 12px",borderRadius:20,border:`0.5px dashed ${T.border}`,background:"transparent",color:T.txt2,fontSize:11,cursor:"pointer"}}>
             + Добавить склад
@@ -10259,11 +10259,11 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
                         <div style={{height:3,borderRadius:2,background:barColor,width:`${Math.min(pct,100)}%`}}/>
                       </div>
                       <span style={{fontSize:10,color:T.txt2,whiteSpace:"nowrap"}}>{u.capacity.toLocaleString()}</span>
-                      {user?.role !== "foreman" && (
+                      {(
                         <button onClick={()=>openEditUnit(u)}
                           style={{background:`${T.blue}12`,border:`0.5px solid ${T.blue}40`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.blue,padding:"2px 6px"}}>✏</button>
                       )}
-                      {user?.role !== "foreman" && (
+                      {(
                         <button onClick={()=>setDeleteConf(u.id)}
                           style={{background:"rgba(239,68,68,0.08)",border:"0.5px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:11,color:"#f87171",padding:"2px 6px"}}>🗑</button>
                       )}
