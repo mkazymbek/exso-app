@@ -9938,9 +9938,8 @@ const INIT_INV_TXNS = []; // { id, txn_type:"IN"|"OUT"|"ADJUSTMENT", su_id, qty,
 
 // ─── INVENTORY PAGE ───────────────────────────────────────────────────────────
 const INV_TYPE_CFG = {
-  FUEL:      { label:"ГСМ",          color:"#2d7de0", icon:"⛽", unitLabel:"л"  },
-  EXPLOSIVE: { label:"ВВ",           color:"#d48818", icon:"💥", unitLabel:"кг" },
-  MATERIAL:  { label:"ТМЦ",          color:"#12a068", icon:"📦", unitLabel:"шт" },
+  FUEL:      { label:"ГСМ", color:"#185FA5", icon:"⛽", unitLabel:"л"  },
+  EXPLOSIVE: { label:"ВВ",  color:"#3B6D11", icon:"💥", unitLabel:"кг" },
 };
 const INV_TXN_CFG = {
   IN:         { label:"Приход",       color:"#12a068", sign:+1 },
@@ -9949,37 +9948,35 @@ const INV_TXN_CFG = {
 };
 
 function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, objs, nodes, user, T }) {
-  const [tab,         setTab]         = useState("units");    // "units" | "journal"
-  const [filterOid,   setFilterOid]   = useState("all");
-  const [filterType,  setFilterType]  = useState("all");
-  const [txnModal,    setTxnModal]    = useState(null);       // null | "IN" | "OUT" | "ADJUSTMENT"
-  const [unitModal,   setUnitModal]   = useState(null);       // null | "add" | unit obj
-  const [deleteConf,  setDeleteConf]  = useState(null);       // unit id
-  const [unitForm,    setUnitForm]    = useState({});
-  const [unitErr,     setUnitErr]     = useState("");
+  const [tab,        setTab]        = useState("units");
+  const [filterType, setFilterType] = useState("all");
+  const [txnModal,   setTxnModal]   = useState(null);   // null | "IN" | "OUT" | "ADJUSTMENT"
+  const [unitModal,  setUnitModal]  = useState(null);   // null | "add" | unit obj
+  const [deleteConf, setDeleteConf] = useState(null);
+  const [unitForm,   setUnitForm]   = useState({});
+  const [unitErr,    setUnitErr]    = useState("");
 
-  // ── EAM assets list (буровые станки и техника из nodes) ──────────────────
-  const eamAssets = nodes.filter(n => n.type === "ASSET");
-
-  // ── Balance calculation ──────────────────────────────────────────────────
-  function calcBalance(suId) {
-    return invTxns
-      .filter(t => t.su_id === suId)
-      .reduce((s, t) => {
-        const cfg = INV_TXN_CFG[t.txn_type];
-        if (t.txn_type === "ADJUSTMENT") return t.qty; // ADJUSTMENT задаёт абсолютный остаток
-        return s + cfg.sign * t.qty;
-      }, 0);
-  }
-
-  // ── Filtered views ───────────────────────────────────────────────────────
   const visibleOids = user?.role === "foreman"
     ? (user.oids === "all" ? objs.map(o => o.id) : user.oids)
     : objs.map(o => o.id);
 
+  // Only FUEL and EXPLOSIVE — no MATERIAL/ТМЦ
+  const TYPES = {
+    FUEL:      { label:"ГСМ",  color:"#185FA5", bg:"#E6F1FB", icon:"⛽", unit:"л"  },
+    EXPLOSIVE: { label:"ВВ",   color:"#3B6D11", bg:"#EAF3DE", icon:"💥", unit:"кг" },
+  };
+
+  function calcBalance(suId) {
+    return invTxns
+      .filter(t => t.su_id === suId)
+      .reduce((s, t) => {
+        if (t.txn_type === "ADJUSTMENT") return t.qty;
+        return s + (t.txn_type === "IN" ? 1 : -1) * t.qty;
+      }, 0);
+  }
+
   const filteredUnits = storageUnits.filter(u => {
     if (!visibleOids.includes(u.oid)) return false;
-    if (filterOid !== "all" && u.oid !== Number(filterOid)) return false;
     if (filterType !== "all" && u.item_type !== filterType) return false;
     return true;
   });
@@ -9987,326 +9984,357 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
   const filteredTxns = [...invTxns]
     .filter(t => {
       const su = storageUnits.find(u => u.id === t.su_id);
-      if (!su) return false;
-      if (!visibleOids.includes(su.oid)) return false;
-      if (filterOid !== "all" && su.oid !== Number(filterOid)) return false;
+      if (!su || !visibleOids.includes(su.oid)) return false;
       if (filterType !== "all" && su.item_type !== filterType) return false;
       return true;
     })
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
-  // ── Summary KPIs ────────────────────────────────────────────────────────
-  const kpis = Object.keys(INV_TYPE_CFG).map(type => {
-    const units = storageUnits.filter(u => visibleOids.includes(u.oid) && u.item_type === type);
-    const totalBalance = units.reduce((s, u) => s + Math.max(0, calcBalance(u.id)), 0);
-    const totalCapacity = units.reduce((s, u) => s + u.capacity, 0);
-    const lowCount = units.filter(u => {
-      const bal = calcBalance(u.id);
-      return bal <= u.min_level;
-    }).length;
-    return { type, ...INV_TYPE_CFG[type], totalBalance, totalCapacity, unitCount: units.length, lowCount };
-  }).filter(k => k.unitCount > 0);
+  // Summary
+  const totalFuel = storageUnits
+    .filter(u => visibleOids.includes(u.oid) && u.item_type === "FUEL")
+    .reduce((s, u) => s + Math.max(0, calcBalance(u.id)), 0);
+  const totalAnfo = storageUnits
+    .filter(u => visibleOids.includes(u.oid) && u.item_type === "EXPLOSIVE" && u.item_name?.includes("АНФО"))
+    .reduce((s, u) => s + Math.max(0, calcBalance(u.id)), 0);
+  const totalEmul = storageUnits
+    .filter(u => visibleOids.includes(u.oid) && u.item_type === "EXPLOSIVE" && u.item_name?.includes("Эмульс"))
+    .reduce((s, u) => s + Math.max(0, calcBalance(u.id)), 0);
+  const lowCount = storageUnits
+    .filter(u => visibleOids.includes(u.oid) && calcBalance(u.id) <= u.min_level)
+    .length;
 
-  // ── Storage unit CRUD ────────────────────────────────────────────────────
-  function openAddUnit() {
-    setUnitForm({ oid: String(objs[0]?.id || ""), name:"", item_type:"FUEL", item_name:"Дизельное топливо", unit:"л", capacity:"", min_level:"" });
-    setUnitErr(""); setUnitModal("add");
+  // Colors
+  function statusColor(bal, min) {
+    if (bal <= min) return "#A32D2D";
+    if (bal <= min * 2) return "#854F0B";
+    return T.txt0;
   }
-  function openEditUnit(u) {
-    setUnitForm({ ...u, oid: String(u.oid), capacity: String(u.capacity), min_level: String(u.min_level) });
-    setUnitErr(""); setUnitModal(u);
+  function pctColor(pct) {
+    if (pct < 15) return "#A32D2D";
+    if (pct < 40) return "#854F0B";
+    return "#3B6D11";
+  }
+  function pctBadge(pct) {
+    if (pct < 15) return { bg:"#FCEBEB", color:"#A32D2D" };
+    if (pct < 40) return { bg:"#FAEEDA", color:"#854F0B" };
+    return { bg:"#EAF3DE", color:"#3B6D11" };
+  }
+
+  // Unit CRUD
+  function openAddUnit() {
+    setUnitForm({ oid: String(visibleOids[0] || ""), name:"", item_type:"FUEL", item_name:"Дизельное топливо", unit:"л", capacity:"", min_level:"" });
+    setUnitErr(""); setUnitModal("add");
   }
   function saveUnit() {
     if (!unitForm.name.trim()) { setUnitErr("Введите название"); return; }
-    if (!unitForm.capacity || isNaN(Number(unitForm.capacity)) || Number(unitForm.capacity) <= 0) { setUnitErr("Укажите вместимость"); return; }
-    const su = {
-      name: unitForm.name.trim(),
-      oid: Number(unitForm.oid),
-      item_type: unitForm.item_type,
-      item_name: unitForm.item_name.trim() || unitForm.item_type,
-      unit: unitForm.unit.trim() || "л",
-      capacity: Number(unitForm.capacity),
-      min_level: Number(unitForm.min_level) || 0,
+    if (!unitForm.capacity || isNaN(unitForm.capacity)) { setUnitErr("Укажите ёмкость"); return; }
+    const newUnit = {
+      id: "su"+genId(), oid: Number(unitForm.oid),
+      name: unitForm.name.trim(), item_type: unitForm.item_type,
+      item_name: unitForm.item_name.trim(), unit: unitForm.unit,
+      capacity: parseFloat(unitForm.capacity),
+      min_level: parseFloat(unitForm.min_level) || 0,
     };
-    if (unitModal === "add") {
-      setStorageUnits(prev => [...prev, { ...su, id: genId() }]);
-    } else {
-      setStorageUnits(prev => prev.map(u => u.id === unitModal.id ? { ...u, ...su } : u));
+    setStorageUnits(prev => [...prev, newUnit]);
+    // Set initial balance if provided
+    if (unitForm.initial_balance && parseFloat(unitForm.initial_balance) > 0) {
+      const initTxn = {
+        id: "txn"+genId(), su_id: newUnit.id, txn_type: "ADJUSTMENT",
+        qty: parseFloat(unitForm.initial_balance), date: new Date().toISOString().slice(0,10),
+        note: "Начальный остаток", recorded_by: user?.name || "system",
+      };
+      setInvTxns(prev => [initTxn, ...prev]);
     }
     setUnitModal(null); setUnitErr("");
   }
-  function deleteUnit() {
-    setStorageUnits(prev => prev.filter(u => u.id !== deleteConf));
-    setInvTxns(prev => prev.filter(t => t.su_id !== deleteConf));
-    setDeleteConf(null);
+
+  // Txn save
+  function saveTxn(data) {
+    const txn = {
+      id: "txn"+genId(), su_id: data.suId, txn_type: data.type,
+      qty: parseFloat(data.qty) || 0, date: data.date,
+      doc_ref: data.docRef || "", note: data.note || "",
+      asset_id: data.assetId || null,
+      recorded_by: user?.name || "—",
+    };
+    setInvTxns(prev => [txn, ...prev]);
+    setTxnModal(null);
   }
 
-  const ITEM_DEFAULTS = {
-    FUEL:      { unit:"л",  suggestions:["Дизельное топливо","Бензин АИ-92","Бензин АИ-95","Авиационный керосин"] },
-    EXPLOSIVE: { unit:"кг", suggestions:["АНФО","Эмульсия","Граммонит 79/21","Детонирующий шнур","Детонатор ЭД-8"] },
-    MATERIAL:  { unit:"шт", suggestions:["Долото","Штанга бурильная","Фильтр масляный","Ремень ГРМ"] },
-  };
+  const obj = (oid) => objs.find(o => o.id === Number(oid));
+
+  // Spark bars for a unit (last 17 days)
+  function SparkBars({ suId, min }) {
+    const today = new Date().toISOString().slice(0,10);
+    const days = Array.from({length:17},(_,i)=>{
+      const d = new Date(); d.setDate(d.getDate()-16+i);
+      return d.toISOString().slice(0,10);
+    });
+    // cumulative balance per day
+    const txns = invTxns.filter(t=>t.su_id===suId).sort((a,b)=>a.date.localeCompare(b.date));
+    let running = 0;
+    const balsByDay = {};
+    txns.forEach(t=>{
+      if(t.txn_type==="ADJUSTMENT") running=t.qty;
+      else running += (t.txn_type==="IN"?1:-1)*t.qty;
+      balsByDay[t.date] = running;
+    });
+    const bals = days.map(d=>{
+      const key = Object.keys(balsByDay).filter(k=>k<=d).sort().pop();
+      return key ? balsByDay[key] : null;
+    }).filter(v=>v!==null);
+    if(!bals.length) return null;
+    const mx = Math.max(...bals, min*2);
+    return (
+      <div style={{display:"flex",alignItems:"flex-end",gap:1,height:24,marginTop:4}}>
+        {bals.map((v,i)=>{
+          const pct = Math.max(4, Math.round(v/mx*100));
+          const c = v<=min?"#A32D2D":v<=min*2?"#854F0B":"#185FA5";
+          return <div key={i} style={{flex:1,height:`${pct}%`,background:c,borderRadius:"1px 1px 0 0",minWidth:3}}/>;
+        })}
+      </div>
+    );
+  }
+
+  // Build chart data for Графики tab
+  function buildChartData() {
+    const today = new Date().toISOString().slice(0,10);
+    const days = Array.from({length:17},(_,i)=>{
+      const d = new Date(); d.setDate(d.getDate()-16+i);
+      return d.toISOString().slice(0,10);
+    });
+    return { days, units: filteredUnits };
+  }
 
   return (
     <div>
-      {/* ── Delete confirm modal ── */}
-      {deleteConf && (
+      {/* Modals */}
+      {unitModal && (
         <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:T.bg2,border:"1px solid rgba(239,68,68,0.4)",borderRadius:8,maxWidth:380,width:"100%",padding:28,textAlign:"center"}}>
-            <div style={{fontSize:32,marginBottom:12}}>⚠️</div>
-            <div style={{fontSize:14,fontWeight:700,color:T.txt0,marginBottom:8}}>Удалить склад?</div>
-            <div style={{fontSize:13,color:T.txt2,marginBottom:20}}>Все транзакции по этому складу будут удалены. Действие необратимо.</div>
+          <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,width:"100%",maxWidth:440}}>
+            <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>Добавить склад / резервуар</div>
+              <button onClick={()=>setUnitModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
+            </div>
+            <div style={{padding:16,display:"flex",flexDirection:"column",gap:11}}>
+              <FieldSelect label="Объект *" value={unitForm.oid} onChange={e=>setUnitForm(p=>({...p,oid:e.target.value}))} T={T}>
+                {objs.filter(o=>visibleOids.includes(o.id)).map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+              </FieldSelect>
+              <FieldSelect label="Тип *" value={unitForm.item_type} onChange={e=>setUnitForm(p=>({...p,item_type:e.target.value,unit:e.target.value==="FUEL"?"л":"кг"}))} T={T}>
+                <option value="FUEL">ГСМ</option>
+                <option value="EXPLOSIVE">ВВ</option>
+              </FieldSelect>
+              <FieldInput label="Название (Резервуар ДТ-1, Склад АНФО...)" value={unitForm.name} onChange={e=>setUnitForm(p=>({...p,name:e.target.value}))} T={T}/>
+              <FieldInput label="Наименование (Дизельное топливо, АНФО...)" value={unitForm.item_name} onChange={e=>setUnitForm(p=>({...p,item_name:e.target.value}))} T={T}/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                <FieldInput label="Ёмкость *" type="number" value={unitForm.capacity} onChange={e=>setUnitForm(p=>({...p,capacity:e.target.value}))} T={T} placeholder={unitForm.unit}/>
+                <FieldInput label="Мин. уровень" type="number" value={unitForm.min_level} onChange={e=>setUnitForm(p=>({...p,min_level:e.target.value}))} T={T} placeholder={unitForm.unit}/>
+                <FieldInput label="Нач. остаток" type="number" value={unitForm.initial_balance||""} onChange={e=>setUnitForm(p=>({...p,initial_balance:e.target.value}))} T={T} placeholder={unitForm.unit}/>
+              </div>
+              {unitErr && <div style={{fontSize:12,color:"#ef4444"}}>⚠ {unitErr}</div>}
+              <div style={{display:"flex",gap:8}}>
+                <Btn variant="success" style={{flex:1}} onClick={saveUnit} T={T}>✓ Сохранить</Btn>
+                <Btn variant="ghost" onClick={()=>setUnitModal(null)} T={T}>Отмена</Btn>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {txnModal && (
+        <TxnModal
+          txnType={txnModal}
+          storageUnits={filteredUnits}
+          eamAssets={nodes.filter(n=>n.type==="ASSET"&&visibleOids.includes(Number(n.assigned_object_id)))}
+          objs={objs}
+          onSave={saveTxn}
+          onClose={()=>setTxnModal(null)}
+          user={user}
+          T={T}
+        />
+      )}
+
+      {deleteConf && (
+        <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:T.bg2,border:"1px solid rgba(239,68,68,0.4)",borderRadius:10,maxWidth:360,width:"100%",padding:28,textAlign:"center"}}>
+            <div style={{fontSize:28,marginBottom:10}}>🗑</div>
+            <div style={{fontSize:14,fontWeight:600,color:T.txt0,marginBottom:8}}>Удалить склад?</div>
+            <div style={{fontSize:12,color:T.txt2,marginBottom:20}}>Все транзакции по этому складу также будут удалены.</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-              <Btn variant="danger" onClick={deleteUnit} T={T}>Удалить</Btn>
+              <Btn variant="primary" style={{background:"#dc2626"}} onClick={()=>{ setStorageUnits(p=>p.filter(u=>u.id!==deleteConf)); setInvTxns(p=>p.filter(t=>t.su_id!==deleteConf)); setDeleteConf(null); }} T={T}>Удалить</Btn>
               <Btn variant="ghost" onClick={()=>setDeleteConf(null)} T={T}>Отмена</Btn>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Storage unit modal ── */}
-      {unitModal && (
-        <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,width:"100%",maxWidth:500,padding:24}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-              <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>{unitModal==="add" ? "Новый склад / резервуар" : "Редактировать склад"}</div>
-              <button onClick={()=>setUnitModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.txt2}}>×</button>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <FieldInput label="Название" value={unitForm.name||""} onChange={e=>setUnitForm(p=>({...p,name:e.target.value}))} T={T} placeholder="Резервуар ДТ-1"/>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                <FieldSelect label="Объект" value={unitForm.oid||""} onChange={e=>setUnitForm(p=>({...p,oid:e.target.value}))} T={T}>
-                  {objs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
-                </FieldSelect>
-                <FieldSelect label="Тип ресурса" value={unitForm.item_type||"FUEL"} onChange={e=>{
-                  const def = ITEM_DEFAULTS[e.target.value];
-                  setUnitForm(p=>({...p, item_type:e.target.value, unit:def.unit, item_name:def.suggestions[0]}));
-                }} T={T}>
-                  {Object.entries(INV_TYPE_CFG).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
-                </FieldSelect>
-              </div>
-              <div>
-                <label style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>Наименование ресурса</label>
-                <input list={`inv-suggestions-${unitModal}`} value={unitForm.item_name||""} onChange={e=>setUnitForm(p=>({...p,item_name:e.target.value}))}
-                  style={{width:"100%",padding:"8px 12px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,outline:"none",fontFamily:"'Inter',sans-serif"}}/>
-                <datalist id={`inv-suggestions-${unitModal}`}>
-                  {(ITEM_DEFAULTS[unitForm.item_type||"FUEL"]?.suggestions||[]).map(s=><option key={s} value={s}/>)}
-                </datalist>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
-                <FieldInput label="Единица" value={unitForm.unit||""} onChange={e=>setUnitForm(p=>({...p,unit:e.target.value}))} T={T} placeholder="л"/>
-                <FieldInput label="Вместимость" type="number" value={unitForm.capacity||""} onChange={e=>setUnitForm(p=>({...p,capacity:e.target.value}))} T={T}/>
-                <FieldInput label="Мин. запас" type="number" value={unitForm.min_level||""} onChange={e=>setUnitForm(p=>({...p,min_level:e.target.value}))} T={T}/>
-              </div>
-              {unitErr && <div style={{fontSize:12,color:"#ef4444",fontWeight:600}}>⚠ {unitErr}</div>}
-            </div>
-            <div style={{display:"flex",gap:8,marginTop:18}}>
-              <Btn variant="success" style={{flex:1}} onClick={saveUnit} T={T}>Сохранить</Btn>
-              <Btn variant="ghost" onClick={()=>setUnitModal(null)} T={T}>Отмена</Btn>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Transaction modal ── */}
-      {txnModal && (
-        <InvTxnModal
-          txnType={txnModal}
-          storageUnits={storageUnits.filter(u=>visibleOids.includes(u.oid))}
-          eamAssets={eamAssets}
-          objs={objs}
-          onSave={txn => { setInvTxns(prev => [...prev, {...txn, id:genId()}]); setTxnModal(null); }}
-          onClose={() => setTxnModal(null)}
-          user={user}
-          T={T}
-        />
-      )}
-
-      {/* ── Header ── */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:10}}>
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:T.blue,textTransform:"uppercase",letterSpacing:".18em",marginBottom:4}}>▌ СКЛАД</div>
-          <div style={{fontSize:22,fontWeight:700,color:T.txt0}}>Управление запасами</div>
-        </div>
-        <div style={{display:"flex",gap:8}}>
-          <Btn variant="ghost" onClick={openAddUnit} T={T} style={{fontSize:12}}>+ Склад/резервуар</Btn>
-          <Btn variant="primary" onClick={()=>setTxnModal("IN")} T={T} style={{fontSize:12,background:T.green,borderColor:T.green}}>↓ Приход</Btn>
-          <Btn variant="primary" onClick={()=>setTxnModal("OUT")} T={T} style={{fontSize:12,background:T.amber,borderColor:T.amber}}>↑ Выдача</Btn>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
+        <div style={{fontSize:22,fontWeight:600,color:T.txt0}}>Склад</div>
+        <div style={{display:"flex",gap:6}}>
           <Btn variant="ghost" onClick={()=>setTxnModal("ADJUSTMENT")} T={T} style={{fontSize:12}}>⚖ Корректировка</Btn>
+          <Btn variant="ghost" onClick={()=>setTxnModal("OUT")} T={T} style={{fontSize:12}}>− Выдача</Btn>
+          <Btn variant="primary" onClick={()=>setTxnModal("IN")} T={T} style={{fontSize:12}}>+ Приход</Btn>
         </div>
       </div>
 
-      {/* ── KPI summary ── */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:10,marginBottom:20}}>
-        {kpis.map(k => {
-          const pct = k.totalCapacity > 0 ? Math.round(k.totalBalance / k.totalCapacity * 100) : 0;
-          const barColor = pct < 15 ? "#ef4444" : pct < 30 ? T.amber : k.color;
-          return (
-            <div key={k.type} style={{background:T.bg2,border:`1px solid ${k.lowCount>0?"#ef444440":T.border}`,borderTop:`3px solid ${k.color}`,borderRadius:6,padding:"14px 16px"}}>
-              <div style={{fontSize:12,fontWeight:700,color:k.color,textTransform:"uppercase",letterSpacing:".08em",marginBottom:8}}>{k.icon} {k.label}</div>
-              <div style={{fontSize:26,fontWeight:700,color:T.txt0,lineHeight:1,fontFamily:"'Inter',sans-serif"}}>{k.totalBalance.toLocaleString()}</div>
-              <div style={{fontSize:12,color:T.txt2,marginBottom:10}}>{k.unitLabel} · {k.unitCount} ед. хранения</div>
-              <div style={{height:4,background:T.border,borderRadius:2,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${Math.min(pct,100)}%`,background:barColor,borderRadius:2,transition:"width 0.3s"}}/>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                <span style={{fontSize:12,color:T.txt2}}>{pct}% заполнено</span>
-                {k.lowCount > 0 && <span style={{fontSize:12,color:"#ef4444",fontWeight:700}}>⚠ {k.lowCount} низкий запас</span>}
-              </div>
-            </div>
-          );
-        })}
+      {/* Summary strip */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:T.border,border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden",marginBottom:14}}>
+        {[
+          {l:"ДТ остаток",  v:totalFuel>0?`${totalFuel.toLocaleString()} л`:"—",  c:T.txt0},
+          {l:"АНФО",       v:totalAnfo>0?`${totalAnfo.toLocaleString()} кг`:"—",  c:"#3B6D11"},
+          {l:"Эмульсия",   v:totalEmul>0?`${totalEmul.toLocaleString()} кг`:"—",  c:totalEmul<500?"#A32D2D":T.txt0},
+          {l:"Низкий уровень", v:lowCount, c:lowCount>0?"#A32D2D":T.txt0},
+        ].map(({l,v,c})=>(
+          <div key={l} style={{background:T.bg2,padding:"10px 14px"}}>
+            <div style={{fontSize:10,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",marginBottom:3}}>{l}</div>
+            <div style={{fontSize:19,fontWeight:600,color:c,lineHeight:1}}>{v}</div>
+          </div>
+        ))}
       </div>
 
-      {/* ── Filters ── */}
-      <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
-        {/* Tabs */}
-        <div style={{display:"flex",gap:0,border:`1px solid ${T.border}`,borderRadius:5,overflow:"hidden"}}>
-          {[["units","Склады"],["journal","Журнал"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{padding:"7px 16px",border:"none",background:tab===k?T.blue:"transparent",color:tab===k?"#fff":T.txt2,fontSize:12,fontWeight:700,cursor:"pointer",transition:"all 0.15s"}}>
-              {l}
-            </button>
-          ))}
-        </div>
-        <div style={{marginLeft:8,display:"flex",gap:6,flexWrap:"wrap"}}>
-          {[["all","Все объекты"],...objs.filter(o=>visibleOids.includes(o.id)).map(o=>[String(o.id),o.name])].map(([v,l])=>(
-            <button key={v} onClick={()=>setFilterOid(v)} style={{padding:"5px 12px",borderRadius:4,border:`1px solid ${filterOid===v?T.blue:T.border}`,background:filterOid===v?`${T.blue}15`:"transparent",color:filterOid===v?T.blue:T.txt2,fontSize:12,fontWeight:600,cursor:"pointer"}}>{l}</button>
-          ))}
-        </div>
-        <div style={{display:"flex",gap:5,marginLeft:4}}>
-          {[["all","Все"],["FUEL","ГСМ"],["EXPLOSIVE","ВВ"],["MATERIAL","ТМЦ"]].map(([v,l])=>(
-            <button key={v} onClick={()=>setFilterType(v)} style={{padding:"5px 10px",borderRadius:4,border:`1px solid ${filterType===v?T.blue:T.border}`,background:filterType===v?`${T.blue}15`:"transparent",color:filterType===v?T.blue:T.txt2,fontSize:12,fontWeight:600,cursor:"pointer"}}>{l}</button>
-          ))}
-        </div>
+      {/* Tabs */}
+      <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,marginBottom:14}}>
+        {[["units","Остатки"],["journal","Журнал"]].map(([id,label])=>(
+          <div key={id} onClick={()=>setTab(id)}
+            style={{padding:"7px 16px",fontSize:13,fontWeight:500,cursor:"pointer",
+              color:tab===id?T.txt0:T.txt2,
+              borderBottom:tab===id?`2px solid ${T.txt0}`:"2px solid transparent",
+              marginBottom:-1,transition:"color .1s"}}>
+            {label}
+          </div>
+        ))}
       </div>
 
-      {/* ── UNITS TAB ── */}
+      {/* Filter pills */}
+      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+        {[["all","Все"],["FUEL","ГСМ"],["EXPLOSIVE","ВВ"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setFilterType(k)}
+            style={{padding:"4px 12px",borderRadius:20,border:`0.5px solid ${filterType===k?T.txt0:T.border}`,
+              background:filterType===k?T.txt0:"transparent",
+              color:filterType===k?(T.bg1||"#fff"):T.txt2,
+              fontSize:11,fontWeight:filterType===k?600:400,cursor:"pointer"}}>
+            {l}
+          </button>
+        ))}
+        {user?.role !== "foreman" && (
+          <button onClick={openAddUnit}
+            style={{marginLeft:"auto",padding:"4px 12px",borderRadius:20,border:`0.5px dashed ${T.border}`,background:"transparent",color:T.txt2,fontSize:11,cursor:"pointer"}}>
+            + Добавить склад
+          </button>
+        )}
+      </div>
+
+      {/* ОСТАТКИ */}
       {tab === "units" && (
-        <div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:10}}>
           {filteredUnits.length === 0 ? (
-            <Card style={{padding:32,textAlign:"center"}} T={T}>
-              <div style={{fontSize:32,marginBottom:12}}>🏗</div>
-              <div style={{fontSize:13,color:T.txt2,marginBottom:16}}>Нет складов по выбранному фильтру</div>
-              <Btn variant="primary" onClick={openAddUnit} T={T} style={{fontSize:12}}>+ Добавить склад</Btn>
-            </Card>
-          ) : (
-            // Group by object
-            objs.filter(o=>visibleOids.includes(o.id)).map(obj => {
-              const objUnits = filteredUnits.filter(u => u.oid === obj.id);
-              if (!objUnits.length) return null;
-              return (
-                <div key={obj.id} style={{marginBottom:24}}>
-                  <div style={{fontSize:13,fontWeight:700,color:T.txt0,textTransform:"uppercase",letterSpacing:".1em",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
-                    <span>📍 {obj.name}</span>
-                    <span style={{fontSize:12,color:T.txt2,fontWeight:400,textTransform:"none",letterSpacing:0}}>({objUnits.length} ед. хранения)</span>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
-                    {objUnits.map(u => {
-                      const balance = calcBalance(u.id);
-                      const pct = u.capacity > 0 ? Math.round(balance / u.capacity * 100) : 0;
-                      const cfg = INV_TYPE_CFG[u.item_type] || INV_TYPE_CFG.MATERIAL;
-                      const isLow = balance <= u.min_level;
-                      const isEmpty = balance <= 0;
-                      const barColor = isEmpty ? "#ef4444" : isLow ? T.amber : cfg.color;
-                      const lastTxns = invTxns.filter(t=>t.su_id===u.id).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,1);
-                      return (
-                        <div key={u.id} style={{background:T.bg2,border:`1px solid ${isEmpty?"#ef444450":isLow?"#d4881840":T.border}`,borderRadius:8,overflow:"hidden",boxShadow:`0 2px 8px ${T.cardSh}`}}>
-                          <div style={{height:3,background:`linear-gradient(90deg,${barColor},${barColor}60)`}}/>
-                          <div style={{padding:"14px 16px"}}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
-                              <div>
-                                <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>{u.name}</div>
-                                <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3}}>
-                                  <span style={{fontSize:12,fontWeight:700,color:cfg.color,background:`${cfg.color}15`,padding:"1px 6px",borderRadius:3}}>{cfg.icon} {cfg.label}</span>
-                                  <span style={{fontSize:12,color:T.txt2}}>{u.item_name}</span>
-                                </div>
-                              </div>
-                              <div style={{display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
-                                <button onClick={()=>openEditUnit(u)} style={{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:4,cursor:"pointer",fontSize:12,color:T.txt2,padding:"3px 7px"}}>✏</button>
-                                <button onClick={()=>setDeleteConf(u.id)} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:12,color:"#f87171",padding:"3px 7px"}}>🗑</button>
-                              </div>
-                            </div>
-
-                            {/* Balance + bar */}
-                            <div style={{marginBottom:10}}>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:5}}>
-                                <div style={{fontSize:26,fontWeight:700,color:isEmpty?"#ef4444":isLow?T.amber:T.txt0,fontFamily:"'Inter',sans-serif",lineHeight:1}}>
-                                  {balance.toLocaleString()}
-                                  <span style={{fontSize:13,fontWeight:400,color:T.txt2,marginLeft:4}}>{u.unit}</span>
-                                </div>
-                                <div style={{fontSize:12,color:T.txt2}}>{pct}% / {u.capacity.toLocaleString()} {u.unit}</div>
-                              </div>
-                              <div style={{height:6,background:T.border,borderRadius:3,overflow:"hidden"}}>
-                                <div style={{height:"100%",width:`${Math.min(Math.max(pct,0),100)}%`,background:barColor,borderRadius:3,transition:"width 0.3s"}}/>
-                              </div>
-                              {isLow && !isEmpty && <div style={{fontSize:12,color:T.amber,fontWeight:700,marginTop:4}}>⚠ Низкий запас (мин. {u.min_level.toLocaleString()} {u.unit})</div>}
-                              {isEmpty && <div style={{fontSize:12,color:"#ef4444",fontWeight:700,marginTop:4}}>⛔ Остаток пустой</div>}
-                            </div>
-
-                            {/* Last txn */}
-                            {lastTxns.length > 0 && (
-                              <div style={{fontSize:12,color:T.txt2,borderTop:`1px solid ${T.border}`,paddingTop:8,display:"flex",justifyContent:"space-between"}}>
-                                <span>Последняя операция: {INV_TXN_CFG[lastTxns[0].txn_type]?.label}</span>
-                                <span>{lastTxns[0].date}</span>
-                              </div>
-                            )}
-
-                            {/* Quick action buttons */}
-                            <div style={{display:"flex",gap:6,marginTop:10}}>
-                              <button onClick={()=>setTxnModal("IN")} style={{flex:1,padding:"6px",borderRadius:4,border:`1px solid ${T.green}40`,background:`${T.green}10`,color:T.green,fontSize:12,fontWeight:700,cursor:"pointer"}}>↓ Приход</button>
-                              <button onClick={()=>setTxnModal("OUT")} style={{flex:1,padding:"6px",borderRadius:4,border:`1px solid ${T.amber}40`,background:`${T.amber}10`,color:T.amber,fontSize:12,fontWeight:700,cursor:"pointer"}}>↑ Выдача</button>
-                            </div>
-                          </div>
+            <div style={{gridColumn:"1/-1",padding:32,textAlign:"center",fontSize:12,color:T.txt2,background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10}}>
+              <div style={{fontSize:28,marginBottom:10}}>📦</div>Нет складов на объекте
+            </div>
+          ) : filteredUnits.map(u=>{
+            const bal    = calcBalance(u.id);
+            const pct    = u.capacity > 0 ? Math.min(100, Math.round(bal / u.capacity * 100)) : 0;
+            const isLow  = bal <= u.min_level;
+            const tp     = TYPES[u.item_type] || TYPES.FUEL;
+            const bdg    = pctBadge(pct);
+            const sColor = pctColor(pct);
+            return (
+              <div key={u.id} style={{background:T.bg2,border:`1px solid ${isLow?"rgba(163,45,45,.35)":T.border}`,borderRadius:10,overflow:"hidden"}}>
+                <div style={{display:"flex",alignItems:"stretch"}}>
+                  <div style={{width:4,background:isLow?"#A32D2D":tp.color,flexShrink:0}}/>
+                  <div style={{flex:1,padding:"12px 14px"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:500,color:T.txt0}}>{u.name}</div>
+                        <div style={{fontSize:11,color:T.txt2,marginTop:1}}>{u.item_name} · {obj(u.oid)?.name||"—"}</div>
+                      </div>
+                      <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:bdg.bg,color:bdg.color,flexShrink:0}}>{pct}%</span>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+                      {[
+                        ["Остаток",     `${Math.max(0,bal).toLocaleString()} ${u.unit}`, isLow?"#A32D2D":T.txt0],
+                        ["Ёмкость",     `${u.capacity.toLocaleString()} ${u.unit}`,     T.txt0],
+                        ["Мин. уровень",`${u.min_level.toLocaleString()} ${u.unit}`,     isLow?"#A32D2D":T.txt2],
+                        ["Запас",       bal>0&&u.capacity>0?`${Math.round((bal-u.min_level)/((u.capacity-u.min_level)||1)*100)}% до мин`:isLow?"Ниже минимума!":"—", isLow?"#A32D2D":T.txt2],
+                      ].map(([l,v,c])=>(
+                        <div key={l} style={{background:T.bg3,borderRadius:6,padding:"5px 8px"}}>
+                          <div style={{fontSize:9,color:T.txt2,textTransform:"uppercase",letterSpacing:".04em",marginBottom:2}}>{l}</div>
+                          <div style={{fontSize:12,fontWeight:500,color:c}}>{v}</div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+                    {/* Mini sparkline */}
+                    <SparkBars suId={u.id} min={u.min_level}/>
                   </div>
                 </div>
-              );
-            })
-          )}
+                {/* Progress bar footer */}
+                <div style={{borderTop:`1px solid ${T.border}`,padding:"6px 14px",display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:10,color:sColor,whiteSpace:"nowrap"}}>{Math.max(0,bal).toLocaleString()} {u.unit}</span>
+                  <div style={{flex:1,height:3,borderRadius:2,background:T.cardSh,overflow:"hidden"}}>
+                    <div style={{height:3,borderRadius:2,background:isLow?"#A32D2D":tp.color,width:`${pct}%`}}/>
+                  </div>
+                  <span style={{fontSize:10,color:T.txt2,whiteSpace:"nowrap"}}>{u.capacity.toLocaleString()} {u.unit}</span>
+                  {user?.role !== "foreman" && (
+                    <button onClick={()=>setDeleteConf(u.id)} style={{background:"none",border:"none",cursor:"pointer",color:T.txt2,fontSize:12,padding:0,opacity:.5}}>🗑</button>
+                  )}
+                  {isLow && (
+                    <button onClick={()=>setTxnModal("IN")}
+                      style={{padding:"2px 8px",borderRadius:4,border:`0.5px solid ${T.amber}50`,background:`${T.amber}10`,color:T.amber,fontSize:10,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>
+                      Заявка
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* ── JOURNAL TAB ── */}
+      {/* ЖУРНАЛ */}
       {tab === "journal" && (
-        <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:8,overflow:"hidden"}}>
+        <div style={{border:`1px solid ${T.border}`,borderRadius:10,overflow:"hidden"}}>
           {filteredTxns.length === 0 ? (
-            <div style={{padding:32,textAlign:"center",color:T.txt2,fontSize:13}}>Операций нет. Добавьте первый приход.</div>
+            <div style={{padding:32,textAlign:"center",fontSize:12,color:T.txt2}}>
+              <div style={{fontSize:28,marginBottom:10}}>📋</div>Нет операций
+            </div>
           ) : (
             <div style={{overflowX:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:600}}>
                 <thead>
-                  <tr style={{background:T.rowHdr}}>
-                    {["Тип","Склад / Резервуар","Объект","Ресурс","Кол-во","Техника (EAM)","Документ","Дата","Кто"].map(h=>(
-                      <th key={h} style={{padding:"9px 12px",textAlign:"left",fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em",borderBottom:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                  <tr style={{background:T.bg3}}>
+                    {["Тип","Склад","Кол-во","Основание / станок","Накладная","Дата","Кто"].map(h=>(
+                      <th key={h} style={{padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:T.txt2,textTransform:"uppercase",letterSpacing:".05em",borderBottom:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTxns.map((t,i) => {
-                    const su  = storageUnits.find(u=>u.id===t.su_id);
-                    const obj = objs.find(o=>o.id===su?.oid);
-                    const cfg = INV_TXN_CFG[t.txn_type] || INV_TXN_CFG.IN;
-                    const asset = eamAssets.find(n=>n.id===t.asset_id);
-                    const sign = t.txn_type === "IN" ? "+" : t.txn_type === "OUT" ? "−" : "±";
+                  {filteredTxns.map((t,i)=>{
+                    const su   = storageUnits.find(u=>u.id===t.su_id);
+                    const sign = t.txn_type==="IN"?"+":t.txn_type==="OUT"?"-":"→";
+                    const c    = t.txn_type==="IN"?"#3B6D11":t.txn_type==="OUT"?"#A32D2D":"#534AB7";
+                    const asset= nodes.find(n=>n.id===t.asset_id);
+                    const txnCfg={
+                      IN:    {label:"Приход",     bg:"#EAF3DE",color:"#3B6D11"},
+                      OUT:   {label:"Выдача",     bg:"#FCEBEB",color:"#A32D2D"},
+                      ADJUSTMENT:{label:"Коррект.",bg:"#EEEDFE",color:"#534AB7"},
+                    }[t.txn_type]||{label:t.txn_type,bg:T.bg3,color:T.txt2};
                     return (
-                      <tr key={t.id} style={{background:i%2?T.rowAlt:"transparent"}}>
-                        <td style={{padding:"8px 12px"}}>
-                          <span style={{fontSize:12,fontWeight:700,color:cfg.color,background:`${cfg.color}15`,padding:"2px 8px",borderRadius:3,whiteSpace:"nowrap"}}>{cfg.label}</span>
+                      <tr key={t.id} style={{background:i%2===1?T.rowAlt:"transparent"}}>
+                        <td style={{padding:"7px 12px"}}>
+                          <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:txnCfg.bg,color:txnCfg.color}}>{txnCfg.label}</span>
                         </td>
-                        <td style={{padding:"8px 12px",fontSize:12,color:T.txt0,fontWeight:600}}>{su?.name||"—"}</td>
-                        <td style={{padding:"8px 12px",fontSize:12,color:T.txt2}}>{obj?.name||"—"}</td>
-                        <td style={{padding:"8px 12px",fontSize:12,color:T.txt1}}>{su?.item_name||"—"}</td>
-                        <td style={{padding:"8px 12px",fontSize:13,fontWeight:700,color:cfg.color,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap"}}>
-                          {sign}{t.qty.toLocaleString()} <span style={{fontSize:12,color:T.txt2,fontWeight:400}}>{su?.unit||""}</span>
+                        <td style={{padding:"7px 12px",color:T.txt0}}>{su?.name||"—"}</td>
+                        <td style={{padding:"7px 12px",fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:c,whiteSpace:"nowrap"}}>
+                          {sign}{t.qty.toLocaleString()} {su?.unit||""}
                         </td>
-                        <td style={{padding:"8px 12px",fontSize:12,color:t.asset_id?T.cyan:T.txt2}}>
-                          {asset ? `${asset.name}` : t.asset_id ? t.asset_id : "—"}
+                        <td style={{padding:"7px 12px",color:asset?T.cyan:T.txt2}}>
+                          {asset?asset.name:t.note||"—"}
                         </td>
-                        <td style={{padding:"8px 12px",fontSize:12,color:T.txt2}}>{t.doc_ref||"—"}</td>
-                        <td style={{padding:"8px 12px",fontSize:12,color:T.txt2,whiteSpace:"nowrap"}}>{t.date}</td>
-                        <td style={{padding:"8px 12px",fontSize:12,color:T.txt2}}>{t.recorded_by||"—"}</td>
+                        <td style={{padding:"7px 12px",color:T.txt2,fontFamily:"'JetBrains Mono',monospace",fontSize:11}}>{t.doc_ref||"—"}</td>
+                        <td style={{padding:"7px 12px",color:T.txt2,whiteSpace:"nowrap"}}>{t.date}</td>
+                        <td style={{padding:"7px 12px",color:T.txt2}}>{t.recorded_by||"—"}</td>
                       </tr>
                     );
                   })}
@@ -10319,177 +10347,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
     </div>
   );
 }
-
-// ── Transaction modal ─────────────────────────────────────────────────────────
-function InvTxnModal({ txnType, storageUnits, eamAssets, objs, onSave, onClose, user, T }) {
-  const cfg = INV_TXN_CFG[txnType];
-  const [suId,     setSuId]     = useState(storageUnits[0]?.id || "");
-  const [qty,      setQty]      = useState("");
-  const [date,     setDate]     = useState(()=>new Date().toISOString().slice(0,10));
-  const [assetId,  setAssetId]  = useState("");
-  const [docRef,   setDocRef]   = useState("");
-  const [note,     setNote]     = useState("");
-  const [err,      setErr]      = useState("");
-
-  const su = storageUnits.find(u=>u.id===suId);
-  const obj = objs.find(o=>o.id===su?.oid);
-
-  function handleSave() {
-    if (!suId) { setErr("Выберите склад"); return; }
-    if (!qty || isNaN(Number(qty)) || Number(qty) <= 0) { setErr("Введите корректное количество"); return; }
-    if (txnType === "OUT" && !assetId) { setErr("Укажите технику (EAM) — обязательное поле"); return; }
-    setErr("");
-    onSave({
-      txn_type:    txnType,
-      su_id:       suId,
-      qty:         Number(qty),
-      date,
-      asset_id:    assetId || null,
-      doc_ref:     docRef.trim() || null,
-      note:        note.trim() || null,
-      recorded_by: user?.name || "—",
-    });
-  }
-
-  // Group storage units by object for cleaner select
-  const groupedUnits = objs.map(o => ({
-    obj: o,
-    units: storageUnits.filter(u=>u.oid===o.id)
-  })).filter(g=>g.units.length>0);
-
-  return (
-    <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${cfg.color}`,borderRadius:8,width:"100%",maxWidth:500,padding:24}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:700,color:T.txt0}}>{cfg.label}</div>
-            {su && <div style={{fontSize:12,color:cfg.color,marginTop:2}}>{su.name} · {su.item_name} · остаток: {Math.max(0,storageUnits.find(u=>u.id===suId) ? 0 : 0).toLocaleString()} {su.unit}</div>}
-          </div>
-          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.txt2}}>×</button>
-        </div>
-
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {/* Склад */}
-          <div>
-            <label style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>Склад / Резервуар</label>
-            <select value={suId} onChange={e=>setSuId(e.target.value)}
-              style={{width:"100%",padding:"8px 12px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,outline:"none"}}>
-              {groupedUnits.map(g=>(
-                <optgroup key={g.obj.id} label={g.obj.name}>
-                  {g.units.map(u=><option key={u.id} value={u.id}>{u.name} ({u.item_name})</option>)}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>
-                Количество {su ? `(${su.unit})` : ""}
-              </label>
-              <input type="text" inputMode="numeric" value={qty} onChange={e=>setQty(e.target.value)} placeholder="0"
-                style={{width:"100%",padding:"8px 12px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,outline:"none",fontFamily:"'JetBrains Mono',monospace"}}/>
-            </div>
-            <FieldInput label="Дата" type="date" value={date} onChange={e=>setDate(e.target.value)} T={T}/>
-          </div>
-
-          {/* Техника EAM — обязательно для OUT */}
-          {txnType === "OUT" && (
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>
-                Техника (EAM) <span style={{color:"#ef4444"}}>*</span>
-              </label>
-              <select value={assetId} onChange={e=>setAssetId(e.target.value)}
-                style={{width:"100%",padding:"8px 12px",background:T.inputBg,border:`1px solid ${assetId?T.border:"#ef444450"}`,borderRadius:4,color:T.txt0,fontSize:13,outline:"none"}}>
-                <option value="">— Выберите технику —</option>
-                {eamAssets.map(a=><option key={a.id} value={a.id}>{a.name} {a.serialNo ? `(${a.serialNo})` : ""}</option>)}
-              </select>
-              <div style={{fontSize:12,color:T.txt2,marginTop:4}}>Каждая выдача должна быть привязана к единице техники</div>
-            </div>
-          )}
-
-          {/* Документ-основание */}
-          <FieldInput label={txnType==="IN" ? "Накладная / документ" : "Документ-основание"} value={docRef} onChange={e=>setDocRef(e.target.value)} T={T} placeholder={txnType==="IN" ? "№ накладной" : "Заявка, путёвка..."}/>
-
-          {/* Примечание */}
-          {txnType === "ADJUSTMENT" && (
-            <div>
-              <label style={{fontSize:12,fontWeight:700,color:T.txt2,textTransform:"uppercase",letterSpacing:".06em",display:"block",marginBottom:6}}>
-                Обоснование корректировки <span style={{color:"#ef4444"}}>*</span>
-              </label>
-              <textarea value={note} onChange={e=>setNote(e.target.value)} rows={3} placeholder="Причина расхождения..."
-                style={{width:"100%",padding:"8px 12px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:4,color:T.txt0,fontSize:13,outline:"none",resize:"vertical",fontFamily:"'Inter',sans-serif"}}/>
-            </div>
-          )}
-
-          {err && <div style={{fontSize:12,color:"#ef4444",fontWeight:600,padding:"8px 12px",background:"rgba(239,68,68,0.08)",borderRadius:4}}>⚠ {err}</div>}
-        </div>
-
-        <div style={{display:"flex",gap:8,marginTop:18}}>
-          <Btn variant="primary" style={{flex:1,background:cfg.color,borderColor:cfg.color}} onClick={handleSave} T={T}>
-            {cfg.label}
-          </Btn>
-          <Btn variant="ghost" onClick={onClose} T={T}>Отмена</Btn>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const INIT_EXPLOSIVES = [];
-
-function ExplosivesPage({ explosives, setExplosives, objs, reps, user, T }) {
-  const isForeman = user?.role === "foreman";
-  // Форман видит только свои участки
-  const visibleOids = isForeman
-    ? (user.oids === "all" ? objs.map(o=>o.id) : user.oids)
-    : objs.map(o => o.id);
-  const visibleObjs  = objs.filter(o => visibleOids.includes(o.id));
-  const visibleExpl  = explosives.filter(t => visibleOids.includes(t.oid));
-
-  const [showForm, setShowForm] = useState(false);
-  const [filterOid, setFilterOid] = useState("all"); // "all" | oid string
-
-  // Фильтр по участку (для журнала)
-  const filteredExpl = filterOid === "all" ? visibleExpl : visibleExpl.filter(t => t.oid === Number(filterOid));
-
-  // Compute balances per site per explosive type (только видимые)
-  const balances = {};
-  visibleExpl.forEach(txn => {
-    const key = `${txn.oid}__${txn.exp_type}`;
-    if (!balances[key]) balances[key] = { oid: txn.oid, exp_type: txn.exp_type, qty: 0 };
-    if (txn.txn_type === "receipt") balances[key].qty += txn.qty;
-    else balances[key].qty -= txn.qty;
-  });
-  const balList = Object.values(balances).filter(b => b.qty !== 0);
-
-  // KPIs (видимые операции)
-  const totalIn  = visibleExpl.filter(t=>t.txn_type==="receipt").reduce((s,t)=>s+t.qty,0);
-  const totalOut = visibleExpl.filter(t=>t.txn_type!=="receipt").reduce((s,t)=>s+t.qty,0);
-  const totalBalance = totalIn - totalOut;
-
-  // Auto-consumption from approved reports (только видимые участки)
-  const autoConsumed = reps.filter(r=>r.status==="approved"&&r.fuel_kg>0&&visibleOids.includes(r.oid))
-    .reduce((s,r)=>s+r.fuel_kg,0);
-
-  return (
-    <div>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
-        <div>
-          <div style={{ fontSize:20, fontWeight:600, color:T.txt0 }}>Склад ВВ</div>
-          <div style={{ fontSize:12, color:T.txt2, marginTop:2 }}>
-            Учёт взрывчатых веществ и средств взрывания
-            {isForeman && <span style={{ marginLeft:8, color:T.amber, fontWeight:600 }}>· {visibleObjs.map(o=>o.name).join(", ")}</span>}
-          </div>
-        </div>
-        <button onClick={() => setShowForm(true)}
-          style={{ padding:"9px 18px", borderRadius:6, border:"none", background:T.amber, color:"#000", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-          + Операция
-        </button>
-      </div>
-
-      {/* KPI row */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:10, marginBottom:20 }}>
+repeat(auto-fit,minmax(160px,1fr))", gap:10, marginBottom:20 }}>
         {[
           ["Приход", totalIn.toLocaleString(), T.green, "за всё время"],
           ["Расход", totalOut.toLocaleString(), T.amber, "выдано + списано"],
