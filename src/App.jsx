@@ -8927,7 +8927,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
         {PlanStrip}
         {Toolbar}
         {PlanLegend}
-        <PlanHeatmap/>
+        {PlanHeatmap()}
         {planStatus==="RETURNED"&&plan?.engineer_comment&&(
           <div style={{marginTop:12,padding:"10px 14px",background:`${T.amber}10`,border:`1px solid ${T.amber}30`,borderRadius:8,fontSize:12,color:T.amber}}>
             ↩ Комментарий инженера: <b style={{color:T.txt0}}>{plan.engineer_comment}</b>
@@ -8939,7 +8939,7 @@ function MechanicKTGPage({ nodes, objs, mechCats, passports, meters, ktgPlans, s
         {FactStrip}
         {FactLegend}
         <div style={{fontSize:11,color:T.txt2,marginBottom:8}}>Тепловая карта — только буровые станки (из Dashboard). Компрессоры и прочая техника в факт не включаются.</div>
-        <FactHeatmap/>
+        {FactHeatmap()}
       </>}
     </div>
   );
@@ -10299,7 +10299,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
                       ))}
                     </div>
                     {/* Mini sparkline */}
-                    <SparkBars suId={u.id} min={u.min_level}/>
+                    {SparkBars({suId:u.id, min:u.min_level})}
                   </div>
                 </div>
                 {/* Progress bar footer */}
@@ -10617,6 +10617,54 @@ function ForemanMaintenancePage({ user, objs, rigs, nodes=[], maintRecords, setM
 }
 
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
+
+const INIT_MAINT_RECORDS = {
+  a12: [
+    {id:"mra12_1",date:"2026-03-04",type:"ТО-250",hours:2834,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a13: [
+    {id:"mra13_1",date:"2026-03-05",type:"ТО-250",hours:3099,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a14: [
+    {id:"mra14_1",date:"2026-03-04",type:"ТО-250",hours:3017,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a16: [
+    {id:"mra16_1",date:"2026-03-05",type:"ТО-250",hours:null,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a18: [
+    {id:"mra18_1",date:"2026-02-24",type:"ТО-250",hours:1462,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a19: [
+    {id:"mra19_1",date:"2026-03-12",type:"ТО-250",hours:798,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a20: [
+    {id:"mra20_1",date:"2026-03-12",type:"ТО-250",hours:820,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a21: [
+    {id:"mra21_1",date:"2026-03-12",type:"ТО-250",hours:800,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax208: [
+    {id:"mrax208_1",date:"2026-03-09",type:"ТО-250",hours:6798,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax210: [
+    {id:"mrax210_1",date:"2026-03-12",type:"ТО-250",hours:4215,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax211: [
+    {id:"mrax211_1",date:"2026-03-12",type:"ТО-250",hours:3887,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax214: [
+    {id:"mrax214_1",date:"2026-03-04",type:"ТО-250",hours:2155,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax217: [
+    {id:"mrax217_1",date:"2026-03-04",type:"ТО-250",hours:466,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax218: [
+    {id:"mrax218_1",date:"2026-03-04",type:"ТО-250",hours:450,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax219: [
+    {id:"mrax219_1",date:"2026-03-03",type:"ТО-250",hours:452,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+};
 export default function App() {
   const [isDark, setIsDark] = useState(false);
   const T = isDark ? DARK : LIGHT;
@@ -10894,50 +10942,3 @@ export default function App() {
   );
 }
 
-const INIT_MAINT_RECORDS = {
-  a12: [
-    {id:"mra12_1",date:"2026-03-04",type:"ТО-250",hours:2834,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  a13: [
-    {id:"mra13_1",date:"2026-03-05",type:"ТО-250",hours:3099,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  a14: [
-    {id:"mra14_1",date:"2026-03-04",type:"ТО-250",hours:3017,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  a16: [
-    {id:"mra16_1",date:"2026-03-05",type:"ТО-250",hours:null,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  a18: [
-    {id:"mra18_1",date:"2026-02-24",type:"ТО-250",hours:1462,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  a19: [
-    {id:"mra19_1",date:"2026-03-12",type:"ТО-250",hours:798,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  a20: [
-    {id:"mra20_1",date:"2026-03-12",type:"ТО-250",hours:820,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  a21: [
-    {id:"mra21_1",date:"2026-03-12",type:"ТО-250",hours:800,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  ax208: [
-    {id:"mrax208_1",date:"2026-03-09",type:"ТО-250",hours:6798,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  ax210: [
-    {id:"mrax210_1",date:"2026-03-12",type:"ТО-250",hours:4215,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  ax211: [
-    {id:"mrax211_1",date:"2026-03-12",type:"ТО-250",hours:3887,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  ax214: [
-    {id:"mrax214_1",date:"2026-03-04",type:"ТО-250",hours:2155,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  ax217: [
-    {id:"mrax217_1",date:"2026-03-04",type:"ТО-250",hours:466,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  ax218: [
-    {id:"mrax218_1",date:"2026-03-04",type:"ТО-250",hours:450,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-  ax219: [
-    {id:"mrax219_1",date:"2026-03-03",type:"ТО-250",hours:452,note:"ТО-250",by:"Виталий ОМТС"}
-  ],
-};
