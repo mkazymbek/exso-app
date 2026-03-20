@@ -9934,7 +9934,17 @@ const INIT_STORAGE_UNITS = [
   { id:"su14", oid:5, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:10000, min_level:300  },
 ];
 
-const INIT_INV_TXNS = []; // { id, txn_type:"IN"|"OUT"|"ADJUSTMENT", su_id, qty, date, asset_id, doc_ref, note, recorded_by, shift_report_id }
+const INIT_INV_TXNS = [
+  { id:"txn_dt_000000188", su_id:"su8", txn_type:"IN", qty:38140, date:"2026-01-20", doc_ref:"ЦБ000000188", note:"ДТ 32.8 т / 13,282,500 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000145", su_id:"su5", txn_type:"IN", qty:24919, date:"2026-01-22", doc_ref:"ЦБ000000145", note:"ДТ 21.43 т / 9,000,000 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000389", su_id:"su8", txn_type:"IN", qty:38326, date:"2026-02-03", doc_ref:"ЦБ000000389", note:"ДТ 32.96 т / 13,282,500 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000387", su_id:"su5", txn_type:"IN", qty:42500, date:"2026-02-04", doc_ref:"ЦБ000000387", note:"ДТ 36.55 т / 14,518,000 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000571", su_id:"su8", txn_type:"IN", qty:39744, date:"2026-02-16", doc_ref:"ЦБ000000571", note:"ДТ 34.18 т / 13,793,100 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000680", su_id:"su5", txn_type:"IN", qty:40419, date:"2026-02-20", doc_ref:"ЦБ000000680", note:"ДТ 34.76 т / 13,838,000 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000779", su_id:"su8", txn_type:"IN", qty:38407, date:"2026-03-03", doc_ref:"ЦБ000000779", note:"ДТ 33.03 т / 13,282,500 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000933", su_id:"su5", txn_type:"IN", qty:42453, date:"2026-03-16", doc_ref:"ЦБ000000933", note:"ДТ 36.51 т / 13,237,000 тг", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000934", su_id:"su8", txn_type:"IN", qty:38279, date:"2026-03-16", doc_ref:"ЦБ000000934", note:"ДТ 32.92 т / 11,935,000 тг", recorded_by:"ТОО Explosion Solutions" },
+];
 
 // ─── INVENTORY PAGE ───────────────────────────────────────────────────────────
 const INV_TYPE_CFG = {
