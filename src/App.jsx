@@ -9915,7 +9915,7 @@ function MaintenanceFormModal({ initial, rigs, passports, onSave, onClose, T }) 
 const INIT_STORAGE_UNITS = [
   // Борлы (oid:1)
   { id:"su1",  oid:1, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:15000, min_level:1000 },
-  { id:"txnSu",  oid:1, name:"Резервуар ДТ-2",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:10000, min_level:500  },
+  { id:"su2",  oid:1, name:"Резервуар ДТ-2",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:10000, min_level:500  },
   { id:"su3",  oid:1, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:20000, min_level:500  },
   { id:"su4",  oid:1, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:10000, min_level:200  },
   // Коскудук (oid:2)
@@ -9961,7 +9961,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
   const [tab,        setTab]        = useState("units");
   const [filterType, setFilterType] = useState("all");
   const [txnModal,   setTxnModal]   = useState(null);
-  const [unitModal,  setUnitModal]  = useState(null);
+  const [unitModal,  setUnitModal]  = useState(null);   // null | "add" | unit obj (edit)
   const [deleteConf, setDeleteConf] = useState(null);
   const [unitForm,   setUnitForm]   = useState({});
   const [unitErr,    setUnitErr]    = useState("");
@@ -9977,8 +9977,8 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
     : objs.map(o => o.id);
 
   const TYPE_CFG = {
-    FUEL:      { label:"ГСМ",  color:T.blue,  icon:"⛽", unit:"л"  },
-    EXPLOSIVE: { label:"ВВ",   color:T.green, icon:"💥", unit:"кг" },
+    FUEL:      { label:"ГСМ",  color:T.blue,  unit:"л"  },
+    EXPLOSIVE: { label:"ВВ",   color:T.green, unit:"кг" },
   };
 
   function calcBalance(suId) {
@@ -10003,20 +10003,30 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
     })
     .sort((a, b) => b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id)));
 
-  function openTxnModal(type) {
+  function openTxnModal(type, suIdHint) {
     setTxnQty(""); setTxnDocRef(""); setTxnNote(""); setTxnAssetId("");
     setTxnDate(new Date().toISOString().slice(0,10));
-    setTxnSuId(filteredUnits[0]?.id || "");
+    setTxnSuId(suIdHint || filteredUnits[0]?.id || "");
     setTxnModal(type);
   }
 
   function saveTxn() {
-    if (!txnQty || isNaN(txnQty)) return;
+    const qty = parseFloat(txnQty);
+    if (!qty || isNaN(qty)) return;
+    const su = storageUnits.find(u => u.id === (txnSuId || filteredUnits[0]?.id));
+    // Overflow check for IN
+    if (txnModal === "IN" && su) {
+      const bal = calcBalance(su.id);
+      if (bal + qty > su.capacity) {
+        const over = (bal + qty - su.capacity).toLocaleString();
+        if (!window.confirm(`⚠ Превышение ёмкости на ${over} ${su.unit}!\n\nЁмкость: ${su.capacity.toLocaleString()} ${su.unit}\nТекущий остаток: ${bal.toLocaleString()} ${su.unit}\nПриход: ${qty.toLocaleString()} ${su.unit}\n\nВсё равно сохранить?`)) return;
+      }
+    }
     const txn = {
       id: "txn" + genId(),
       su_id: txnSuId || filteredUnits[0]?.id || "",
       txn_type: txnModal,
-      qty: parseFloat(txnQty),
+      qty,
       date: txnDate,
       doc_ref: txnDocRef,
       note: txnNote,
@@ -10024,103 +10034,123 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
       recorded_by: user?.name || "—",
     };
     setInvTxns(prev => [txn, ...prev]);
-    addInvTxn(txn).catch(e => console.warn('addInvTxn error:', e.message));
+    addInvTxn(txn).catch(e => console.warn("addInvTxn:", e.message));
     setTxnModal(null);
   }
 
+  // ── Unit CRUD ──────────────────────────────────────────────────
+  function openAddUnit() {
+    setUnitForm({ oid: String(visibleOids[0]||""), item_type:"FUEL", unit:"л", name:"", item_name:"", capacity:"", min_level:"", initial_balance:"" });
+    setUnitErr(""); setUnitModal("add");
+  }
+  function openEditUnit(u) {
+    setUnitForm({ oid:String(u.oid), item_type:u.item_type, unit:u.unit, name:u.name, item_name:u.item_name, capacity:String(u.capacity), min_level:String(u.min_level), _id:u.id });
+    setUnitErr(""); setUnitModal("edit");
+  }
   function saveUnit() {
     if (!unitForm.name?.trim()) { setUnitErr("Введите название"); return; }
     if (!unitForm.capacity || isNaN(unitForm.capacity)) { setUnitErr("Укажите ёмкость"); return; }
-    const u = {
-      id: "su" + genId(),
-      oid: Number(unitForm.oid),
-      name: unitForm.name.trim(),
-      item_type: unitForm.item_type || "FUEL",
-      item_name: (unitForm.item_name || "").trim(),
-      unit: unitForm.unit || "л",
-      capacity: parseFloat(unitForm.capacity),
-      min_level: parseFloat(unitForm.min_level) || 0,
-    };
-    setStorageUnits(prev => [...prev, u]);
-    upsertStorageUnit(u).catch(e => console.warn('upsertStorageUnit error:', e.message));
-    if (unitForm.initial_balance && parseFloat(unitForm.initial_balance) > 0) {
-      const initTxn = { id:"txn"+genId(), su_id:u.id, txn_type:"ADJUSTMENT", qty:parseFloat(unitForm.initial_balance), date:new Date().toISOString().slice(0,10), note:"Начальный остаток", recorded_by:user?.name||"system" };
-      setInvTxns(prev => [initTxn, ...prev]);
-      addInvTxn(initTxn).catch(e => console.warn('addInvTxn init error:', e.message));
+    if (unitModal === "edit") {
+      // Edit existing
+      const updated = { id:unitForm._id, oid:Number(unitForm.oid), name:unitForm.name.trim(),
+        item_type:unitForm.item_type, item_name:(unitForm.item_name||"").trim(),
+        unit:unitForm.unit, capacity:parseFloat(unitForm.capacity), min_level:parseFloat(unitForm.min_level)||0 };
+      setStorageUnits(prev => prev.map(u => u.id === updated.id ? updated : u));
+      upsertStorageUnit(updated).catch(e => console.warn("upsertStorageUnit:", e.message));
+    } else {
+      // Add new
+      const u = { id:"su"+genId(), oid:Number(unitForm.oid), name:unitForm.name.trim(),
+        item_type:unitForm.item_type, item_name:(unitForm.item_name||"").trim(),
+        unit:unitForm.unit, capacity:parseFloat(unitForm.capacity), min_level:parseFloat(unitForm.min_level)||0 };
+      setStorageUnits(prev => [...prev, u]);
+      upsertStorageUnit(u).catch(e => console.warn("upsertStorageUnit:", e.message));
+      if (unitForm.initial_balance && parseFloat(unitForm.initial_balance) > 0) {
+        const initTxn = { id:"txn"+genId(), su_id:u.id, txn_type:"ADJUSTMENT",
+          qty:parseFloat(unitForm.initial_balance), date:new Date().toISOString().slice(0,10),
+          note:"Начальный остаток", recorded_by:user?.name||"system" };
+        setInvTxns(prev => [initTxn, ...prev]);
+        addInvTxn(initTxn).catch(e => console.warn("addInvTxn init:", e.message));
+      }
     }
     setUnitModal(null); setUnitErr("");
   }
 
-  const pctColor = p => p < 15 ? "#ef4444" : p < 40 ? T.amber : T.green;
-  const pctBg    = p => p < 15 ? "rgba(239,68,68,0.12)" : p < 40 ? `${T.amber}18` : `${T.green}18`;
+  const pctColor = p => p > 100 ? "#7c3aed" : p < 15 ? "#ef4444" : p < 40 ? T.amber : T.green;
+  const pctBg    = p => p > 100 ? "rgba(124,58,237,0.12)" : p < 15 ? "rgba(239,68,68,0.12)" : p < 40 ? `${T.amber}18` : `${T.green}18`;
+
+  // ── Unit form modal (shared add/edit) ─────────────────────────
+  const isEdit = unitModal === "edit";
+  const UnitModal = unitModal ? (
+    <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,width:"100%",maxWidth:440}}>
+        <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>{isEdit ? "Редактировать склад" : "Добавить склад"}</div>
+          <button onClick={()=>setUnitModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
+        </div>
+        <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
+          <FieldSelect label="Объект *" value={unitForm.oid||""} onChange={e=>setUnitForm(p=>({...p,oid:e.target.value}))} T={T}>
+            {objs.filter(o=>visibleOids.includes(o.id)).map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+          </FieldSelect>
+          <FieldSelect label="Тип *" value={unitForm.item_type||"FUEL"} onChange={e=>setUnitForm(p=>({...p,item_type:e.target.value,unit:e.target.value==="FUEL"?"л":"кг"}))} T={T}>
+            <option value="FUEL">ГСМ</option>
+            <option value="EXPLOSIVE">ВВ</option>
+          </FieldSelect>
+          <FieldInput label="Название (Резервуар ДТ-1...)" value={unitForm.name||""} onChange={e=>setUnitForm(p=>({...p,name:e.target.value}))} T={T}/>
+          <FieldInput label="Наименование (ДТ, АНФО...)" value={unitForm.item_name||""} onChange={e=>setUnitForm(p=>({...p,item_name:e.target.value}))} T={T}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"+(isEdit?"":" 1fr"),gap:8}}>
+            <FieldInput label={`Ёмкость (${unitForm.unit||"л"}) *`} type="number" value={unitForm.capacity||""} onChange={e=>setUnitForm(p=>({...p,capacity:e.target.value}))} T={T}/>
+            <FieldInput label={`Мин. уровень (${unitForm.unit||"л"})`} type="number" value={unitForm.min_level||""} onChange={e=>setUnitForm(p=>({...p,min_level:e.target.value}))} T={T}/>
+            {!isEdit && <FieldInput label={`Нач. остаток (${unitForm.unit||"л"})`} type="number" value={unitForm.initial_balance||""} onChange={e=>setUnitForm(p=>({...p,initial_balance:e.target.value}))} T={T}/>}
+          </div>
+          {unitErr && <div style={{fontSize:12,color:"#ef4444"}}>⚠ {unitErr}</div>}
+          <div style={{display:"flex",gap:8}}>
+            <Btn variant="success" style={{flex:1}} onClick={saveUnit} T={T}>✓ Сохранить</Btn>
+            <Btn variant="ghost" onClick={()=>setUnitModal(null)} T={T}>Отмена</Btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const TxnModalEl = txnModal ? (
+    <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${txnModal==="IN"?T.green:txnModal==="OUT"?T.amber:T.violet}`,borderRadius:10,width:"100%",maxWidth:440}}>
+        <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>{txnModal==="IN"?"Приход":txnModal==="OUT"?"Выдача":"Корректировка"}</div>
+          <button onClick={()=>setTxnModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
+        </div>
+        <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
+          <FieldSelect label="Склад *" value={txnSuId||filteredUnits[0]?.id||""} onChange={e=>setTxnSuId(e.target.value)} T={T}>
+            {filteredUnits.map(u=>{
+              const bal = calcBalance(u.id);
+              return <option key={u.id} value={u.id}>{u.name} — {bal.toLocaleString()} {u.unit} / {u.capacity.toLocaleString()}</option>;
+            })}
+          </FieldSelect>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <FieldInput label={txnModal==="ADJUSTMENT"?"Новый остаток *":"Количество *"} type="number" value={txnQty} onChange={e=>setTxnQty(e.target.value)} T={T}/>
+            <FieldInput label="Дата *" type="date" value={txnDate} onChange={e=>setTxnDate(e.target.value)} T={T}/>
+          </div>
+          {txnModal==="OUT" && (
+            <FieldSelect label="Станок / основание" value={txnAssetId} onChange={e=>setTxnAssetId(e.target.value)} T={T}>
+              <option value="">— Не указан —</option>
+              {nodes.filter(n=>n.type==="ASSET"&&visibleOids.includes(Number(n.assigned_object_id))).map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+            </FieldSelect>
+          )}
+          <FieldInput label="№ накладной" value={txnDocRef} onChange={e=>setTxnDocRef(e.target.value)} T={T} placeholder="ТТН-2026-XXXX"/>
+          <FieldInput label="Примечание" value={txnNote} onChange={e=>setTxnNote(e.target.value)} T={T}/>
+          <div style={{display:"flex",gap:8}}>
+            <Btn variant="success" style={{flex:1}} onClick={saveTxn} T={T}>✓ Сохранить</Btn>
+            <Btn variant="ghost" onClick={()=>setTxnModal(null)} T={T}>Отмена</Btn>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div>
-      {/* Unit add modal */}
-      {unitModal && (
-        <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderRadius:10,width:"100%",maxWidth:440}}>
-            <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>Добавить склад</div>
-              <button onClick={()=>setUnitModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
-            </div>
-            <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
-              <FieldSelect label="Объект *" value={unitForm.oid||""} onChange={e=>setUnitForm(p=>({...p,oid:e.target.value}))} T={T}>
-                {objs.filter(o=>visibleOids.includes(o.id)).map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
-              </FieldSelect>
-              <FieldSelect label="Тип *" value={unitForm.item_type||"FUEL"} onChange={e=>setUnitForm(p=>({...p,item_type:e.target.value,unit:e.target.value==="FUEL"?"л":"кг"}))} T={T}>
-                <option value="FUEL">ГСМ</option>
-                <option value="EXPLOSIVE">ВВ</option>
-              </FieldSelect>
-              <FieldInput label="Название" value={unitForm.name||""} onChange={e=>setUnitForm(p=>({...p,name:e.target.value}))} T={T}/>
-              <FieldInput label="Наименование (ДТ, АНФО...)" value={unitForm.item_name||""} onChange={e=>setUnitForm(p=>({...p,item_name:e.target.value}))} T={T}/>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                <FieldInput label="Ёмкость *" type="number" value={unitForm.capacity||""} onChange={e=>setUnitForm(p=>({...p,capacity:e.target.value}))} T={T}/>
-                <FieldInput label="Мин. уровень" type="number" value={unitForm.min_level||""} onChange={e=>setUnitForm(p=>({...p,min_level:e.target.value}))} T={T}/>
-                <FieldInput label="Нач. остаток" type="number" value={unitForm.initial_balance||""} onChange={e=>setUnitForm(p=>({...p,initial_balance:e.target.value}))} T={T}/>
-              </div>
-              {unitErr && <div style={{fontSize:12,color:"#ef4444"}}>⚠ {unitErr}</div>}
-              <div style={{display:"flex",gap:8}}>
-                <Btn variant="success" style={{flex:1}} onClick={saveUnit} T={T}>✓ Сохранить</Btn>
-                <Btn variant="ghost" onClick={()=>setUnitModal(null)} T={T}>Отмена</Btn>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Transaction modal */}
-      {txnModal && (
-        <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${txnModal==="IN"?T.green:txnModal==="OUT"?T.amber:T.violet}`,borderRadius:10,width:"100%",maxWidth:440}}>
-            <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>{txnModal==="IN"?"Приход":txnModal==="OUT"?"Выдача":"Корректировка"}</div>
-              <button onClick={()=>setTxnModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
-            </div>
-            <div style={{padding:16,display:"flex",flexDirection:"column",gap:10}}>
-              <FieldSelect label="Склад *" value={txnSuId||filteredUnits[0]?.id||""} onChange={e=>setTxnSuId(e.target.value)} T={T}>
-                {filteredUnits.map(u=><option key={u.id} value={u.id}>{u.name} ({u.item_name})</option>)}
-              </FieldSelect>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                <FieldInput label={txnModal==="ADJUSTMENT"?"Новый остаток *":"Количество *"} type="number" value={txnQty} onChange={e=>setTxnQty(e.target.value)} T={T}/>
-                <FieldInput label="Дата *" type="date" value={txnDate} onChange={e=>setTxnDate(e.target.value)} T={T}/>
-              </div>
-              {txnModal === "OUT" && (
-                <FieldSelect label="Станок / основание" value={txnAssetId} onChange={e=>setTxnAssetId(e.target.value)} T={T}>
-                  <option value="">— Не указан —</option>
-                  {nodes.filter(n=>n.type==="ASSET"&&visibleOids.includes(Number(n.assigned_object_id))).map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
-                </FieldSelect>
-              )}
-              <FieldInput label="№ накладной" value={txnDocRef} onChange={e=>setTxnDocRef(e.target.value)} T={T} placeholder="ТТН-2026-XXXX"/>
-              <FieldInput label="Примечание" value={txnNote} onChange={e=>setTxnNote(e.target.value)} T={T}/>
-              <div style={{display:"flex",gap:8}}>
-                <Btn variant="success" style={{flex:1}} onClick={saveTxn} T={T}>✓ Сохранить</Btn>
-                <Btn variant="ghost" onClick={()=>setTxnModal(null)} T={T}>Отмена</Btn>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {UnitModal}
+      {TxnModalEl}
 
       {/* Delete confirm */}
       {deleteConf && (
@@ -10130,7 +10160,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
             <div style={{fontSize:14,fontWeight:600,color:T.txt0,marginBottom:8}}>Удалить склад?</div>
             <div style={{fontSize:12,color:T.txt2,marginBottom:20}}>Все транзакции по этому складу также будут удалены.</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-              <Btn variant="primary" style={{background:"#dc2626"}} onClick={()=>{ setStorageUnits(p=>p.filter(u=>u.id!==deleteConf)); setInvTxns(p=>p.filter(t=>t.su_id!==deleteConf)); deleteStorageUnit(deleteConf).catch(e=>console.warn('deleteStorageUnit:',e.message)); setDeleteConf(null); }} T={T}>Удалить</Btn>
+              <Btn variant="primary" style={{background:"#dc2626"}} onClick={()=>{ setStorageUnits(p=>p.filter(u=>u.id!==deleteConf)); setInvTxns(p=>p.filter(t=>t.su_id!==deleteConf)); deleteStorageUnit(deleteConf).catch(e=>console.warn(e)); setDeleteConf(null); }} T={T}>Удалить</Btn>
               <Btn variant="ghost" onClick={()=>setDeleteConf(null)} T={T}>Отмена</Btn>
             </div>
           </div>
@@ -10141,7 +10171,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
         <div style={{fontSize:22,fontWeight:600,color:T.txt0}}>Склад</div>
         <div style={{display:"flex",gap:6}}>
-          <Btn variant="ghost" onClick={()=>openTxnModal("ADJUSTMENT")} T={T} style={{fontSize:12}}>⚖ Корректировка</Btn>
+          <Btn variant="ghost" onClick={()=>openTxnModal("ADJUSTMENT")} T={T} style={{fontSize:12}}>⚖ Коррект.</Btn>
           <Btn variant="ghost" onClick={()=>openTxnModal("OUT")} T={T} style={{fontSize:12}}>− Выдача</Btn>
           <Btn variant="primary" onClick={()=>openTxnModal("IN")} T={T} style={{fontSize:12}}>+ Приход</Btn>
         </div>
@@ -10153,19 +10183,17 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
           <div key={id} onClick={()=>setTab(id)}
             style={{padding:"7px 16px",fontSize:13,fontWeight:500,cursor:"pointer",
               color:tab===id?T.txt0:T.txt2,
-              borderBottom:tab===id?`2px solid ${T.txt0}`:"2px solid transparent",
-              marginBottom:-1}}>
+              borderBottom:tab===id?`2px solid ${T.txt0}`:"2px solid transparent",marginBottom:-1}}>
             {label}
           </div>
         ))}
       </div>
 
-      {/* Filter pills */}
-      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+      {/* Filter + add button */}
+      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
         {[["all","Все"],["FUEL","ГСМ"],["EXPLOSIVE","ВВ"]].map(([k,l])=>(
           <button key={k} onClick={()=>setFilterType(k)}
-            style={{padding:"4px 12px",borderRadius:20,
-              border:`0.5px solid ${filterType===k?T.txt0:T.border}`,
+            style={{padding:"4px 12px",borderRadius:20,border:`0.5px solid ${filterType===k?T.txt0:T.border}`,
               background:filterType===k?T.txt0:"transparent",
               color:filterType===k?(T.bg1||"#fff"):T.txt2,
               fontSize:11,fontWeight:filterType===k?600:400,cursor:"pointer"}}>
@@ -10173,7 +10201,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
           </button>
         ))}
         {user?.role !== "foreman" && (
-          <button onClick={()=>{ setUnitForm({oid:String(visibleOids[0]||""),item_type:"FUEL",unit:"л"}); setUnitErr(""); setUnitModal(true); }}
+          <button onClick={openAddUnit}
             style={{marginLeft:"auto",padding:"4px 12px",borderRadius:20,border:`0.5px dashed ${T.border}`,background:"transparent",color:T.txt2,fontSize:11,cursor:"pointer"}}>
             + Добавить склад
           </button>
@@ -10189,25 +10217,30 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
               </div>
             : filteredUnits.map(u => {
                 const bal  = calcBalance(u.id);
-                const pct  = u.capacity > 0 ? Math.min(100, Math.round(bal / u.capacity * 100)) : 0;
+                const pct  = u.capacity > 0 ? Math.round(bal / u.capacity * 100) : 0;
+                const over = pct > 100;
                 const isLow = bal <= u.min_level;
                 const tp   = TYPE_CFG[u.item_type] || TYPE_CFG.FUEL;
                 const obj  = objs.find(o => o.id === u.oid);
+                const barColor = over ? "#7c3aed" : isLow ? "#ef4444" : tp.color;
                 return (
-                  <div key={u.id} style={{background:T.bg2,border:`1px solid ${isLow?"rgba(239,68,68,0.4)":T.border}`,borderRadius:10,overflow:"hidden"}}>
+                  <div key={u.id} style={{background:T.bg2,border:`1px solid ${over?"rgba(124,58,237,0.5)":isLow?"rgba(239,68,68,0.4)":T.border}`,borderRadius:10,overflow:"hidden"}}>
                     <div style={{display:"flex"}}>
-                      <div style={{width:4,background:isLow?"#ef4444":tp.color,flexShrink:0}}/>
+                      <div style={{width:4,background:barColor,flexShrink:0}}/>
                       <div style={{flex:1,padding:"12px 14px"}}>
                         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
                           <div>
                             <div style={{fontSize:13,fontWeight:500,color:T.txt0}}>{u.name}</div>
                             <div style={{fontSize:11,color:T.txt2,marginTop:1}}>{u.item_name} · {obj?.name||"—"}</div>
                           </div>
-                          <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:pctBg(pct),color:pctColor(pct)}}>{pct}%</span>
+                          <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                            {over && <span style={{fontSize:10,fontWeight:600,padding:"2px 6px",borderRadius:4,background:"rgba(124,58,237,0.15)",color:"#7c3aed"}}>↑ ПЕРЕЛИВ</span>}
+                            <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:pctBg(pct),color:pctColor(pct)}}>{pct}%</span>
+                          </div>
                         </div>
                         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
                           {[
-                            ["Остаток", `${Math.max(0,bal).toLocaleString()} ${u.unit}`, isLow?"#ef4444":T.txt0],
+                            ["Остаток", `${Math.max(0,bal).toLocaleString()} ${u.unit}`, over?"#7c3aed":isLow?"#ef4444":T.txt0],
                             ["Ёмкость", `${u.capacity.toLocaleString()} ${u.unit}`, T.txt0],
                             ["Мин. уровень", `${u.min_level.toLocaleString()} ${u.unit}`, isLow?"#ef4444":T.txt2],
                             ["Объект", obj?.name||"—", T.txt2],
@@ -10220,17 +10253,22 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
                         </div>
                       </div>
                     </div>
-                    <div style={{borderTop:`1px solid ${T.border}`,padding:"6px 14px",display:"flex",alignItems:"center",gap:8}}>
+                    <div style={{borderTop:`1px solid ${T.border}`,padding:"6px 10px",display:"flex",alignItems:"center",gap:6}}>
                       <span style={{fontSize:10,color:pctColor(pct),whiteSpace:"nowrap"}}>{Math.max(0,bal).toLocaleString()} {u.unit}</span>
                       <div style={{flex:1,height:3,borderRadius:2,background:T.cardSh,overflow:"hidden"}}>
-                        <div style={{height:3,borderRadius:2,background:isLow?"#ef4444":tp.color,width:`${pct}%`}}/>
+                        <div style={{height:3,borderRadius:2,background:barColor,width:`${Math.min(pct,100)}%`}}/>
                       </div>
                       <span style={{fontSize:10,color:T.txt2,whiteSpace:"nowrap"}}>{u.capacity.toLocaleString()}</span>
                       {user?.role !== "foreman" && (
-                        <button onClick={()=>setDeleteConf(u.id)} style={{background:"none",border:"none",cursor:"pointer",color:T.txt2,fontSize:12,padding:0,opacity:.5}}>🗑</button>
+                        <button onClick={()=>openEditUnit(u)}
+                          style={{background:`${T.blue}12`,border:`0.5px solid ${T.blue}40`,borderRadius:4,cursor:"pointer",fontSize:11,color:T.blue,padding:"2px 6px"}}>✏</button>
+                      )}
+                      {user?.role !== "foreman" && (
+                        <button onClick={()=>setDeleteConf(u.id)}
+                          style={{background:"rgba(239,68,68,0.08)",border:"0.5px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontSize:11,color:"#f87171",padding:"2px 6px"}}>🗑</button>
                       )}
                       {isLow && (
-                        <button onClick={()=>openTxnModal("IN")}
+                        <button onClick={()=>openTxnModal("IN", u.id)}
                           style={{padding:"2px 8px",borderRadius:4,border:`0.5px solid ${T.amber}50`,background:`${T.amber}10`,color:T.amber,fontSize:10,cursor:"pointer",fontWeight:600}}>
                           Заявка
                         </button>
@@ -10263,11 +10301,12 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
                       const sign  = t.txn_type==="IN"?"+":t.txn_type==="OUT"?"-":"→";
                       const c     = t.txn_type==="IN"?T.green:t.txn_type==="OUT"?"#ef4444":T.violet;
                       const asset = nodes.find(n=>n.id===t.asset_id);
-                      const cfg   = {IN:{label:"Приход",bg:`${T.green}18`},OUT:{label:"Выдача",bg:"rgba(239,68,68,0.12)"},ADJUSTMENT:{label:"Коррект.",bg:`${T.violet}18`}}[t.txn_type]||{label:t.txn_type,bg:T.bg3};
+                      const lbl   = {IN:"Приход",OUT:"Выдача",ADJUSTMENT:"Коррект."}[t.txn_type]||t.txn_type;
+                      const lbg   = t.txn_type==="IN"?`${T.green}18`:t.txn_type==="OUT"?"rgba(239,68,68,0.12)":`${T.violet}18`;
                       return (
                         <tr key={t.id} style={{background:i%2===1?T.rowAlt:"transparent"}}>
                           <td style={{padding:"7px 12px"}}>
-                            <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:cfg.bg,color:c}}>{cfg.label}</span>
+                            <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:4,background:lbg,color:c}}>{lbl}</span>
                           </td>
                           <td style={{padding:"7px 12px",color:T.txt0}}>{su?.name||"—"}</td>
                           <td style={{padding:"7px 12px",fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:c,whiteSpace:"nowrap"}}>
@@ -10748,7 +10787,37 @@ export default function App() {
           }, 200);
         }
       });
-    } }
+    }
+
+    // ── Авто-списание ГСМ со склада ──────────────────────────────
+    const fuelTotal = parseFloat(edited.fuel) || 0;
+    if (fuelTotal > 0) {
+      // Найти резервуар ДТ для данного объекта
+      setStorageUnits(prev => {
+        const fuelUnits = prev.filter(u => u.item_type === "FUEL" && u.oid === edited.oid);
+        if (!fuelUnits.length) return prev;
+        const su = fuelUnits[0];
+        const txn = {
+          id: "txn_auto_" + id,
+          su_id: su.id,
+          txn_type: "OUT",
+          qty: fuelTotal,
+          date: edited.date,
+          doc_ref: "",
+          note: `Авто-списание по отчёту смены ${edited.date}`,
+          asset_id: null,
+          recorded_by: "Система",
+        };
+        setInvTxns(p => {
+          // Не дублировать если уже есть
+          if (p.some(t => t.id === txn.id)) return p;
+          addInvTxn(txn).catch(e => console.warn("auto fuel deduct:", e.message));
+          return [txn, ...p];
+        });
+        return prev;
+      });
+    }
+  }
 
   const navCEO  = [["dash","Сводка"],["finance","Финансы"],["engineers","Команда"]];
   const navEng  = [["dash","Сводка"],["planning","Планирование"],["inbox","Входящие"],["users","Персонал"]];
