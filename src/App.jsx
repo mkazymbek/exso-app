@@ -10684,7 +10684,7 @@ export default function App() {
   useEffect(() => {
     async function loadFromDB() {
       try {
-        const [dbObjs, dbRigs, dbReps, dbPlans, dbKtg] = await Promise.all([
+        const [dbObjs, dbRigs, dbReps, dbPlans, dbKtg, dbAssets, dbPassports, dbMaintRecs] = await Promise.all([
           getObjects(),
           getRigs(),
           getReports(),
