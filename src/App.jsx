@@ -9915,7 +9915,7 @@ function MaintenanceFormModal({ initial, rigs, passports, onSave, onClose, T }) 
 const INIT_STORAGE_UNITS = [
   // Борлы (oid:1)
   { id:"su1",  oid:1, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:15000, min_level:1000 },
-  { id:"su2",  oid:1, name:"Резервуар ДТ-2",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:10000, min_level:500  },
+  { id:"txnSu",  oid:1, name:"Резервуар ДТ-2",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:10000, min_level:500  },
   { id:"su3",  oid:1, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:20000, min_level:500  },
   { id:"su4",  oid:1, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:10000, min_level:200  },
   // Коскудук (oid:2)
@@ -9955,6 +9955,12 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
   const [deleteConf, setDeleteConf] = useState(null);
   const [unitForm,   setUnitForm]   = useState({});
   const [unitErr,    setUnitErr]    = useState("");
+  const [txnSuId,    setTxnSuId]    = useState("");
+  const [txnQty,     setTxnQty]     = useState("");
+  const [txnDate,    setTxnDate]    = useState(new Date().toISOString().slice(0,10));
+  const [txnDocRef,  setTxnDocRef]  = useState("");
+  const [txnNote,    setTxnNote]    = useState("");
+  const [txnAssetId, setTxnAssetId] = useState("");
 
   const visibleOids = user?.role === "foreman"
     ? (user.oids === "all" ? objs.map(o => o.id) : user.oids)
@@ -10142,18 +10148,45 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
         </div>
       )}
 
-      {txnModal && (
-        <TxnModal
-          txnType={txnModal}
-          storageUnits={filteredUnits}
-          eamAssets={nodes.filter(n=>n.type==="ASSET"&&visibleOids.includes(Number(n.assigned_object_id)))}
-          objs={objs}
-          onSave={saveTxn}
-          onClose={()=>setTxnModal(null)}
-          user={user}
-          T={T}
-        />
-      )}
+      {txnModal && (() => {
+        const cfg = {
+          IN:         { label:"Приход",       color:T.green  },
+          OUT:        { label:"Выдача",       color:T.amber  },
+          ADJUSTMENT: { label:"Корректировка",color:T.violet },
+        }[txnModal] || { label:"Операция", color:T.txt0 };
+        const txnSu = filteredUnits.find(u=>u.id===txnSuId);
+        return (
+          <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:700,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <div style={{background:T.bg2,border:`1px solid ${T.border}`,borderLeft:`4px solid ${cfg.color}`,borderRadius:10,width:"100%",maxWidth:440}}>
+              <div style={{padding:"12px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{fontSize:13,fontWeight:600,color:T.txt0}}>{cfg.label}</div>
+                <button onClick={()=>setTxnModal(null)} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.txt2}}>×</button>
+              </div>
+              <div style={{padding:16,display:"flex",flexDirection:"column",gap:11}}>
+                <FieldSelect label="Склад *" value={txnSuId||filteredUnits[0]?.id||""} onChange={e=>setTxnSuId(e.target.value)} T={T}>
+                  {filteredUnits.map(u=><option key={u.id} value={u.id}>{u.name} ({u.item_name})</option>)}
+                </FieldSelect>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  <FieldInput label={txnModal==="ADJUSTMENT"?"Новый остаток *":"Количество *"} type="number" value={txnQty} onChange={e=>setTxnQty(e.target.value)} T={T} placeholder={txnSu?.unit||""}/>
+                  <FieldInput label="Дата *" type="date" value={txnDate} onChange={e=>setTxnDate(e.target.value)} T={T}/>
+                </div>
+                {txnModal==="OUT" && (
+                  <FieldSelect label="Станок / основание" value={txnAssetId} onChange={e=>setTxnAssetId(e.target.value)} T={T}>
+                    <option value="">— Не указан —</option>
+                    {nodes.filter(n=>n.type==="ASSET"&&visibleOids.includes(Number(n.assigned_object_id))).map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+                  </FieldSelect>
+                )}
+                <FieldInput label="№ накладной / документа" value={txnDocRef} onChange={e=>setTxnDocRef(e.target.value)} T={T} placeholder="ТТН-2026-XXXX"/>
+                <FieldInput label="Примечание" value={txnNote} onChange={e=>setTxnNote(e.target.value)} T={T}/>
+                <div style={{display:"flex",gap:8}}>
+                  <Btn variant="success" style={{flex:1}} onClick={()=>{ if(!txnQty||isNaN(txnQty)){return;} saveTxn({type:txnModal,suId:txnSuId||filteredUnits[0]?.id||"",qty:txnQty,date:txnDate,docRef:txnDocRef,note:txnNote,assetId:txnAssetId||null}); }} T={T}>✓ Сохранить</Btn>
+                  <Btn variant="ghost" onClick={()=>setTxnModal(null)} T={T}>Отмена</Btn>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {deleteConf && (
         <div style={{position:"fixed",inset:0,background:T.modalBg,zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -10173,9 +10206,9 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
         <div style={{fontSize:22,fontWeight:600,color:T.txt0}}>Склад</div>
         <div style={{display:"flex",gap:6}}>
-          <Btn variant="ghost" onClick={()=>setTxnModal("ADJUSTMENT")} T={T} style={{fontSize:12}}>⚖ Корректировка</Btn>
-          <Btn variant="ghost" onClick={()=>setTxnModal("OUT")} T={T} style={{fontSize:12}}>− Выдача</Btn>
-          <Btn variant="primary" onClick={()=>setTxnModal("IN")} T={T} style={{fontSize:12}}>+ Приход</Btn>
+          <Btn variant="ghost" onClick={()=>{setTxnQty("");setTxnDate(new Date().toISOString().slice(0,10));setTxnDocRef("");setTxnNote("");setTxnAssetId("");setTxnModal("ADJUSTMENT");}} T={T} style={{fontSize:12}}>⚖ Корректировка</Btn>
+          <Btn variant="ghost" onClick={()=>{setTxnQty("");setTxnDate(new Date().toISOString().slice(0,10));setTxnDocRef("");setTxnNote("");setTxnAssetId("");setTxnModal("OUT");}} T={T} style={{fontSize:12}}>− Выдача</Btn>
+          <Btn variant="primary" onClick={()=>{setTxnQty("");setTxnDate(new Date().toISOString().slice(0,10));setTxnDocRef("");setTxnNote("");setTxnAssetId("");setTxnModal("IN");}} T={T} style={{fontSize:12}}>+ Приход</Btn>
         </div>
       </div>
 
@@ -10280,7 +10313,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
                     <button onClick={()=>setDeleteConf(u.id)} style={{background:"none",border:"none",cursor:"pointer",color:T.txt2,fontSize:12,padding:0,opacity:.5}}>🗑</button>
                   )}
                   {isLow && (
-                    <button onClick={()=>setTxnModal("IN")}
+                    <button onClick={()=>{setTxnQty("");setTxnDate(new Date().toISOString().slice(0,10));setTxnDocRef("");setTxnNote("");setTxnAssetId("");setTxnModal("IN");}}
                       style={{padding:"2px 8px",borderRadius:4,border:`0.5px solid ${T.amber}50`,background:`${T.amber}10`,color:T.amber,fontSize:10,cursor:"pointer",fontWeight:600,whiteSpace:"nowrap"}}>
                       Заявка
                     </button>
