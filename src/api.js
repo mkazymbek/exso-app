@@ -519,7 +519,7 @@ export async function getAssets() {
   const { data, error } = await supabase
     .from('assets')
     .select('*')
-    .order('garage_num');
+    .order('name');
   if (error) throw error;
   return data; // [{id, parent_id, name, type, cat_type, fuel_rate, desc, assigned_object_id, garage_num, created_by, created_at}]
 }
@@ -657,4 +657,75 @@ export async function deleteMaintRecord(recordId) {
     .delete()
     .eq('id', recordId);
   if (error) throw error;
+}
+
+// ──────────────────────────────────────────────────────────────
+// INVENTORY (storage_units + inv_txns)
+// ──────────────────────────────────────────────────────────────
+
+export async function getStorageUnits() {
+  const { data, error } = await supabase
+    .from('storage_units')
+    .select('*')
+    .order('oid')
+    .order('name');
+  if (error) throw error;
+  return (data || []).map(r => ({
+    id:         r.id,
+    oid:        r.oid,
+    name:       r.name,
+    item_type:  r.item_type,
+    item_name:  r.item_name,
+    unit:       r.unit,
+    capacity:   r.capacity,
+    min_level:  r.min_level,
+  }));
+}
+
+export async function upsertStorageUnit(unit) {
+  const { data, error } = await supabase
+    .from('storage_units')
+    .upsert({ id: unit.id, oid: unit.oid, name: unit.name, item_type: unit.item_type,
+              item_name: unit.item_name, unit: unit.unit, capacity: unit.capacity,
+              min_level: unit.min_level }, { onConflict: 'id' })
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteStorageUnit(id) {
+  const { error } = await supabase.from('storage_units').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function getInvTxns() {
+  const { data, error } = await supabase
+    .from('inv_txns')
+    .select('*')
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(r => ({
+    id:          r.id,
+    su_id:       r.su_id,
+    txn_type:    r.txn_type,
+    qty:         r.qty,
+    date:        r.date,
+    doc_ref:     r.doc_ref,
+    note:        r.note,
+    asset_id:    r.asset_id,
+    recorded_by: r.recorded_by,
+  }));
+}
+
+export async function addInvTxn(txn) {
+  const { data, error } = await supabase
+    .from('inv_txns')
+    .upsert({ id: txn.id, su_id: txn.su_id, txn_type: txn.txn_type, qty: txn.qty,
+              date: txn.date, doc_ref: txn.doc_ref || '', note: txn.note || '',
+              asset_id: txn.asset_id || null, recorded_by: txn.recorded_by || 'system' },
+             { onConflict: 'id' })
+    .select().single();
+  if (error) throw error;
+  return data;
 }

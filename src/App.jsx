@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus, adminCreateUser, adminUpdatePassword, adminDeleteUser, adminListUsers, getAssets, upsertAsset, getPassports, upsertPassport, getMaintRecords, addMaintRecord, deleteMaintRecord } from "./api.js";
+import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus, adminCreateUser, adminUpdatePassword, adminDeleteUser, adminListUsers, getAssets, upsertAsset, getPassports, upsertPassport, getMaintRecords, addMaintRecord, deleteMaintRecord, getStorageUnits, upsertStorageUnit, deleteStorageUnit, getInvTxns, addInvTxn } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
 const DARK = {
@@ -10014,6 +10014,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
       recorded_by: user?.name || "—",
     };
     setInvTxns(prev => [txn, ...prev]);
+    addInvTxn(txn).catch(e => console.warn('addInvTxn error:', e.message));
     setTxnModal(null);
   }
 
@@ -10031,8 +10032,11 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
       min_level: parseFloat(unitForm.min_level) || 0,
     };
     setStorageUnits(prev => [...prev, u]);
+    upsertStorageUnit(u).catch(e => console.warn('upsertStorageUnit error:', e.message));
     if (unitForm.initial_balance && parseFloat(unitForm.initial_balance) > 0) {
-      setInvTxns(prev => [{ id:"txn"+genId(), su_id:u.id, txn_type:"ADJUSTMENT", qty:parseFloat(unitForm.initial_balance), date:new Date().toISOString().slice(0,10), note:"Начальный остаток", recorded_by:user?.name||"system" }, ...prev]);
+      const initTxn = { id:"txn"+genId(), su_id:u.id, txn_type:"ADJUSTMENT", qty:parseFloat(unitForm.initial_balance), date:new Date().toISOString().slice(0,10), note:"Начальный остаток", recorded_by:user?.name||"system" };
+      setInvTxns(prev => [initTxn, ...prev]);
+      addInvTxn(initTxn).catch(e => console.warn('addInvTxn init error:', e.message));
     }
     setUnitModal(null); setUnitErr("");
   }
@@ -10116,7 +10120,7 @@ function InventoryPage({ storageUnits, setStorageUnits, invTxns, setInvTxns, obj
             <div style={{fontSize:14,fontWeight:600,color:T.txt0,marginBottom:8}}>Удалить склад?</div>
             <div style={{fontSize:12,color:T.txt2,marginBottom:20}}>Все транзакции по этому складу также будут удалены.</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-              <Btn variant="primary" style={{background:"#dc2626"}} onClick={()=>{ setStorageUnits(p=>p.filter(u=>u.id!==deleteConf)); setInvTxns(p=>p.filter(t=>t.su_id!==deleteConf)); setDeleteConf(null); }} T={T}>Удалить</Btn>
+              <Btn variant="primary" style={{background:"#dc2626"}} onClick={()=>{ setStorageUnits(p=>p.filter(u=>u.id!==deleteConf)); setInvTxns(p=>p.filter(t=>t.su_id!==deleteConf)); deleteStorageUnit(deleteConf).catch(e=>console.warn('deleteStorageUnit:',e.message)); setDeleteConf(null); }} T={T}>Удалить</Btn>
               <Btn variant="ghost" onClick={()=>setDeleteConf(null)} T={T}>Отмена</Btn>
             </div>
           </div>
@@ -10579,7 +10583,7 @@ export default function App() {
   useEffect(() => {
     async function loadFromDB() {
       try {
-        const [dbObjs, dbRigs, dbReps, dbPlans, dbKtg, dbAssets, dbPassports, dbMaintRecs] = await Promise.all([
+        const [dbObjs, dbRigs, dbReps, dbPlans, dbKtg, dbAssets, dbPassports, dbMaintRecs, dbStorageUnits, dbInvTxns] = await Promise.all([
           getObjects(),
           getRigs(),
           getReports(),
@@ -10588,6 +10592,8 @@ export default function App() {
           getAssets().catch(() => null),
           getPassports().catch(() => null),
           getMaintRecords().catch(() => null),
+          getStorageUnits().catch(() => null),
+          getInvTxns().catch(() => null),
         ]);
         if (dbObjs?.length)  setObjs(dbObjs);
         if (dbAssets?.length) {
@@ -10603,7 +10609,9 @@ export default function App() {
           });
         }
         if (dbPassports && Object.keys(dbPassports).length > 0) setPassports(dbPassports);
-        if (dbMaintRecords && Object.keys(dbMaintRecords).length > 0) setMaintRecords(dbMaintRecords);
+        if (dbMaintRecs && Object.keys(dbMaintRecs).length > 0) setMaintRecords(dbMaintRecs);
+        if (dbStorageUnits?.length) setStorageUnits(dbStorageUnits);
+        if (dbInvTxns?.length)      setInvTxns(dbInvTxns);
         if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const localNames = new Set(prev.map(r => r.n + "_" + r.o)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id) && !localNames.has(r.n + "_" + r.o)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
         if (dbReps?.length)  setReps(prev => { const dbIds = new Set(dbReps.map(r => r.id)); const localOnly = prev.filter(r => !dbIds.has(r.id)); return [...localOnly, ...dbReps]; });
         if (dbPlans?.length) setPlans(dbPlans);
