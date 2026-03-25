@@ -36,36 +36,30 @@ const INIT_OBJS = [
   { id: 7, name: "Улькенсай",  dp: 0, bp: 0, kp: 0 },
 ];
 const INIT_RIGS = [
-  // Борлы (o:1)
-  { id:  3, n: "ROC-107",       o: 1 },
-  { id:  4, n: "ROC-108",       o: 1 },
-  // Шыганак (o:5)
-  { id: 26, n: "Kaishan-101",   o: 5 },
-  { id: 27, n: "Kaishan-103",   o: 5 },
-  // Коскудук (o:2)
-  { id: 28, n: "JK-105",        o: 2 },
-  { id:  9, n: "JK-109",        o: 2 },
-  { id:  5, n: "JK-110",        o: 2 },
-  { id:  6, n: "JK-111",        o: 2 },
-  { id:  8, n: "JK-115",        o: 2 },
-  { id: 20, n: "JK-117",        o: 2 },
-  // Бактай (o:3)
-  { id: 19, n: "JK-106",        o: 3 },
-  { id: 10, n: "JK-112",        o: 3 },
-  { id: 11, n: "JK-113",        o: 3 },
-  { id: 12, n: "JK-114",        o: 3 },
-  { id: 14, n: "JK-116",        o: 3 },
-  { id: 23, n: "JK-118",        o: 3 },
-  { id: 29, n: "Zega-117",      o: 3 },
-  { id: 24, n: "JK-122",        o: 3 },
-  { id: 25, n: "JK-123",        o: 3 },
-  // Жолымбет (o:4)
-  { id: 16, n: "JK-119",        o: 4 },
-  { id: 17, n: "JK-120",        o: 4 },
-  { id: 18, n: "JK-121",        o: 4 },
-  // Без объекта
-  { id: 30, n: "Kaishan-102",   o: null },
-  { id: 31, n: "KG-590-104",    o: null },
+  // Борлы (o:1) — 3 станка
+  { id:  3, n: "ROC-107",   o: 1 },
+  { id:  4, n: "ROC-108",   o: 1 },
+  { id: 32, n: "JK-103",    o: 1 },
+  // Коскудук (o:2) — 5 станков
+  { id:  9, n: "JK-109",    o: 2 },
+  { id:  5, n: "JK-110",    o: 2 },
+  { id:  6, n: "JK-111",    o: 2 },
+  { id:  8, n: "JK-115",    o: 2 },
+  { id: 20, n: "Zega-117",  o: 2 },
+  // Бактай (o:3) — 6 станков
+  { id: 19, n: "JK-106",    o: 3 },
+  { id: 10, n: "JK-112",    o: 3 },
+  { id: 11, n: "JK-113",    o: 3 },
+  { id: 12, n: "JK-114",    o: 3 },
+  { id: 14, n: "JK-116",    o: 3 },
+  { id: 29, n: "Zega-117",  o: 3 },
+  // Жолымбет (o:4) — 3 станка
+  { id: 16, n: "JK-119",    o: 4 },
+  { id: 17, n: "JK-120",    o: 4 },
+  { id: 18, n: "JK-121",    o: 4 },
+  // Шыганак (o:5) — 2 станка
+  { id: 26, n: "JK-101",    o: 5 },
+  { id: 27, n: "JK-106",    o: 5 },
 ];
 
 const INIT_USERS = [
@@ -1818,14 +1812,15 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
     filteredReps.forEach((r) => {
       t.df += r.df; t.bf += r.bf; t.fuel += r.fuel; t.wh += r.wh; t.dh += r.dh;
       t.overDrill += (r.rigs||[]).reduce((s,rig) => s + (toNum(rig.overDrill)||0), 0);
-      // Календарное время = сумма смен × кол-во станков
-      t.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11) * (r.rigs?.length || 1);
+      // Календарное время = сумма смен × ВСЕ станки объекта (не только работавшие)
+      const _objRigCount = rigs.filter(rg=>rg.o===r.oid).length || (r.rigs?.length || 1);
+      t.calHrs += toNum(r.shiftDurationHours || r.shift_duration_hrs || 11) * _objRigCount;
       // Технические простои
       const events = r.downtime_events || r.rigEntries?.flatMap(e=>e.downtimes||[]) || [];
       t.techDH += techDowntimeHours(events);
     });
     return t;
-  }, [filteredReps]);
+  }, [filteredReps, rigs]);
 
   // КТГ и КИО по всем отчётам периода
   const totalKtg = totals.calHrs > 0 ? Math.round((totals.calHrs - totals.techDH) / totals.calHrs * 100) : null;
@@ -2029,8 +2024,10 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
           const techDH    = rr.reduce((s,r)=>{ const evs=r.downtime_events||r.rigEntries?.flatMap(e=>e.downtimes||[])||[]; return s+techDowntimeHours(evs); }, 0);
           const orgDH     = Math.round(dh - techDH);
 
-          const objKtg    = repsKtgKio(rr).ktg;
-          const objKio    = repsKtgKio(rr).kio;
+          const objRigsCnt = rigs.filter(r=>r.o===obj.id).length || 1;
+          const _calHrs   = rr.reduce((s,r)=>s+toNum(r.shiftDurationHours||r.shift_duration_hrs||11),0)*objRigsCnt;
+          const objKtg    = _calHrs>0 ? Math.min(100,Math.round((_calHrs-techDH)/_calHrs*100)) : null;
+          const objKio    = _calHrs>0 ? Math.min(100,Math.round(wh/_calHrs*100)) : null;
 
           const pp        = getPlanForPeriod(obj.id);
           const fraction  = todayPlanFraction > 0 ? todayPlanFraction : 1;
@@ -2226,12 +2223,12 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   approved.forEach((r) => {
     tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel;
     tot.overDrill += (r.rigs||[]).reduce((s,rig)=>s+(toNum(rig.overDrill)||0),0);
-    tot.calHrs   += toNum(r.shiftDurationHours||r.shift_duration_hrs||11)*(r.rigs?.length||1);
+    tot.calHrs   += toNum(r.shiftDurationHours||r.shift_duration_hrs||11)*objRigs.length;
     const evs = r.downtime_events||r.rigEntries?.flatMap(e=>e.downtimes||[])||[];
     tot.techDH += techDowntimeHours(evs);
   });
-  const kv      = repsKtgKio(approved).ktg;
-  const kvKio   = repsKtgKio(approved).kio;
+  const kv    = tot.calHrs>0 ? Math.min(100,Math.round((tot.calHrs-tot.techDH)/tot.calHrs*100)) : null;
+  const kvKio = tot.calHrs>0 ? Math.min(100,Math.round(tot.wh/tot.calHrs*100)) : null;
   const orgDH   = Math.round(Math.max(0, tot.dh - tot.techDH));
   const fuelPerDf = tot.df>0 ? (tot.fuel/tot.df).toFixed(2) : null;
   const fuelPerM3 = tot.bf>0 ? (tot.fuel/tot.bf).toFixed(2) : null;
@@ -2327,13 +2324,18 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
           </thead>
           <tbody>
             {objRigs.map((rg, idx) => {
-              const df2  = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.df||0),0);
-              const wh2  = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.wh||0),0);
-              const dh2  = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.dh||0),0);
-              const f2   = approved.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.fuel||0),0);
-              const od2  = approved.reduce((s,r)=>s+(toNum(r.rigs?.find(x=>x.id===rg.id)?.overDrill)||0),0);
-              const rl   = approved.filter(r=>r.rigs?.find(x=>x.id===rg.id));
-              const ktg2 = repsKtgKio(rl).ktg;
+              const findRig = (r) => r.rigs?.find(x=>x.id===rg.id || x.n===rg.n);
+              const df2  = approved.reduce((s,r)=>s+(findRig(r)?.df||0),0);
+              const wh2  = approved.reduce((s,r)=>s+(findRig(r)?.wh||0),0);
+              const dh2  = approved.reduce((s,r)=>s+(findRig(r)?.dh||0),0);
+              const f2   = approved.reduce((s,r)=>s+(findRig(r)?.fuel||0),0);
+              const od2  = approved.reduce((s,r)=>s+(toNum(findRig(r)?.overDrill)||0),0);
+              const rl   = approved.filter(r=>!!findRig(r));
+              const ktg2 = rl.length>0 ? (() => {
+                const _cal = rl.reduce((s,r)=>s+toNum(r.shiftDurationHours||11),0);
+                const _wh  = rl.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id||x.n===rg.n)?.wh||0),0);
+                return _cal>0 ? Math.min(100,Math.round(_wh/_cal*100)) : null;
+              })() : null;
               const dfPct2 = obj.dp>0 ? Math.round(df2/(obj.dp/objRigs.length)*100) : null;
               const isLast = idx===objRigs.length-1;
               const Td = ({ children, align="right", col }) => (
@@ -2386,8 +2388,8 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
   const ac      = colors[objs.findIndex((o) => o.id === objId) % colors.length];
   const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
   const rigReps  = approved
-    .filter((r) => r.rigs?.find((x) => x.id === rigId))
-    .map((r) => ({ rep: r, rd: r.rigs.find((x) => x.id === rigId) }))
+    .filter((r) => r.rigs?.find((x) => x.id === rigId || x.n === rg?.n))
+    .map((r) => ({ rep: r, rd: r.rigs.find((x) => x.id === rigId || x.n === rg?.n) }))
     .sort((a, b) => a.rep.date > b.rep.date ? -1 : 1);
 
   const tot = {
@@ -2398,7 +2400,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
     overDrill: rigReps.reduce((s, { rd }) => s + (toNum(rd.overDrill)||0), 0),
   };
   const fuelPerDf = tot.df > 0 && tot.fuel > 0 ? (tot.fuel / tot.df).toFixed(2) : null;
-  const { ktg: rigKtg, kio: rigKio } = repsKtgKio(rigReps.map(x=>x.rep).filter(r=>r.rigs?.find(x=>x.id===rigId)));
+  const { ktg: rigKtg, kio: rigKio } = repsKtgKio(rigReps.map(x=>x.rep).filter(r=>r.rigs?.find(x=>x.id===rigId||x.n===rg?.n)));
 
   const ktgColor = (k) => k===null ? T.txt2 : k>=85 ? T.green : k>=70 ? T.amber : "#ef4444";
   const ktgBg    = (k) => k===null ? "transparent" : k>=85 ? `${T.green}18` : k>=70 ? `${T.amber}18` : "rgba(239,68,68,0.12)";
@@ -8145,7 +8147,7 @@ function ForemanDash({ user, objs, rigs, reps, plans, T }) {
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))", gap:8 }}>
                 {drillRigs.map(rg => {
-                  const rgApp  = approved.filter(r=>r.rigs?.find(x=>x.id===rg.id));
+                  const rgApp  = approved.filter(r=>r.rigs?.find(x=>x.id===rg.id||x.n===rg?.n));
                   const rgDf   = rgApp.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.df||0),0);
                   const rgWh   = rgApp.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.wh||0),0);
                   const rgDh   = rgApp.reduce((s,r)=>s+(r.rigs?.find(x=>x.id===rg.id)?.dh||0),0);
