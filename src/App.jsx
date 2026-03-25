@@ -2393,17 +2393,30 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
     .sort((a, b) => a.rep.date > b.rep.date ? -1 : 1);
 
   const tot = {
-    df:   rigReps.reduce((s, { rd }) => s + rd.df,   0),
-    wh:   rigReps.reduce((s, { rd }) => s + rd.wh,   0),
-    dh:   rigReps.reduce((s, { rd }) => s + rd.dh,   0),
-    fuel: rigReps.reduce((s, { rd }) => s + rd.fuel, 0),
+    df:   rigReps.reduce((s, { rd }) => s + (toNum(rd.df)||0),   0),
+    wh:   rigReps.reduce((s, { rd }) => s + (toNum(rd.wh)||0),   0),
+    dh:   rigReps.reduce((s, { rd }) => s + (toNum(rd.dh)||0),   0),
+    fuel: rigReps.reduce((s, { rd }) => s + (toNum(rd.fuel)||0), 0),
     overDrill: rigReps.reduce((s, { rd }) => s + (toNum(rd.overDrill)||0), 0),
   };
   const fuelPerDf = tot.df > 0 && tot.fuel > 0 ? (tot.fuel / tot.df).toFixed(2) : null;
-  const { ktg: rigKtg, kio: rigKio } = repsKtgKio(rigReps.map(x=>x.rep).filter(r=>r.rigs?.find(x=>x.id===rigId||x.n===rg?.n)));
+
+  // КТГ / КИО по этому станку
+  const totalCal = rigReps.reduce((s, { rep }) => s + toNum(rep.shiftDurationHours || 11), 0);
+  const totalTechDH = rigReps.reduce((s, { rep }) => {
+    const evs = (rep.downtime_events || []).filter(e => !e.rigName || e.rigName === rg.n);
+    return s + evs.filter(e => (e.category||e.cat) === "technical")
+                  .reduce((ss, e) => ss + toNum(e.durationHours||e.hrs||0), 0);
+  }, 0);
+  const rigKtg = totalCal > 0 ? Math.min(100, Math.round((totalCal - totalTechDH) / totalCal * 100)) : null;
+  const rigKio = totalCal > 0 ? Math.min(100, Math.round(tot.wh / totalCal * 100)) : null;
 
   const ktgColor = (k) => k===null ? T.txt2 : k>=85 ? T.green : k>=70 ? T.amber : "#ef4444";
   const ktgBg    = (k) => k===null ? "transparent" : k>=85 ? `${T.green}18` : k>=70 ? `${T.amber}18` : "rgba(239,68,68,0.12)";
+  const kioColor = (k) => k===null ? T.txt2 : k>=75 ? T.green : k>=50 ? T.amber : "#ef4444";
+  const kioBg    = (k) => k===null ? "transparent" : k>=75 ? `${T.green}18` : k>=50 ? `${T.amber}18` : "rgba(239,68,68,0.12)";
+  const catColor = (cat) => cat==="technical" ? "#ef4444" : cat==="external" ? "#3b82f6" : T.amber;
+  const catLabel = (cat) => cat==="technical" ? "ТЕХ" : cat==="external" ? "ВНЕ" : "ОФР";
 
   return (
     <div>
@@ -2418,24 +2431,25 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
             <div style={{ fontSize:11, color:T.txt2, marginTop:2 }}>{obj.name} · {rigReps.length} смен</div>
           </div>
         </div>
-        <div>
-          {rigKtg !== null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, background:ktgBg(rigKtg), color:ktgColor(rigKtg), marginLeft:5 }}>КТГ {rigKtg}%</span>}
-          {rigKio !== null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, background: rigKio>=75?`${T.green}18`:rigKio>=50?`${T.amber}18`:"rgba(239,68,68,0.12)", color: rigKio>=75?T.green:rigKio>=50?T.amber:"#ef4444", marginLeft:5 }}>КИО {rigKio}%</span>}
+        <div style={{ display:"flex", gap:6 }}>
+          {rigKtg !== null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, background:ktgBg(rigKtg), color:ktgColor(rigKtg) }}>КТГ {rigKtg}%</span>}
+          {rigKio !== null && <span style={{ fontSize:11, fontWeight:600, padding:"3px 9px", borderRadius:5, background:kioBg(rigKio), color:kioColor(rigKio) }}>КИО {rigKio}%</span>}
         </div>
       </div>
 
       {/* Summary strip */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:1, background:T.border, border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden", marginBottom:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:1, background:T.border, border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden", marginBottom:14 }}>
         {[
           { label:"⛏ Бурение",  val:tot.df,   unit:"п.м.", color:T.red },
           { label:"⏱ Работа",   val:tot.wh,   unit:"ч",    color:T.blue },
-          { label:"⏸ Простои",  val:tot.dh,   unit:"ч",    color: tot.dh>0?T.amber:T.txt2 },
+          { label:"⏸ Простои",  val:tot.dh,   unit:"ч",    color:tot.dh>0?T.amber:T.txt2 },
           { label:"⛽ ГСМ",      val:tot.fuel, unit:"л",    color:T.violet },
-          { label:"⛽ л/п.м.",   val:fuelPerDf||"—", unit: fuelPerDf?"":"", color:T.txt0 },
+          { label:"⛽ л/п.м.",   val:fuelPerDf||"—", unit:fuelPerDf?"":"", color:T.txt0 },
+          { label:"📐 КТГ / КИО", val:(rigKtg!==null?`${rigKtg}%`:"—")+(rigKio!==null?` / ${rigKio}%`:""), unit:"", color:rigKtg!==null?ktgColor(rigKtg):T.txt2 },
         ].map(({ label, val, unit, color }) => (
           <div key={label} style={{ background:T.bg2, padding:"11px 14px" }}>
             <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em", marginBottom:5 }}>{label}</div>
-            <div style={{ fontSize:20, fontWeight:600, color, lineHeight:1 }}>
+            <div style={{ fontSize:typeof val==="number"&&val>9999?16:20, fontWeight:600, color, lineHeight:1 }}>
               {typeof val === "number" ? val.toLocaleString() : val}
             </div>
             {unit && <div style={{ fontSize:11, color:T.txt2, marginTop:4 }}>{unit}</div>}
@@ -2448,56 +2462,80 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
         Отчёты по сменам — {rigReps.length}
       </div>
       {rigReps.length === 0
-        ? <div style={{ padding:24, textAlign:"center", fontSize:12, color:T.txt2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:10 }}>Нет утверждённых отчётов</div>
+        ? <div style={{ padding:24, textAlign:"center", fontSize:12, color:T.txt2, background:T.bg2, border:`1px solid ${T.border}`, borderRadius:10 }}>Нет отчётов</div>
         : (
           <div style={{ border:`1px solid ${T.border}`, borderRadius:10, overflow:"hidden" }}>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
               <thead>
                 <tr style={{ background:T.bg3 }}>
-                  {["Дата / Смена","Оператор","Бурение","Работа, ч","Простой, ч","ГСМ, л","л/п.м.","Перебур","КТГ","Статус"].map((h,i) => (
-                    <th key={h} style={{ padding:"7px 10px", fontSize:10, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".05em", borderBottom:`1px solid ${T.border}`, textAlign:i<2?"left":"right", paddingLeft:i===0?14:10, whiteSpace:"nowrap" }}>{h}</th>
+                  {["Дата / Смена","Бурение","Работа, ч","Простои","ГСМ, л","л/п.м.","КТГ","КИО","Статус"].map((h,i) => (
+                    <th key={h} style={{ padding:"7px 10px", fontSize:10, fontWeight:600, color:T.txt2, textTransform:"uppercase", letterSpacing:".05em", borderBottom:`1px solid ${T.border}`, textAlign:i===0?"left":"right", whiteSpace:"nowrap", paddingLeft:i===0?14:10 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {rigReps.map(({ rep, rd }, idx) => {
-                  const shiftDur = toNum(rep.shiftDurationHours || 11);
-                  const rigKtg2  = shiftDur > 0 ? Math.min(100, Math.round((shiftDur - 0) / shiftDur * 100)) : null;
-                  const fpd2     = rd.df > 0 && rd.fuel > 0 ? (rd.fuel / rd.df).toFixed(2) : null;
-                  const isLast   = idx === rigReps.length - 1;
-                  const downNote = rd.dt && rd.dt !== "—" ? rd.dt : null;
+                  const shiftDur  = toNum(rep.shiftDurationHours || 11);
+                  const shiftEvs  = (rep.downtime_events||[]).filter(e=>!e.rigName||e.rigName===rg.n);
+                  const techDH2   = shiftEvs.filter(e=>(e.category||e.cat)==="technical")
+                                            .reduce((s,e)=>s+toNum(e.durationHours||e.hrs||0),0);
+                  const allDH2    = toNum(rd.dh) || 0;
+                  const shiftKtg2 = shiftDur>0 ? Math.min(100, Math.round((shiftDur-techDH2)/shiftDur*100)) : null;
+                  const shiftKio2 = shiftDur>0 ? Math.min(100, Math.round(toNum(rd.wh)/shiftDur*100)) : null;
+                  const fpd2      = rd.df>0&&rd.fuel>0 ? (rd.fuel/rd.df).toFixed(2) : null;
+                  const isLast    = idx===rigReps.length-1;
+                  // All downtime: events if available, else rd.dh+rd.dt
+                  const hasEvents = shiftEvs.length > 0;
+                  const downNote  = rd.dt && rd.dt !== "—" ? rd.dt : null;
+                  // Row bg tint for full-downtime shifts
+                  const rowTint   = allDH2 >= shiftDur && rd.df === 0
+                    ? (techDH2 > 0 ? "rgba(239,68,68,0.04)" : "rgba(245,158,11,0.04)")
+                    : "";
+
                   return (
-                    <tr key={rep.id} style={{ borderBottom: isLast ? "none" : `1px solid ${T.border}` }}
-                      onMouseEnter={e => e.currentTarget.querySelectorAll("td").forEach(td => td.style.background=T.bg3)}
-                      onMouseLeave={e => e.currentTarget.querySelectorAll("td").forEach(td => td.style.background="")}>
+                    <tr key={rep.id} style={{ borderBottom:isLast?"none":`1px solid ${T.border}`, background:rowTint }}
+                      onMouseEnter={e=>e.currentTarget.querySelectorAll("td").forEach(td=>td.style.background=T.bg3)}
+                      onMouseLeave={e=>e.currentTarget.querySelectorAll("td").forEach(td=>td.style.background=rowTint)}>
                       <td style={{ padding:"9px 14px" }}>
                         <div style={{ fontSize:13, fontWeight:500, color:T.txt0 }}>{rep.date}</div>
                         <div style={{ fontSize:10, color:T.txt2, marginTop:1 }}>{rep.sh==="day"?"☀ Дневная":"☾ Ночная"}</div>
                       </td>
-                      <td style={{ padding:"9px 10px", fontSize:11, color:T.txt2 }}>
-                        {rd.operator || rep.by || "—"}
-                      </td>
                       <td style={{ padding:"9px 10px", textAlign:"right" }}>
-                        <span style={{ fontWeight:500 }}>{rd.df?.toLocaleString()||"—"}</span>
-                        <span style={{ fontSize:10, color:T.txt2, marginLeft:2 }}>п.м.</span>
+                        {rd.df>0 ? <><span style={{ fontWeight:500 }}>{rd.df.toLocaleString()}</span><span style={{ fontSize:10, color:T.txt2, marginLeft:2 }}>п.м.</span></> : <span style={{color:T.txt2}}>0 п.м.</span>}
                       </td>
-                      <td style={{ padding:"9px 10px", textAlign:"right" }}>{rd.wh||"—"}</td>
-                      <td style={{ padding:"9px 10px", textAlign:"right" }}>
-                        {rd.dh > 0
-                          ? <span>
-                              <span style={{ color:T.amber, fontWeight:500 }}>{rd.dh}</span>
-                              {downNote && <div style={{ fontSize:10, color:T.txt2, marginTop:1, maxWidth:100, textAlign:"right" }}>{downNote}</div>}
-                            </span>
-                          : "—"}
+                      <td style={{ padding:"9px 10px", textAlign:"right", color:toNum(rd.wh)>0?T.txt0:T.txt2 }}>
+                        {toNum(rd.wh)>0 ? rd.wh : <span style={{color:T.txt2}}>0</span>}
+                      </td>
+                      <td style={{ padding:"9px 10px", textAlign:"right", maxWidth:180 }}>
+                        {allDH2>0 ? (
+                          <div>
+                            {hasEvents ? shiftEvs.map((e,ei) => (
+                              <div key={ei} style={{ display:"flex", alignItems:"baseline", gap:4, justifyContent:"flex-end", marginBottom:ei<shiftEvs.length-1?3:0 }}>
+                                <span style={{ fontSize:10, fontWeight:700, padding:"1px 4px", borderRadius:3, background:`${catColor(e.category||e.cat)}22`, color:catColor(e.category||e.cat) }}>
+                                  {catLabel(e.category||e.cat)}
+                                </span>
+                                <span style={{ color:catColor(e.category||e.cat), fontWeight:600 }}>{toNum(e.durationHours||e.hrs||0)}ч</span>
+                                {(e.sub||e.reason) && <div style={{ fontSize:10, color:T.txt2, marginTop:1, textAlign:"right" }}>{e.sub||e.reason}</div>}
+                              </div>
+                            )) : (
+                              <div style={{ display:"flex", alignItems:"baseline", gap:4, justifyContent:"flex-end" }}>
+                                <span style={{ color:T.amber, fontWeight:600 }}>{allDH2}ч</span>
+                                {downNote && <div style={{ fontSize:10, color:T.txt2, marginTop:1 }}>{downNote}</div>}
+                              </div>
+                            )}
+                          </div>
+                        ) : "—"}
                       </td>
                       <td style={{ padding:"9px 10px", textAlign:"right" }}>{rd.fuel>0?rd.fuel.toLocaleString():"—"}</td>
                       <td style={{ padding:"9px 10px", textAlign:"right" }}>{fpd2||"—"}</td>
-                      <td style={{ padding:"9px 10px", textAlign:"right", color: rd.overDrill>0?T.cyan:T.txt2, fontWeight: rd.overDrill>0?500:400 }}>
-                        {rd.overDrill>0?`${rd.overDrill} м`:"—"}
+                      <td style={{ padding:"9px 10px", textAlign:"right" }}>
+                        {shiftKtg2!==null
+                          ? <span style={{ fontSize:11, fontWeight:600, padding:"2px 7px", borderRadius:4, background:ktgBg(shiftKtg2), color:ktgColor(shiftKtg2) }}>{shiftKtg2}%</span>
+                          : "—"}
                       </td>
                       <td style={{ padding:"9px 10px", textAlign:"right" }}>
-                        {rigKtg2 !== null
-                          ? <span style={{ fontSize:10, fontWeight:600, padding:"2px 6px", borderRadius:4, background:ktgBg(rigKtg2), color:ktgColor(rigKtg2) }}>{rigKtg2}%</span>
+                        {shiftKio2!==null
+                          ? <span style={{ fontSize:11, fontWeight:600, padding:"2px 7px", borderRadius:4, background:kioBg(shiftKio2), color:kioColor(shiftKio2) }}>{shiftKio2}%</span>
                           : "—"}
                       </td>
                       <td style={{ padding:"9px 10px", textAlign:"right" }}>
@@ -2509,17 +2547,16 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
                 {/* Totals */}
                 <tr style={{ background:T.bg3, borderTop:`1px solid ${T.border}` }}>
                   <td style={{ padding:"8px 14px", fontSize:11, fontWeight:600, color:T.txt2 }}>Итого</td>
-                  <td style={{ padding:"8px 10px" }}>—</td>
-                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.df.toLocaleString()} <span style={{ fontSize:10, color:T.txt2, fontWeight:400 }}>п.м.</span></td>
-                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.wh||"—"}</td>
-                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600, color:tot.dh>0?T.amber:T.txt0 }}>{tot.dh>0?tot.dh:"—"}</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.df.toLocaleString()} <span style={{ fontSize:10, fontWeight:400, color:T.txt2 }}>п.м.</span></td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.wh}</td>
+                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600, color:tot.dh>0?T.amber:T.txt0 }}>{tot.dh>0?`${tot.dh} ч`:"—"}</td>
                   <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{tot.fuel>0?tot.fuel.toLocaleString():"—"}</td>
                   <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600 }}>{fuelPerDf||"—"}</td>
-                  <td style={{ padding:"8px 10px", textAlign:"right", fontWeight:600, color:tot.overDrill>0?T.cyan:T.txt0 }}>{tot.overDrill>0?`${tot.overDrill.toLocaleString()} м`:"—"}</td>
                   <td style={{ padding:"8px 10px", textAlign:"right" }}>
-                    {rigKtg !== null
-                      ? <span style={{ fontSize:10, fontWeight:600, padding:"2px 6px", borderRadius:4, background:ktgBg(rigKtg), color:ktgColor(rigKtg) }}>{rigKtg}%</span>
-                      : "—"}
+                    {rigKtg!==null ? <span style={{ fontSize:11, fontWeight:600, padding:"2px 7px", borderRadius:4, background:ktgBg(rigKtg), color:ktgColor(rigKtg) }}>{rigKtg}%</span> : "—"}
+                  </td>
+                  <td style={{ padding:"8px 10px", textAlign:"right" }}>
+                    {rigKio!==null ? <span style={{ fontSize:11, fontWeight:600, padding:"2px 7px", borderRadius:4, background:kioBg(rigKio), color:kioColor(rigKio) }}>{rigKio}%</span> : "—"}
                   </td>
                   <td style={{ padding:"8px 10px" }}>—</td>
                 </tr>
@@ -2531,49 +2568,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SHIFT REPORT 2.0  —  ForemanForm (полная замена, обратная совместимость)
-// Новая модель: rigEntries[] с downtimes[] per станок + валидация
-// ═══════════════════════════════════════════════════════════════════════════════
 
-// ── Справочник простоев 2.0 ──────────────────────────────────────────────────
-const SR_DOWNTIME_CFG = {
-  technical: {
-    label: "⚙ Техническая", color: "#ef4444",
-    reasons: [
-      { key: "repair",        label: "Ремонт" },
-      { key: "maintenance",   label: "Плановое ТО" },
-      { key: "waiting_parts", label: "Ожидание запчастей" },
-      { key: "hydraulics",    label: "Гидросистема" },
-      { key: "engine",        label: "Двигатель" },
-      { key: "electrics",     label: "Электрика" },
-      { key: "other_tech",    label: "Прочее техническое" },
-    ],
-  },
-  organizational: {
-    label: "⏳ Организационная", color: "#f59e0b",
-    reasons: [
-      { key: "no_work_front",  label: "Нет фронта работ" },
-      { key: "shift_change",   label: "Пересменка" },
-      { key: "no_operator",    label: "Нет оператора" },
-      { key: "no_explosives",  label: "Нет ВВ / СВ" },
-      { key: "surveyor_wait",  label: "Ожидание маркшейдера" },
-      { key: "other_org",      label: "Прочее организационное" },
-    ],
-  },
-  external: {
-    label: "🌩 Внешняя", color: "#3b82f6",
-    reasons: [
-      { key: "weather",       label: "Погодные условия" },
-      { key: "blast_zone",    label: "Зона отчуждения (взрыв)" },
-      { key: "road_blocked",  label: "Дорога заблокирована" },
-      { key: "power_outage",  label: "Отключение электроэнергии" },
-      { key: "other_ext",     label: "Прочее внешнее" },
-    ],
-  },
-};
-
-// ── Utility functions ─────────────────────────────────────────────────────────
 function getDowntimeTotal(downtimes) {
   return (downtimes || []).reduce((s, d) => s + toNum(d.durationHours), 0);
 }
