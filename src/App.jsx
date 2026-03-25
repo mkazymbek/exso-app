@@ -2219,11 +2219,12 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   if (!obj) return null;
   const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
 
+  const objRigs = rigs.filter((rg)=>rg.o===objId);
   const tot = { df:0, bf:0, wh:0, dh:0, fuel:0, overDrill:0, calHrs:0, techDH:0 };
   approved.forEach((r) => {
     tot.df+=r.df; tot.bf+=(r.bf||0); tot.wh+=r.wh; tot.dh+=r.dh; tot.fuel+=r.fuel;
     tot.overDrill += (r.rigs||[]).reduce((s,rig)=>s+(toNum(rig.overDrill)||0),0);
-    tot.calHrs   += toNum(r.shiftDurationHours||r.shift_duration_hrs||11)*objRigs.length;
+    tot.calHrs   += toNum(r.shiftDurationHours||r.shift_duration_hrs||11)*(objRigs.length||r.rigs?.length||1);
     const evs = r.downtime_events||r.rigEntries?.flatMap(e=>e.downtimes||[])||[];
     tot.techDH += techDowntimeHours(evs);
   });
@@ -2234,7 +2235,6 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   const fuelPerM3 = tot.bf>0 ? (tot.fuel/tot.bf).toFixed(2) : null;
   const colors  = OBJ_COLORS(T);
   const ac      = colors[objs.findIndex((o)=>o.id===objId) % colors.length];
-  const objRigs = rigs.filter((rg)=>rg.o===objId);
 
   const pctColor = (p) => p===null?T.txt2:p>=100?T.green:p>=80?T.amber:"#ef4444";
   const pctBg    = (p) => p===null?"transparent":p>=100?`${T.green}18`:p>=80?`${T.amber}18`:"rgba(239,68,68,0.12)";
