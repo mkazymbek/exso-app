@@ -2059,17 +2059,6 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
   }, [reps, rangeStart, rangeEnd, anchor, mode]);
 
   // ── BVR паспорта за период ─────────────────────────────────────────────────
-  // БВР из сменных отчётов (blast_vol, blast_holes, fuel_kg)
-  const blastReps = filteredReps.filter(r => r.blast_vol > 0 || r.fuel_kg_bvr > 0);
-  const blastTotals = blastReps.reduce((t, r) => ({
-    count:   t.count   + (r.blast_vol > 0 ? 1 : 0),
-    holes:   t.holes   + (r.blast_holes || 0),
-    vol:     t.vol     + (r.blast_vol   || 0),
-    vv_kg:   t.vv_kg   + (r.fuel_kg_bvr || 0),
-  }), { count:0, holes:0, vol:0, vv_kg:0 });
-  const blastSpecConsumption = blastTotals.vol > 0
-    ? Math.round(blastTotals.vv_kg / blastTotals.vol * 1000) / 1000
-    : null;
 
   // ── Compute plan for the period ──────────────────────────────────────────
   // Для текущего месяца — используем monthTotal × completedDays/daysInMonth (точная пропорция)
@@ -2317,21 +2306,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
                 {fullBf > 0 && <span style={{ fontSize:11, color:T.txt2 }}>месяц: <b style={{ color:T.txt0 }}>{fullBf.toLocaleString()}</b></span>}
               </div>
             </Cell>
-            {/* БВР паспорта */}
-            {blastTotals.count > 0 && (
-              <Cell label="💣 БВР">
-                <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:4 }}>
-                  <span style={{ fontSize:26, fontWeight:600, color:T.txt0 }}>{blastTotals.count}</span>
-                  <span style={{ fontSize:13, color:T.txt2 }}>взрывов</span>
-                  <span style={{ fontSize:13, color:T.amber, marginLeft:4 }}>{(blastTotals.vv_kg/1000).toFixed(1)} т ВВ</span>
-                </div>
-                <div style={{ display:"flex", gap:12, marginTop:4, flexWrap:"wrap" }}>
-                  <span style={{ fontSize:11, color:T.txt2 }}>скважин: <b style={{color:T.txt0}}>{blastTotals.holes.toLocaleString()}</b></span>
-                  <span style={{ fontSize:11, color:T.txt2 }}>объём: <b style={{color:T.txt0}}>{blastTotals.vol.toLocaleString()} м³</b></span>
-                  {blastSpecConsumption && <span style={{ fontSize:11, color:T.txt2 }}>уд.: <b style={{color:T.amber}}>{blastSpecConsumption} кг/м³</b></span>}
-                </div>
-              </Cell>
-            )}
+
             {/* КТГ / КИО */}
             <Cell label="⚙ КТГ / КИО">
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
@@ -2366,11 +2341,6 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
           const rr        = filteredReps.filter((r) => r.oid === obj.id);
           const df        = rr.reduce((s,r)=>s+r.df, 0);
           const bf        = rr.reduce((s,r)=>s+r.bf, 0);
-          const objBlastReps = blastReps.filter(r => r.oid === obj.id);
-          const blastCount = objBlastReps.filter(r=>r.blast_vol>0).length;
-          const blastVV   = objBlastReps.reduce((s,r)=>s+(r.fuel_kg_bvr||0),0);
-          const blastVol  = objBlastReps.reduce((s,r)=>s+(r.blast_vol||0),0);
-          const blastSpec = blastVol > 0 ? Math.round(blastVV/blastVol*1000)/1000 : null;
           const wh        = rr.reduce((s,r)=>s+r.wh, 0);
           const dh        = rr.reduce((s,r)=>s+r.dh, 0);
           const fuel      = rr.reduce((s,r)=>s+r.fuel, 0);
@@ -2451,9 +2421,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
                   { label:"Перебур", val: overDrill>0?`${overDrill.toLocaleString()} м`:"—" },
                   { label:"Тех. прост.", val: techDH>0?`${Math.round(techDH)} ч`:"—", col: techDH>0?"#ef4444":null },
                   { label:"ОФР", val: orgDH>0?`${orgDH} ч`:"—", col: orgDH>0?T.amber:null },
-                  blastCount > 0 ? { label:"БВР взрывов", val:String(blastCount), sub: blastVol > 0 ? `${blastVol.toLocaleString()} м³` : null, col: T.amber } : null,
-                  blastVV > 0 ? { label:"ВВ расход", val:`${(blastVV/1000).toFixed(1)} т`, sub: blastSpec ? `${blastSpec} кг/м³` : null, col: T.amber } : null,
-                ].filter(Boolean).map(({ label, val, sub, col }, idx2) => (
+                ].map(({ label, val, sub, col }, idx2) => (
                   <div key={idx2} style={{ flex:1, padding:"8px 14px", borderRight: idx2<3?`1px solid ${T.border}`:"none" }}>
                     <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".04em", marginBottom:3 }}>{label}</div>
                     <div style={{ fontSize:13, fontWeight:600, color:col||T.txt0 }}>{val}</div>
@@ -3196,10 +3164,6 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
   const [shiftDur,  setShiftDur]  = useState(11);
   const [bf,        setBf]        = useState("");
   const [fuelKg,    setFuelKg]    = useState("");
-  const [blastBlock, setBlastBlock] = useState("");   // № блока
-  const [blastRock,  setBlastRock]  = useState("");   // порода
-  const [blastHoles, setBlastHoles] = useState("");   // кол-во скважин
-  const [blastVol,   setBlastVol]   = useState("");   // объём взрыва м³ (факт)
   const [comment,   setComment]   = useState("");
   const [entries,   setEntries]   = useState(initEntries);
   const [dtEditor,  setDtEditor]  = useState(null);  // rigId открытого редактора
@@ -3268,10 +3232,6 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
     techDH:    entries.reduce((s,e) => s + (e.downtimes||[]).filter(d=>d.category==="technical").reduce((ss,d)=>ss+toNum(d.durationHours),0), 0),
     bf:        toNum(bf),
     fuelKg:    toNum(fuelKg),
-    blast_block: blastBlock.trim(),
-    blast_rock:  blastRock.trim(),
-    blast_holes: toNum(blastHoles),
-    blast_vol:   toNum(blastVol),
   };
   // КТГ и КИО для текущей смены
   const calHrsShift = entries.length * shiftDur; // кол-во станков × длительность смены
@@ -3314,10 +3274,6 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
       dh:      totals.dh,
       fuel:    totals.fuel,
       fuel_kg: totals.fuelKg,
-      blast_block: blastBlock.trim() || null,
-      blast_rock:  blastRock.trim()  || null,
-      blast_holes: toNum(blastHoles) || null,
-      blast_vol:   toNum(blastVol)   || null,
     fuel_kg_bvr: toNum(fuelKg) || null,
       rigs: entries.map(e => ({
         id:        e.rigId,
@@ -3469,62 +3425,13 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
             </div>
           );
         })()}
-        <div style={{ padding:"12px 18px", borderBottom:`1px solid ${T.border}`, background:`${T.amber}08` }}>
-          <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".04em", marginBottom:8 }}>
-            💥 Взрывные работы — данные по участку в целом
-            <span style={{ marginLeft:10, fontWeight:400, color:T.txt2, textTransform:"none", letterSpacing:"normal" }}>
-              · ВВ кг будет автоматически списано со склада Анфо
-            </span>
-          </div>
-          <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-end" }}>
-            {/* Row 1: Блок, Порода, Скважин */}
-            <div style={{ flex:"1 1 150px" }}>
-              <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>№ блока</label>
-              <input type="text" value={blastBlock} onChange={e=>setBlastBlock(e.target.value)}
-                placeholder="480_005"
-                style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.amber}80`, borderRadius:4, fontSize:13, color:T.txt0, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
-            </div>
-            <div style={{ flex:"1 1 130px" }}>
-              <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>Порода</label>
-              <select value={blastRock} onChange={e=>setBlastRock(e.target.value)}
-                style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.amber}80`, borderRadius:4, fontSize:13, color:T.txt0, outline:"none" }}>
-                <option value="">—</option>
-                <option value="порода">Порода</option>
-                <option value="руда">Руда</option>
-                <option value="руда/порода">Руда/порода</option>
-                <option value="подбурки">Подбурки</option>
-              </select>
-            </div>
-            <div style={{ flex:"1 1 100px" }}>
-              <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>Скважин</label>
-              <input type="text" inputMode="numeric" value={blastHoles} onChange={e=>setBlastHoles(e.target.value)}
-                placeholder="0"
-                style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.amber}80`, borderRadius:4, fontSize:14, fontWeight:700, color:T.amber, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
-            </div>
-            <div style={{ flex:"1 1 130px" }}>
-              <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>Объём взрыва м³</label>
-              <input type="text" inputMode="numeric" value={blastVol} onChange={e=>setBlastVol(e.target.value)}
-                placeholder="0"
-                style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.amber}80`, borderRadius:4, fontSize:14, fontWeight:700, color:T.amber, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
-            </div>
-            <div style={{ flex:"1 1 130px" }}>
-              <label style={{ display:"block", fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", marginBottom:5 }}>ВВ кг</label>
-              <input type="text" inputMode="numeric" value={fuelKg} onChange={e => setFuelKg(e.target.value)}
-                onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) setFuelKg(v); }}
-                placeholder="0"
-                style={{ width:"100%", padding:"8px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.cyan}80`, borderRadius:4, fontSize:14, fontWeight:700, color:T.cyan, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
-            </div>
-            {(toNum(blastVol) > 0 || toNum(fuelKg) > 0) && (
-              <div style={{ display:"flex", gap:10, flexWrap:"wrap", paddingBottom:2, alignItems:"center" }}>
-                {blastBlock && <span style={{ fontSize:12, color:T.txt2 }}>Блок: <b style={{ color:T.txt0 }}>{blastBlock}</b></span>}
-                {blastRock  && <span style={{ fontSize:12, color:T.txt2 }}>Порода: <b style={{ color:T.txt0 }}>{blastRock}</b></span>}
-                {toNum(blastHoles) > 0 && <span style={{ fontSize:12, color:T.txt2 }}>Скв.: <b style={{ color:T.amber }}>{toNum(blastHoles)}</b></span>}
-                {toNum(blastVol) > 0   && <span style={{ fontSize:12, color:T.txt2 }}>Объём: <b style={{ color:T.amber }}>{toNum(blastVol).toLocaleString()} м³</b></span>}
-                {toNum(fuelKg) > 0     && <span style={{ fontSize:12, color:T.txt2 }}>ВВ: <b style={{ color:T.cyan }}>{toNum(fuelKg).toLocaleString()} кг</b></span>}
-                {toNum(blastVol) > 0 && toNum(fuelKg) > 0 && <span style={{ fontSize:13, fontWeight:700, color:T.amber }}>↳ Уд.: {(toNum(fuelKg)/toNum(blastVol)).toFixed(3)} кг/м³</span>}
-              </div>
-            )}
-          </div>
+        <div style={{ padding:"10px 18px", borderBottom:`1px solid ${T.border}`, background:`${T.amber}08`, display:"flex", alignItems:"center", gap:14 }}>
+          <span style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".04em", whiteSpace:"nowrap" }}>💥 Взрывы м³</span>
+          <input type="text" inputMode="numeric" value={bf} onChange={e => setBf(e.target.value)}
+            onPaste={e => { e.preventDefault(); const v = e.clipboardData.getData("text").trim().replace(/[^0-9.]/g,""); if(v) setBf(v); }}
+            placeholder="0"
+            style={{ width:140, padding:"7px 12px", background:T.inputBg, border:`1px solid ${T.border}`, borderBottom:`2px solid ${T.amber}80`, borderRadius:4, fontSize:15, fontWeight:700, color:T.amber, fontFamily:"'JetBrains Mono',monospace", outline:"none" }} />
+          {toNum(bf) > 0 && <span style={{ fontSize:13, color:T.txt2 }}>= <b style={{ color:T.amber }}>{toNum(bf).toLocaleString()} м³</b></span>}
         </div>
 
         {/* Таблица станков 2.0 */}
@@ -3783,19 +3690,10 @@ function ForemanForm({ user, objs, rigs, reps=[], onSubmit, onUpdate=()=>{}, set
               </div>
 
               {/* Взрывные работы */}
-              {(toNum(blastVol)>0||toNum(fuelKg)>0) && (
-                <div style={{ padding:"10px 14px", background:`${T.amber}12`, border:`1px solid ${T.amber}30`, borderRadius:6, display:"flex", gap:14, flexWrap:"wrap", alignItems:"center" }}>
-                  <span style={{ fontSize:12, fontWeight:700, color:T.amber }}>💥 ВЗРЫВНЫЕ РАБОТЫ</span>
-                  {blastBlock && <span style={{ fontSize:12, color:T.txt1 }}>Блок: <b style={{ color:T.txt0 }}>{blastBlock}</b></span>}
-                  {blastRock  && <span style={{ fontSize:12, color:T.txt1 }}>Порода: <b style={{ color:T.txt0 }}>{blastRock}</b></span>}
-                  {toNum(blastHoles)>0 && <span style={{ fontSize:12, color:T.txt1 }}>Скв.: <b style={{ color:T.amber }}>{toNum(blastHoles)}</b></span>}
-                  {toNum(blastVol)>0   && <span style={{ fontSize:12, color:T.txt1 }}>Объём: <b style={{ color:T.amber }}>{toNum(blastVol).toLocaleString()} м³</b></span>}
-                  {toNum(fuelKg)>0     && <span style={{ fontSize:12, color:T.txt1 }}>ВВ: <b style={{ color:T.cyan }}>{toNum(fuelKg).toLocaleString()} кг</b></span>}
-                  {toNum(blastVol)>0 && toNum(fuelKg)>0 && (
-                    <span style={{ fontSize:13, fontWeight:700, color:T.amber }}>
-                      Уд.: {(toNum(fuelKg)/toNum(blastVol)).toFixed(3)} кг/м³
-                    </span>
-                  )}
+              {toNum(bf)>0 && (
+                <div style={{ padding:"8px 14px", background:`${T.amber}12`, border:`1px solid ${T.amber}30`, borderRadius:6, display:"flex", gap:8, alignItems:"center" }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:T.amber }}>💥 Взрывы:</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:T.amber }}>{toNum(bf).toLocaleString()} м³</span>
                 </div>
               )}
 
