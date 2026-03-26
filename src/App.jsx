@@ -3961,13 +3961,7 @@ class InboxErrorBoundary extends React.Component {
           <div style={{ fontSize:13, color:"#111", background:"#fff",
             padding:14, borderRadius:6, whiteSpace:"pre-wrap",
             border:"1px solid #fca5a5", maxHeight:400, overflowY:"auto" }}>
-            {msg}{'
-
-=== STACK ===
-'}{stack}{'
-
-=== COMPONENT ===
-'}{comp}
+            {msg}{'\n\n=== STACK ===\n'}{stack}{'\n\n=== COMPONENT ===\n'}{comp}
           </div>
           <button onClick={() => this.setState({ error:null, info:null })}
             style={{ marginTop:14, padding:"10px 20px", borderRadius:5,
