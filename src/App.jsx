@@ -3954,11 +3954,7 @@ class InboxErrorBoundary extends React.Component {
           </div>
           <div style={{ fontSize: 12, color: "#374151", fontFamily: "monospace",
             whiteSpace: "pre-wrap", background: "#fff", padding: 12, borderRadius: 4 }}>
-            {this.state.error.message}
-            {"
-"}{this.state.error.stack?.split("
-").slice(0,5).join("
-")}
+            {this.state.error.message}{'\n'}{(this.state.error.stack||'').split('\n').slice(0,5).join('\n')}
           </div>
           <button onClick={() => this.setState({ error: null })}
             style={{ marginTop: 12, padding: "8px 16px", borderRadius: 5, border: "none",
