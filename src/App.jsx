@@ -1918,11 +1918,13 @@ function repDateToIso(dateStr, anchorYear) {
   return dateStr;
 }
 
-function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], invTxns=[], passports={}, onDrillObj, T }) {
+function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], invTxns=[], passports={}, onDrillObj, initialAnchor, onAnchorChange, T }) {
 
   // ── Period state ──────────────────────────────────────────────────────────
   const [mode, setMode] = useState("month");    // month-only Dashboard
-  const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
+  const [anchor, setAnchor] = useState(() => initialAnchor || new Date().toISOString().slice(0, 7) + "-01");
+  // Sync anchor up to parent when it changes
+  const _setAnchor = (v) => { setAnchor(v); onAnchorChange?.(v); };
 
   function fmtD(iso) {
     if (!iso) return "—";
@@ -1981,7 +1983,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
     if (mode === "day")   d.setDate(d.getDate() + dir);
     if (mode === "week")  d.setDate(d.getDate() + dir * 7);
     if (mode === "month") d.setMonth(d.getMonth() + dir);
-    setAnchor(d.toISOString().slice(0, 10));
+    _setAnchor(d.toISOString().slice(0, 10));
   }
 
   // ── Filter reps by date range ─────────────────────────────────────────────
@@ -2191,7 +2193,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
           <button onClick={() => shift(-1)} style={{ width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center", background:T.bg3, border:`1px solid ${T.border}`, borderRadius:6, cursor:"pointer", fontSize:14, color:T.txt1 }}>‹</button>
           <div style={{ padding:"0 18px", height:30, display:"flex", alignItems:"center", background:T.bg2, border:`1px solid ${T.border}`, borderRadius:6, fontSize:13, fontWeight:600, color:T.txt0, letterSpacing:".02em", minWidth:130, justifyContent:"center" }}>{label}</div>
           <button onClick={() => shift(1)}  style={{ width:30, height:30, display:"flex", alignItems:"center", justifyContent:"center", background:T.bg3, border:`1px solid ${T.border}`, borderRadius:6, cursor:"pointer", fontSize:14, color:T.txt1 }}>›</button>
-          <input type="month" value={anchor.slice(0,7)} onChange={(e) => setAnchor(e.target.value + "-01")}
+          <input type="month" value={anchor.slice(0,7)} onChange={(e) => _setAnchor(e.target.value + "-01")}
             style={{ marginLeft:6, padding:"5px 8px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:6, color:T.txt0, fontSize:12, outline:"none", cursor:"pointer" }} />
         </div>
         <div style={{ fontSize:12, color:T.txt2 }}>
@@ -2483,10 +2485,26 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
     </div>
   );
 }
-function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
+function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, initialAnchor, onAnchorChange, T }) {
   const obj = objs.find((o) => o.id === objId);
   if (!obj) return null;
-  const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
+
+  // Month picker state — inherits from Dashboard
+  const MONTHS_RU = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
+  const [anchor, setAnchor] = useState(() => initialAnchor || new Date().toISOString().slice(0,7)+"-01");
+  const setAnchorSync = (v) => { setAnchor(v); onAnchorChange?.(v); };
+  function shiftMonth(dir) {
+    const d = new Date(anchor); d.setMonth(d.getMonth() + dir);
+    setAnchorSync(d.toISOString().slice(0,7) + "-01");
+  }
+  const ym     = anchor.slice(0,7);
+  const [y, m] = ym.split("-");
+  const monthLabel = MONTHS_RU[parseInt(m,10)-1] + " " + y;
+  const monthStart = ym + "-01";
+  const monthEnd   = new Date(parseInt(y), parseInt(m), 0).toISOString().slice(0,10);
+
+  const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId
+    && r.date >= monthStart && r.date <= monthEnd);
 
   const objRigs = rigs.filter((rg)=>rg.o===objId);
   const tot = { df:0, bf:0, wh:0, dh:0, fuel:0, overDrill:0, calHrs:0, techDH:0 };
@@ -2524,6 +2542,16 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   return (
     <div>
       <Breadcrumb items={[{ label:"DASHBOARD", onClick:onBack }, { label:obj.name.toUpperCase() }]} T={T} />
+
+      {/* Month picker */}
+      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:14 }}>
+        <button onClick={()=>shiftMonth(-1)} style={{ width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,color:T.txt1,cursor:"pointer",fontSize:14 }}>‹</button>
+        <div style={{ padding:"0 14px",height:28,display:"flex",alignItems:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,fontSize:13,fontWeight:600,color:T.txt0,minWidth:100,justifyContent:"center" }}>{monthLabel}</div>
+        <button onClick={()=>shiftMonth(1)}  style={{ width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,color:T.txt1,cursor:"pointer",fontSize:14 }}>›</button>
+        <input type="month" value={ym} onChange={(e)=>setAnchorSync(e.target.value+"-01")}
+          style={{ marginLeft:4,padding:"4px 8px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:5,color:T.txt0,fontSize:12 }} />
+        <span style={{ fontSize:12,color:T.txt2,marginLeft:4 }}>{approved.length} отчётов</span>
+      </div>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
@@ -2648,14 +2676,28 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, T }) {
   );
 }
 
-function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
+function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, initialAnchor, onAnchorChange, T }) {
   const rg  = rigs.find((r) => r.id === rigId);
   const obj = objs.find((o) => o.id === objId);
   if (!rg || !obj) return null;
 
+  const MONTHS_RU = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
+  const [anchor, setAnchor] = useState(() => initialAnchor || new Date().toISOString().slice(0,7)+"-01");
+  const setAnchorSync = (v) => { setAnchor(v); onAnchorChange?.(v); };
+  function shiftMonth(dir) {
+    const d = new Date(anchor); d.setMonth(d.getMonth() + dir);
+    setAnchorSync(d.toISOString().slice(0,7) + "-01");
+  }
+  const ym     = anchor.slice(0,7);
+  const [y, m] = ym.split("-");
+  const monthLabel = MONTHS_RU[parseInt(m,10)-1] + " " + y;
+  const monthStart = ym + "-01";
+  const monthEnd   = new Date(parseInt(y), parseInt(m), 0).toISOString().slice(0,10);
+
   const colors  = OBJ_COLORS(T);
   const ac      = colors[objs.findIndex((o) => o.id === objId) % colors.length];
-  const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId);
+  const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId
+    && r.date >= monthStart && r.date <= monthEnd);
   const rigReps  = approved
     .filter((r) => r.rigs?.find((x) => x.id === rigId || x.n === rg?.n))
     .map((r) => ({ rep: r, rd: r.rigs.find((x) => x.id === rigId || x.n === rg?.n) }))
@@ -2690,6 +2732,16 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, T }) {
   return (
     <div>
       <Breadcrumb items={[{ label:"DASHBOARD", onClick:onBack }, { label:obj.name.toUpperCase(), onClick:onBackToObj }, { label:rg.n }]} T={T} />
+
+      {/* Month picker */}
+      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:14 }}>
+        <button onClick={()=>shiftMonth(-1)} style={{ width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,color:T.txt1,cursor:"pointer",fontSize:14 }}>‹</button>
+        <div style={{ padding:"0 14px",height:28,display:"flex",alignItems:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,fontSize:13,fontWeight:600,color:T.txt0,minWidth:100,justifyContent:"center" }}>{monthLabel}</div>
+        <button onClick={()=>shiftMonth(1)}  style={{ width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",background:T.bg2,border:`1px solid ${T.border}`,borderRadius:5,color:T.txt1,cursor:"pointer",fontSize:14 }}>›</button>
+        <input type="month" value={ym} onChange={(e)=>setAnchorSync(e.target.value+"-01")}
+          style={{ marginLeft:4,padding:"4px 8px",background:T.inputBg,border:`1px solid ${T.border}`,borderRadius:5,color:T.txt0,fontSize:12 }} />
+        <span style={{ fontSize:12,color:T.txt2,marginLeft:4 }}>{rigReps.length} смен</span>
+      </div>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14 }}>
@@ -11666,6 +11718,7 @@ export default function App() {
   const [user,    setUser]    = useState(null);
   const [subPage, setSubPage] = useState("dash");
   const [view,    setView]    = useState({ type: "dash" }); // type: dash | obj | rig
+  const [dashAnchor, setDashAnchor] = useState(() => new Date().toISOString().slice(0, 7) + "-01");
 
   const [objs,       setObjs]       = useState(INIT_OBJS);
   const [rigs,       setRigs]       = useState(INIT_RIGS);
@@ -11904,6 +11957,8 @@ export default function App() {
       <RigDetail
         rigId={view.rigId} objId={view.objId}
         objs={objs} rigs={rigs} reps={reps}
+        initialAnchor={dashAnchor}
+        onAnchorChange={setDashAnchor}
         onBack={goDash}
         onBackToObj={() => setView({ type: "obj", objId: view.objId })}
         T={T}
@@ -11914,6 +11969,8 @@ export default function App() {
       <ObjDetail
         objId={view.objId}
         objs={objs} rigs={rigs} reps={reps}
+        initialAnchor={dashAnchor}
+        onAnchorChange={setDashAnchor}
         onDrillRig={(rigId) => setView({ type: "rig", rigId, objId: view.objId })}
         onBack={goDash}
         T={T}
@@ -11922,7 +11979,7 @@ export default function App() {
   } else if (subPage === "dash") {
     content = user.role === "foreman"
       ? <ForemanDash user={user} objs={vObjs} rigs={rigs} reps={vReps} plans={plans} T={T} />
-      : <Dashboard objs={objs} rigs={rigs} reps={reps} plans={plans} ktgPlans={ktgPlans} nodes={nodes} storageUnits={storageUnits} invTxns={invTxns} passports={passports} onDrillObj={(id) => setView({ type: "obj", objId: id })} T={T} />;
+      : <Dashboard objs={objs} rigs={rigs} reps={reps} plans={plans} ktgPlans={ktgPlans} nodes={nodes} storageUnits={storageUnits} invTxns={invTxns} passports={passports} onDrillObj={(id) => setView({ type: "obj", objId: id })} initialAnchor={dashAnchor} onAnchorChange={setDashAnchor} T={T} />;
   } else if (subPage === "enter") {
     content = <ForemanForm user={user} objs={vObjs} rigs={rigs} reps={vReps} onSubmit={handleSubmitReport} onUpdate={handleUpdateReport} setExplosives={setExplosives} downtimeLog={downtimeLog} setDowntimeLog={setDowntimeLog} T={T} />;
   } else if (subPage === "planning") {
