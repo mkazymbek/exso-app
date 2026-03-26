@@ -1529,7 +1529,7 @@ const TABLE_COLS = [
   { field: "fuel", label: "ГСМ л" },
 ];
 
-function DataTable({ rows, onCell, totals, T }) {
+function DataTable({ rows, onCell, totals, shiftKtg=null, shiftKio=null, T }) {
   const colors = [T.red, T.blue, "#ef4444", T.violet];
   return (
     <div style={{ overflowX: "auto" }}>
@@ -3941,25 +3941,39 @@ function ReportHistoryList({ reps, obj, rigs, onEdit=()=>{}, T }) {
 
 // ─── ENGINEER INBOX ───────────────────────────────────────────────────────────
 class InboxErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { error: null }; }
+  constructor(props) { super(props); this.state = { error: null, info: null }; }
   static getDerivedStateFromError(e) { return { error: e }; }
-  componentDidCatch(e, info) { console.error("EngineerInbox crash:", e, info); }
+  componentDidCatch(e, info) {
+    console.error("InboxErrorBoundary caught:", e, info);
+    this.setState({ info });
+  }
   render() {
     if (this.state.error) {
+      const msg   = this.state.error?.message || String(this.state.error);
+      const stack = this.state.error?.stack   || '';
+      const comp  = this.state.info?.componentStack || '';
       return (
-        <div style={{ padding: 32, background: "#fff0f0", border: "1px solid #f87171",
-          borderRadius: 8, margin: 16 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#b91c1c", marginBottom: 8 }}>
-            ⚠ Ошибка при загрузке входящих
+        <div style={{ padding:24, margin:16, background:"#fff0f0",
+          border:"2px solid #f87171", borderRadius:8, fontFamily:"monospace" }}>
+          <div style={{ fontSize:16, fontWeight:700, color:"#b91c1c", marginBottom:12 }}>
+            ⚠ Ошибка при загрузке входящих — скопируйте текст ниже
           </div>
-          <div style={{ fontSize: 12, color: "#374151", fontFamily: "monospace",
-            whiteSpace: "pre-wrap", background: "#fff", padding: 12, borderRadius: 4 }}>
-            {this.state.error.message}{'\n'}{(this.state.error.stack||'').split('\n').slice(0,5).join('\n')}
+          <div style={{ fontSize:13, color:"#111", background:"#fff",
+            padding:14, borderRadius:6, whiteSpace:"pre-wrap",
+            border:"1px solid #fca5a5", maxHeight:400, overflowY:"auto" }}>
+            {msg}{'
+
+=== STACK ===
+'}{stack}{'
+
+=== COMPONENT ===
+'}{comp}
           </div>
-          <button onClick={() => this.setState({ error: null })}
-            style={{ marginTop: 12, padding: "8px 16px", borderRadius: 5, border: "none",
-              background: "#b91c1c", color: "#fff", cursor: "pointer", fontSize: 13 }}>
-            Попробовать снова
+          <button onClick={() => this.setState({ error:null, info:null })}
+            style={{ marginTop:14, padding:"10px 20px", borderRadius:5,
+              background:"#b91c1c", color:"#fff", border:"none",
+              cursor:"pointer", fontSize:13, fontWeight:600 }}>
+            ↺ Попробовать снова
           </button>
         </div>
       );
