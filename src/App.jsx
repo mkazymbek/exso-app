@@ -2269,7 +2269,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
             </Cell>
             {/* БВР паспорта */}
             {blastTotals.count > 0 && (
-              <Cell label="💣 БВР паспорта">
+              <Cell label="💣 БВР">
                 <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:4 }}>
                   <span style={{ fontSize:26, fontWeight:600, color:T.txt0 }}>{blastTotals.count}</span>
                   <span style={{ fontSize:13, color:T.txt2 }}>взрывов</span>
@@ -10201,261 +10201,6 @@ function expCatalogLookup(name) {
   }
   return EXP_CATALOG[EXP_CATALOG.length - 1];
 }
-const INIT_BLAST_PASSPORTS = [];
-
-function BlastPassportPage({ passports_bvr, setPassportsBvr, objs, reps, T }) {
-  const [showForm, setShowForm]  = useState(false);
-  const [editing,  setEditing]   = useState(null);
-  const [filterObj, setFilterObj] = useState("all");
-
-  const filtered = passports_bvr.filter(p => filterObj === "all" || p.oid === Number(filterObj));
-
-  function save(data) {
-    if (editing) {
-      setPassportsBvr(prev => prev.map(p => p.id === editing.id ? { ...data, id: editing.id } : p));
-    } else {
-      setPassportsBvr(prev => [...prev, { ...data, id: genId() }]);
-    }
-    setShowForm(false); setEditing(null);
-  }
-
-  return (
-    <div>
-      {/* Header */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:20 }}>
-        <div>
-          <div style={{ fontSize:20, fontWeight:600, color:T.txt0 }}>Паспорта БВР</div>
-          <div style={{ fontSize:12, color:T.txt2, marginTop:2 }}>Буровзрывные работы · {passports_bvr.length} паспортов</div>
-        </div>
-        <button onClick={() => { setEditing(null); setShowForm(true); }}
-          style={{ padding:"9px 18px", borderRadius:6, border:"none", background:T.red, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-          + Новый паспорт
-        </button>
-      </div>
-
-      {/* Filter */}
-      <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
-        {[["all","Все участки"], ...objs.map(o=>[String(o.id),o.name])].map(([v,lbl]) => (
-          <button key={v} onClick={() => setFilterObj(v)}
-            style={{ padding:"5px 12px", borderRadius:4, border:`1px solid ${filterObj===v ? T.red : T.border}`,
-              background: filterObj===v ? `${T.red}12` : "transparent",
-              color: filterObj===v ? T.red : T.txt2, fontSize:12, fontWeight:600, cursor:"pointer" }}>
-            {lbl}
-          </button>
-        ))}
-      </div>
-
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div style={{ padding:40, textAlign:"center", color:T.txt2, fontSize:13 }}>
-          Паспортов нет. Создайте первый.
-        </div>
-      ) : (
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {filtered.map(p => {
-            const obj = objs.find(o => o.id === p.oid);
-            const eff = p.designed_vol > 0 ? Math.round(p.actual_vol / p.designed_vol * 100) : null;
-            const statusColors = { draft:"#6b7fa0", approved:T.green, executed:T.blue };
-            const statusLabels = { draft:"Черновик", approved:"Утверждён", executed:"Выполнен" };
-            return (
-              <div key={p.id} style={{ background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, overflow:"hidden" }}>
-                <div style={{ padding:"12px 18px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
-                  <div>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ fontSize:15, fontWeight:700, color:T.txt0, fontFamily:"'Inter',sans-serif" }}>
-                        {p.block_name || `Блок #${p.id}`}
-                      </div>
-                      <span style={{ padding:"2px 8px", borderRadius:3, background:`${statusColors[p.status]}18`, color:statusColors[p.status], fontSize:12, fontWeight:700, border:`1px solid ${statusColors[p.status]}40` }}>
-                        {statusLabels[p.status]}
-                      </span>
-                    </div>
-                    <div style={{ fontSize:12, color:T.txt2, marginTop:3 }}>
-                      {obj?.name} · {p.date} · Инж: {p.engineer}
-                    </div>
-                  </div>
-                  <div style={{ display:"flex", gap:6 }}>
-                    <button onClick={() => { setEditing(p); setShowForm(true); }}
-                      style={{ padding:"6px 14px", borderRadius:5, border:`1px solid ${T.border}`, background:T.bg3, color:T.txt1, fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                      Открыть
-                    </button>
-                    <button onClick={() => setPassportsBvr(prev => prev.filter(x => x.id !== p.id))}
-                      style={{ padding:"6px 10px", borderRadius:5, border:`1px solid ${T.border}`, background:"transparent", color:"#ef4444", fontSize:12, cursor:"pointer" }}>
-                      ×
-                    </button>
-                  </div>
-                </div>
-                {/* Stats row */}
-                <div style={{ padding:"8px 18px 12px", display:"flex", gap:20, flexWrap:"wrap", borderTop:`1px solid ${T.border}`, background:T.bg3 }}>
-                  {[
-                    ["Скважин", p.holes_count, "шт", T.blue],
-                    ["Глубина ср.", p.avg_depth, "м", T.txt1],
-                    ["Заряд", p.total_charge_kg?.toLocaleString(), "кг", T.amber],
-                    ["Объём проект.", p.designed_vol?.toLocaleString(), "м³", T.violet],
-                    ["Объём факт.", p.actual_vol > 0 ? p.actual_vol?.toLocaleString() : "—", p.actual_vol > 0 ? "м³" : "", T.green],
-                    eff !== null ? ["Эффективность", eff, "%", eff >= 90 ? T.green : eff >= 70 ? T.amber : "#ef4444"] : null,
-                    p.drilled_meters > 0 ? ["Обурено", p.drilled_meters?.toLocaleString(), "п/м", T.red] : null,
-                    p.spec_consumption > 0 ? ["Уд. расход", p.spec_consumption?.toFixed(3), "кг/м³", T.violet] : null,
-                  ].filter(Boolean).map(([lbl, val, unit, color]) => (
-                    <div key={lbl}>
-                      <div style={{ fontSize:12, color:T.txt2, textTransform:"uppercase", letterSpacing:".06em" }}>{lbl}</div>
-                      <div style={{ fontSize:16, fontWeight:700, color, fontFamily:"'Inter',sans-serif" }}>
-                        {val} <span style={{ fontSize:12, fontWeight:400, color:T.txt2 }}>{unit}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {p.vv_items && Object.keys(p.vv_items).length > 0 && (
-                  <div style={{ padding:"8px 18px 10px", borderTop:`1px solid ${T.border}` }}>
-                    <div style={{ fontSize:10, fontWeight:600, color:T.violet, textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>ВВ материалы</div>
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
-                      {Object.entries(p.vv_items).map(([mat,qty])=>(
-                        <span key={mat} style={{ fontSize:11, background:T.bg3, border:`1px solid ${T.border}`, borderRadius:4, padding:"2px 7px", color:T.txt1 }}>
-                          {mat.replace("SUPREMEDET-S ","").replace(" гр.","гр")}: <b style={{color:T.txt0}}>{qty.toLocaleString()}</b>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {showForm && (
-        <BlastPassportForm
-          initial={editing}
-          objs={objs}
-          onSave={save}
-          onClose={() => { setShowForm(false); setEditing(null); }}
-          T={T}
-        />
-      )}
-    </div>
-  );
-}
-
-function BlastPassportForm({ initial, objs, onSave, onClose, T }) {
-  const [oid,         setOid]        = useState(initial?.oid || objs[0]?.id || "");
-  const [date,        setDate]       = useState(initial?.date || "");
-  const [blockName,   setBlockName]  = useState(initial?.block_name || "");
-  const [engineer,    setEngineer]   = useState(initial?.engineer || "");
-  const [holes,       setHoles]      = useState(initial?.holes_count || "");
-  const [avgDepth,    setAvgDepth]   = useState(initial?.avg_depth || "");
-  const [diameter,    setDiameter]   = useState(initial?.diameter || "");
-  const [expType,     setExpType]    = useState(initial?.exp_type || EXPLOSIVE_TYPES[0]);
-  const [charge,      setCharge]     = useState(initial?.total_charge_kg || "");
-  const [initSystem,  setInitSystem] = useState(initial?.init_system || "СИНВ");
-  const [designedVol, setDesignedVol]= useState(initial?.designed_vol || "");
-  const [actualVol,   setActualVol]  = useState(initial?.actual_vol || "");
-  const [postStatus,  setPostStatus] = useState(initial?.post_status || "ok");
-  const [status,      setStatus]     = useState(initial?.status || "draft");
-  const [notes,       setNotes]      = useState(initial?.notes || "");
-
-  function handleSave() {
-    onSave({ oid:Number(oid), date, block_name:blockName, engineer, holes_count:toNum(holes),
-      avg_depth:toNum(avgDepth), diameter:toNum(diameter), exp_type:expType,
-      total_charge_kg:toNum(charge), init_system:initSystem, designed_vol:toNum(designedVol),
-      actual_vol:toNum(actualVol), post_status:postStatus, status, notes });
-  }
-
-  const F = ({ label, children }) => (
-    <div>
-      <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>{label}</div>
-      {children}
-    </div>
-  );
-
-  const inp = (val, set, ph="") => (
-    <input type="text" value={val} onChange={e=>set(e.target.value)} placeholder={ph}
-      style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:13, outline:"none", fontFamily:"'Inter',sans-serif" }} />
-  );
-
-  const sel = (val, set, opts) => (
-    <select value={val} onChange={e=>set(e.target.value)}
-      style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt0, fontSize:13, outline:"none" }}>
-      {opts.map(([v,l]) => <option key={v} value={v}>{l}</option>)}
-    </select>
-  );
-
-  return (
-    <div style={{ position:"fixed", inset:0, background:T.modalBg, zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center", padding:"20px 16px", overflowY:"auto" }}>
-      <div style={{ background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, width:"100%", maxWidth:600, marginBottom:20 }}>
-        <div style={{ padding:"14px 20px", borderBottom:`1px solid ${T.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", background:T.cardSh }}>
-          <div style={{ fontSize:14, fontWeight:700, color:T.txt0 }}>💥 {initial ? "Редактировать" : "Новый"} паспорт БВР</div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:T.txt2, fontSize:18, cursor:"pointer" }}>×</button>
-        </div>
-        <div style={{ padding:"18px 20px", display:"flex", flexDirection:"column", gap:14 }}>
-
-          {/* Section: Общее */}
-          <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6 }}>Общие данные</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            <F label="Участок">{sel(oid, setOid, objs.map(o=>[String(o.id),o.name]))}</F>
-            <F label="Дата">{inp(date, setDate, "2025-06-01")}</F>
-            <F label="Название блока">{inp(blockName, setBlockName, "Блок 14-СВ")}</F>
-            <F label="Ответственный инженер">{inp(engineer, setEngineer, "Иванов Н.С.")}</F>
-          </div>
-
-          {/* Section: Скважины */}
-          <div style={{ fontSize:12, fontWeight:700, color:T.blue, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Скважины</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-            <F label="Кол-во скважин">{inp(holes, setHoles, "48")}</F>
-            <F label="Средняя глубина, м">{inp(avgDepth, setAvgDepth, "12.5")}</F>
-            <F label="Диаметр, мм">{inp(diameter, setDiameter, "250")}</F>
-          </div>
-
-          {/* Section: ВВ */}
-          <div style={{ fontSize:12, fontWeight:700, color:T.amber, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Взрывчатые вещества</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-            <F label="Тип ВВ">{sel(expType, setExpType, EXPLOSIVE_TYPES.map(e=>[e,e]))}</F>
-            <F label="Общий заряд, кг">{inp(charge, setCharge, "14400")}</F>
-            <F label="Система инициирования">{sel(initSystem, setInitSystem, [["СИНВ","СИНВ"],["СИНВ-Ш","СИНВ-Ш"],["ЭДКЗ","ЭДКЗ"],["Детошнур","Детошнур"]])}</F>
-          </div>
-
-          {/* Section: Объёмы */}
-          <div style={{ fontSize:12, fontWeight:700, color:T.violet, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Объёмы горной массы</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            <F label="Проектный объём, м³">{inp(designedVol, setDesignedVol, "120000")}</F>
-            <F label="Фактический объём, м³">{inp(actualVol, setActualVol, "0 — заполнить после взрыва")}</F>
-          </div>
-
-          {/* Section: Статус */}
-          <div style={{ fontSize:12, fontWeight:700, color:T.green, textTransform:"uppercase", letterSpacing:".12em", borderBottom:`1px solid ${T.border}`, paddingBottom:6, marginTop:4 }}>Статус и итог взрыва</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-            <F label="Статус паспорта">{sel(status, setStatus, [["draft","Черновик"],["approved","Утверждён"],["executed","Выполнен"]])}</F>
-            <F label="Результат взрыва">{sel(postStatus, setPostStatus, [["ok","Успешно"],["misfires","Отказы"],["reblast","↺ Перебур требуется"],["pending","— Ожидание"]])}</F>
-          </div>
-          <div>
-            <div style={{ fontSize:12, fontWeight:700, color:T.txt2, textTransform:"uppercase", letterSpacing:".08em", marginBottom:5 }}>Примечания</div>
-            <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Особые условия, отклонения, наблюдения..."
-              style={{ width:"100%", padding:"8px 10px", background:T.inputBg, border:`1px solid ${T.border}`, borderRadius:4, color:T.txt1, fontSize:12, resize:"vertical", minHeight:64, fontFamily:"'Inter',sans-serif", outline:"none" }} />
-          </div>
-        </div>
-        <div style={{ padding:"12px 20px", borderTop:`1px solid ${T.border}`, display:"flex", gap:8, justifyContent:"flex-end" }}>
-          <button onClick={onClose} style={{ padding:"8px 18px", borderRadius:5, border:`1px solid ${T.border}`, background:"transparent", color:T.txt2, fontSize:13, fontWeight:600, cursor:"pointer" }}>Отмена</button>
-          <button onClick={handleSave} style={{ padding:"8px 22px", borderRadius:5, border:"none", background:T.red, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-            {initial ? "Сохранить" : "Создать паспорт"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MODULE 3 — MAINTENANCE SCHEDULE  (Mechanic → новая вкладка)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const MAINT_TYPES = {
-  "ТО-1": { interval_hrs: 250,  label: "ТО-1",  color: "#10b981", desc: "Замена масла, фильтры" },
-  "ТО-2": { interval_hrs: 500,  label: "ТО-2",  color: "#3b82f6", desc: "ТО-1 + осмотр компрессора, гидравлики" },
-  "ТО-3": { interval_hrs: 1000, label: "ТО-3",  color: "#8b5cf6", desc: "ТО-2 + ревизия мачты, ходовой части" },
-  "ТО-4": { interval_hrs: 2000, label: "ТО-4",  color: "#f59e0b", desc: "Капитальная ревизия агрегатов" },
-  "Ремонт": { interval_hrs: null, label: "Ремонт", color: "#ef4444", desc: "Внеплановый ремонт" },
-};
-
-const INIT_MAINT_LOGS = [];
 
 function MaintenancePage({ nodes, passports, maintLogs, setMaintLogs, user, T }) {
   const [showForm,  setShowForm]  = useState(false);
@@ -11887,7 +11632,6 @@ export default function App() {
   const [points,       setPoints]       = useState(INIT_POINTS);
   const [measurements, setMeasurements] = useState(INIT_MEASUREMENTS);
   const [properties,   setProperties]   = useState(INIT_PROPERTIES);
-  const [blastPassports, setBlastPassports] = useState(INIT_BLAST_PASSPORTS);
   const [maintLogs,      setMaintLogs]      = useState(INIT_MAINT_LOGS);
   const [maintRecords,   setMaintRecords]   = useState(INIT_MAINT_RECORDS);  // { nodeId: [{id,date,type,hours,note,by}] }
   const [explosives,     setExplosives]     = useState(INIT_EXPLOSIVES_STOCK);
@@ -12092,8 +11836,6 @@ export default function App() {
     content = <UsersEditor users={users} setUsers={setUsers} objs={objs} T={T} />;
   } else if (subPage === "engineers") {
     content = <EngineerAssign users={users} setUsers={setUsers} T={T} />;
-  } else if (subPage === "bvr") {
-    content = <BlastPassportPage passports_bvr={blastPassports} setPassportsBvr={setBlastPassports} objs={objs} reps={reps} T={T} />;
   } else if (subPage === "explosives") {
     content = <ExplosivesPage explosives={explosives} setExplosives={setExplosives} objs={objs} reps={reps} user={user} T={T} />;
   } else if (subPage === "inventory") {
