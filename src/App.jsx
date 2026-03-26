@@ -1918,7 +1918,7 @@ function repDateToIso(dateStr, anchorYear) {
   return dateStr;
 }
 
-function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], invTxns=[], passports={}, onDrillObj, initialAnchor, onAnchorChange, T }) {
+function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], invTxns=[], passports={}, blastPassports=[], onDrillObj, initialAnchor, onAnchorChange, T }) {
 
   // ── Period state ──────────────────────────────────────────────────────────
   const [mode, setMode] = useState("month");    // month-only Dashboard
@@ -2007,6 +2007,19 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
       return iso >= rangeStart && iso <= effectiveEnd;
     });
   }, [reps, rangeStart, rangeEnd, anchor, mode]);
+
+  // ── BVR паспорта за период ─────────────────────────────────────────────────
+  const filteredBlast = blastPassports.filter(p => p.date >= rangeStart && p.date <= rangeEnd);
+  const blastTotals = filteredBlast.reduce((t, p) => ({
+    count:   t.count   + 1,
+    holes:   t.holes   + (p.holes_count  || 0),
+    vol:     t.vol     + (p.actual_vol   || 0),
+    vv_kg:   t.vv_kg   + (p.total_charge_kg || 0),
+    meters:  t.meters  + (p.drilled_meters  || 0),
+  }), { count:0, holes:0, vol:0, vv_kg:0, meters:0 });
+  const blastSpecConsumption = blastTotals.vol > 0
+    ? Math.round(blastTotals.vv_kg / blastTotals.vol * 1000) / 1000
+    : null;
 
   // ── Compute plan for the period ──────────────────────────────────────────
   // Для текущего месяца — используем monthTotal × completedDays/daysInMonth (точная пропорция)
@@ -2254,6 +2267,21 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
                 {fullBf > 0 && <span style={{ fontSize:11, color:T.txt2 }}>месяц: <b style={{ color:T.txt0 }}>{fullBf.toLocaleString()}</b></span>}
               </div>
             </Cell>
+            {/* БВР паспорта */}
+            {blastTotals.count > 0 && (
+              <Cell label="💣 БВР паспорта">
+                <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:4 }}>
+                  <span style={{ fontSize:26, fontWeight:600, color:T.txt0 }}>{blastTotals.count}</span>
+                  <span style={{ fontSize:13, color:T.txt2 }}>взрывов</span>
+                  <span style={{ fontSize:13, color:T.amber, marginLeft:4 }}>{(blastTotals.vv_kg/1000).toFixed(1)} т ВВ</span>
+                </div>
+                <div style={{ display:"flex", gap:12, marginTop:4, flexWrap:"wrap" }}>
+                  <span style={{ fontSize:11, color:T.txt2 }}>скважин: <b style={{color:T.txt0}}>{blastTotals.holes.toLocaleString()}</b></span>
+                  <span style={{ fontSize:11, color:T.txt2 }}>объём: <b style={{color:T.txt0}}>{blastTotals.vol.toLocaleString()} м³</b></span>
+                  {blastSpecConsumption && <span style={{ fontSize:11, color:T.txt2 }}>уд.: <b style={{color:T.amber}}>{blastSpecConsumption} кг/м³</b></span>}
+                </div>
+              </Cell>
+            )}
             {/* КТГ / КИО */}
             <Cell label="⚙ КТГ / КИО">
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
@@ -2288,6 +2316,11 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
           const rr        = filteredReps.filter((r) => r.oid === obj.id);
           const df        = rr.reduce((s,r)=>s+r.df, 0);
           const bf        = rr.reduce((s,r)=>s+r.bf, 0);
+          const objBlast  = filteredBlast.filter(p => p.oid === obj.id);
+          const blastCount = objBlast.length;
+          const blastVV   = objBlast.reduce((s,p)=>s+(p.total_charge_kg||0),0);
+          const blastVol  = objBlast.reduce((s,p)=>s+(p.actual_vol||0),0);
+          const blastSpec = blastVol > 0 ? Math.round(blastVV/blastVol*1000)/1000 : null;
           const wh        = rr.reduce((s,r)=>s+r.wh, 0);
           const dh        = rr.reduce((s,r)=>s+r.dh, 0);
           const fuel      = rr.reduce((s,r)=>s+r.fuel, 0);
@@ -2368,7 +2401,9 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
                   { label:"Перебур", val: overDrill>0?`${overDrill.toLocaleString()} м`:"—" },
                   { label:"Тех. прост.", val: techDH>0?`${Math.round(techDH)} ч`:"—", col: techDH>0?"#ef4444":null },
                   { label:"ОФР", val: orgDH>0?`${orgDH} ч`:"—", col: orgDH>0?T.amber:null },
-                ].map(({ label, val, sub, col }, idx2) => (
+                  blastCount > 0 ? { label:"БВР взрывов", val:String(blastCount), sub: blastVol > 0 ? `${blastVol.toLocaleString()} м³` : null, col: T.amber } : null,
+                  blastVV > 0 ? { label:"ВВ расход", val:`${(blastVV/1000).toFixed(1)} т`, sub: blastSpec ? `${blastSpec} кг/м³` : null, col: T.amber } : null,
+                ].filter(Boolean).map(({ label, val, sub, col }, idx2) => (
                   <div key={idx2} style={{ flex:1, padding:"8px 14px", borderRight: idx2<3?`1px solid ${T.border}`:"none" }}>
                     <div style={{ fontSize:10, color:T.txt2, textTransform:"uppercase", letterSpacing:".04em", marginBottom:3 }}>{label}</div>
                     <div style={{ fontSize:13, fontWeight:600, color:col||T.txt0 }}>{val}</div>
@@ -10315,6 +10350,18 @@ function BlastPassportPage({ passports_bvr, setPassportsBvr, objs, reps, T }) {
                     </div>
                   ))}
                 </div>
+                {p.vv_items && Object.keys(p.vv_items).length > 0 && (
+                  <div style={{ padding:"8px 18px 10px", borderTop:`1px solid ${T.border}` }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.violet, textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>ВВ материалы</div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
+                      {Object.entries(p.vv_items).map(([mat,qty])=>(
+                        <span key={mat} style={{ fontSize:11, background:T.bg3, border:`1px solid ${T.border}`, borderRadius:4, padding:"2px 7px", color:T.txt1 }}>
+                          {mat.replace("SUPREMEDET-S ","").replace(" гр.","гр")}: <b style={{color:T.txt0}}>{qty.toLocaleString()}</b>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -12078,7 +12125,7 @@ export default function App() {
   } else if (subPage === "dash") {
     content = user.role === "foreman"
       ? <ForemanDash user={user} objs={vObjs} rigs={rigs} reps={vReps} plans={plans} T={T} />
-      : <Dashboard objs={objs} rigs={rigs} reps={reps} plans={plans} ktgPlans={ktgPlans} nodes={nodes} storageUnits={storageUnits} invTxns={invTxns} passports={passports} onDrillObj={(id) => setView({ type: "obj", objId: id })} initialAnchor={dashAnchor} onAnchorChange={setDashAnchor} T={T} />;
+      : <Dashboard objs={objs} rigs={rigs} reps={reps} plans={plans} ktgPlans={ktgPlans} nodes={nodes} storageUnits={storageUnits} invTxns={invTxns} passports={passports} blastPassports={blastPassports} onDrillObj={(id) => setView({ type: "obj", objId: id })} initialAnchor={dashAnchor} onAnchorChange={setDashAnchor} T={T} />;
   } else if (subPage === "enter") {
     content = <ForemanForm user={user} objs={vObjs} rigs={rigs} reps={vReps} onSubmit={handleSubmitReport} onUpdate={handleUpdateReport} setExplosives={setExplosives} downtimeLog={downtimeLog} setDowntimeLog={setDowntimeLog} T={T} />;
   } else if (subPage === "planning") {
