@@ -11569,7 +11569,12 @@ export default function App() {
         if (dbStorageUnits?.length) setStorageUnits(dbStorageUnits);
         if (dbInvTxns?.length)      setInvTxns(dbInvTxns);
         if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const localNames = new Set(prev.map(r => r.n + "_" + r.o)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id) && !localNames.has(r.n + "_" + r.o)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
-        if (dbReps?.length)  setReps(prev => { const localIds = new Set(prev.map(r => r.id)); const dbOnly = dbReps.filter(r => !localIds.has(r.id)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
+        if (dbReps?.length)  setReps(prev => {
+          const localKeys = new Set(prev.map(r => r.oid + '|' + r.date + '|' + r.sh));
+          const lastLocalDate = prev.reduce((max, r) => r.date > max ? r.date : max, '');
+          const dbOnly = dbReps.filter(r => !localKeys.has(r.oid + '|' + r.date + '|' + r.sh) && r.date > lastLocalDate);
+          return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev;
+        });
         if (dbPlans?.length) setPlans(dbPlans);
         if (dbKtg?.length)   setKtgPlans(dbKtg);
       } catch (e) {
