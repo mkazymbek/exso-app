@@ -11570,19 +11570,13 @@ export default function App() {
         if (dbInvTxns?.length)      setInvTxns(dbInvTxns);
         if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const localNames = new Set(prev.map(r => r.n + "_" + r.o)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id) && !localNames.has(r.n + "_" + r.o)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
           if (dbReps?.length) {
-            // Диагностика мержа
-            const _koskJan = dbReps.filter(r => r.oid === 2 && r.date?.startsWith('2026-01'));
-            console.log('[MERGE] INIT_REPS:', INIT_REPS.length, 'Supabase:', dbReps.length);
-            console.log('[MERGE] Supabase Коскудук янв:', _koskJan.length, 'df[0]:', _koskJan[0]?.df);
-            const _initKosk = INIT_REPS.filter(r => r.oid === 2 && r.date?.startsWith('2026-01'));
-            console.log('[MERGE] INIT Коскудук янв:', _initKosk.length, 'df[0]:', _initKosk[0]?.df);
             setReps(prev => {
               const localKeys = new Set(prev.map(r => r.oid + '|' + r.date + '|' + r.sh));
               const lastLocalDate = prev.reduce((max, r) => r.date > max ? r.date : max, '');
               const dbOnly = dbReps.filter(r => !localKeys.has(r.oid + '|' + r.date + '|' + r.sh) && r.date > lastLocalDate);
-              console.log('[MERGE] lastDate:', lastLocalDate, 'dbOnly added:', dbOnly.length);
               return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev;
             });
+          }
           }
         if (dbPlans?.length) setPlans(dbPlans);
         if (dbKtg?.length)   setKtgPlans(dbKtg);

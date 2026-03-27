@@ -119,7 +119,9 @@ export async function getReports(filters = {}) {
 
   if (filters.objectId)  query = query.eq('object_id', filters.objectId);
   if (filters.status)    query = query.eq('status', filters.status);
-  if (filters.dateFrom)  query = query.gte('date', filters.dateFrom);
+  // Не загружаем данные до апреля 2026 — они уже есть в INIT_REPS
+  const effectiveDateFrom = filters.dateFrom || '2026-04-01';
+  query = query.gte('date', effectiveDateFrom);
   if (filters.dateTo)    query = query.lte('date', filters.dateTo);
 
   const { data, error } = await query;
