@@ -10492,39 +10492,38 @@ function MaintenanceFormModal({ initial, rigs, passports, onSave, onClose, T }) 
 
 // ─── INVENTORY: STORAGE UNITS & TRANSACTIONS ─────────────────────────────────
 const INIT_STORAGE_UNITS = [
-  // Борлы (oid:1) — ~5 000 л/мес расход
-  { id:"su1",  oid:1, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:25000, min_level:2000 },
-  { id:"su2",  oid:1, name:"Резервуар ДТ-2",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:25000, min_level:2000 },
-  { id:"su3",  oid:1, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:30000, min_level:1000 },
-  { id:"su4",  oid:1, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:15000, min_level:500  },
-  // Коскудук (oid:2) — ~20 000 л/мес расход
-  { id:"su5",  oid:2, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:80000, min_level:5000 },
-  { id:"su6",  oid:2, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:25000, min_level:1000 },
-  { id:"su7",  oid:2, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:15000, min_level:500  },
-  // Бактай (oid:3) — ~14 000 л/мес расход
-  { id:"su8",  oid:3, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:80000, min_level:5000 },
-  { id:"su9",  oid:3, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:30000, min_level:1000 },
-  { id:"su10", oid:3, name:"Склад ВВ — Эмульсия",item_type:"EXPLOSIVE", item_name:"Эмульсия",          unit:"кг", capacity:15000, min_level:500  },
-  // Жолымбет (oid:4) — ~21 000 л/мес расход
-  { id:"su11", oid:4, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:80000, min_level:5000 },
-  { id:"su12", oid:4, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:25000, min_level:1000 },
+  // Борлы (oid:1)
+  { id:"su1", oid:1, name:"Резервуар ДТ", item_type:"FUEL", item_name:"Дизельное топливо", unit:"л", capacity:50000, min_level:5000 },
+  // Коскудук (oid:2)
+  { id:"su5", oid:2, name:"Резервуар ДТ", item_type:"FUEL", item_name:"Дизельное топливо", unit:"л", capacity:80000, min_level:8000 },
+  // Бактай (oid:3)
+  { id:"su8", oid:3, name:"Резервуар ДТ", item_type:"FUEL", item_name:"Дизельное топливо", unit:"л", capacity:80000, min_level:8000 },
+  // Жолымбет (oid:4)
+  { id:"su11", oid:4, name:"Резервуар ДТ", item_type:"FUEL", item_name:"Дизельное топливо", unit:"л", capacity:80000, min_level:8000 },
   // Шыганак (oid:5)
-  { id:"su13", oid:5, name:"Резервуар ДТ-1",     item_type:"FUEL",      item_name:"Дизельное топливо", unit:"л",  capacity:30000, min_level:2000 },
-  { id:"su14", oid:5, name:"Склад ВВ — АНФО",    item_type:"EXPLOSIVE", item_name:"АНФО",              unit:"кг", capacity:15000, min_level:500  },
+  { id:"su13", oid:5, name:"Резервуар ДТ", item_type:"FUEL", item_name:"Дизельное топливо", unit:"л", capacity:30000, min_level:3000 },
 ];
 
+
+
 const INIT_INV_TXNS = [
-  // ── Поставки ДТ ──────────────────────────────────────
-  { id:"txn_dt_000000188", su_id:"su8", txn_type:"IN", qty:38140, date:"2026-01-20", doc_ref:"ЦБ000000188", note:"ДТ 32.8 т / 13,282,500 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000145", su_id:"su5", txn_type:"IN", qty:24919, date:"2026-01-22", doc_ref:"ЦБ000000145", note:"ДТ 21.43 т / 9,000,000 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000389", su_id:"su8", txn_type:"IN", qty:38326, date:"2026-02-03", doc_ref:"ЦБ000000389", note:"ДТ 32.96 т / 13,282,500 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000387", su_id:"su5", txn_type:"IN", qty:42500, date:"2026-02-04", doc_ref:"ЦБ000000387", note:"ДТ 36.55 т / 14,518,000 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000571", su_id:"su8", txn_type:"IN", qty:39744, date:"2026-02-16", doc_ref:"ЦБ000000571", note:"ДТ 34.18 т / 13,793,100 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000680", su_id:"su5", txn_type:"IN", qty:40419, date:"2026-02-20", doc_ref:"ЦБ000000680", note:"ДТ 34.76 т / 13,838,000 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000779", su_id:"su8", txn_type:"IN", qty:38407, date:"2026-03-03", doc_ref:"ЦБ000000779", note:"ДТ 33.03 т / 13,282,500 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000933", su_id:"su5", txn_type:"IN", qty:42453, date:"2026-03-16", doc_ref:"ЦБ000000933", note:"ДТ 36.51 т / 13,237,000 тг", recorded_by:"ТОО Explosion Solutions" },
-  { id:"txn_dt_000000934", su_id:"su8", txn_type:"IN", qty:38279, date:"2026-03-16", doc_ref:"ЦБ000000934", note:"ДТ 32.92 т / 11,935,000 тг", recorded_by:"ТОО Explosion Solutions" },
-  // ── Авто-списание Борлы 2026 ──────────────────────────
+  // ── Начальные остатки на 01.01.2026 ─────────────────────────
+  { id:"txn_open_su1", su_id:"su1", txn_type:"IN", qty:30000, date:"2025-12-31", doc_ref:"Начало", note:"Начальный остаток Борлы бак-1 на 01.01.2026", recorded_by:"ExSo" },
+  { id:"txn_open_su2", su_id:"su2", txn_type:"IN", qty:5000, date:"2025-12-31", doc_ref:"Начало", note:"Начальный остаток Борлы бак-2 на 01.01.2026", recorded_by:"ExSo" },
+  { id:"txn_open_su5", su_id:"su5", txn_type:"IN", qty:25000, date:"2025-12-31", doc_ref:"Начало", note:"Начальный остаток Коскудук на 01.01.2026", recorded_by:"ExSo" },
+  { id:"txn_open_su11", su_id:"su11", txn_type:"IN", qty:25000, date:"2025-12-31", doc_ref:"Начало", note:"Начальный остаток Жолымбет на 01.01.2026", recorded_by:"ExSo" },
+  { id:"txn_open_su13", su_id:"su13", txn_type:"IN", qty:5000, date:"2025-12-31", doc_ref:"Начало", note:"Начальный остаток Шыганак на 01.01.2026", recorded_by:"ExSo" },
+  // ── Поставки ДТ (источник: ТОО Explosion Solutions) ─────────
+  { id:"txn_dt_000000188", su_id:"su8", txn_type:"IN", qty:28208, date:"2026-01-20", doc_ref:"ЦБ000000188", note:"Бактай — 32.8 т / 28,208 л / 13,282,500 тг (471 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000145", su_id:"su5", txn_type:"IN", qty:18430, date:"2026-01-22", doc_ref:"ЦБ000000145", note:"Коскудук — 21.43 т / 18,430 л / 9,000,000 тг (488 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000389", su_id:"su8", txn_type:"IN", qty:28346, date:"2026-02-03", doc_ref:"ЦБ000000389", note:"Бактай — 32.96 т / 28,346 л / 13,282,500 тг (469 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000387", su_id:"su5", txn_type:"IN", qty:31433, date:"2026-02-04", doc_ref:"ЦБ000000387", note:"Коскудук — 36.55 т / 31,433 л / 14,518,000 тг (462 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000571", su_id:"su8", txn_type:"IN", qty:29395, date:"2026-02-16", doc_ref:"ЦБ000000571", note:"Бактай — 34.18 т / 29,395 л / 13,793,100 тг (469 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000680", su_id:"su5", txn_type:"IN", qty:29894, date:"2026-02-20", doc_ref:"ЦБ000000680", note:"Коскудук — 34.76 т / 29,894 л / 13,838,000 тг (463 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000779", su_id:"su8", txn_type:"IN", qty:28406, date:"2026-03-03", doc_ref:"ЦБ000000779", note:"Бактай — 33.03 т / 28,406 л / 13,282,500 тг (468 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000933", su_id:"su5", txn_type:"IN", qty:31399, date:"2026-03-16", doc_ref:"ЦБ000000933", note:"Коскудук — 36.51 т / 31,399 л / 13,237,000 тг (422 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  { id:"txn_dt_000000934", su_id:"su8", txn_type:"IN", qty:28311, date:"2026-03-16", doc_ref:"ЦБ000000934", note:"Бактай — 32.92 т / 28,311 л / 11,935,000 тг (422 тг/л)", recorded_by:"ТОО Explosion Solutions" },
+  // ── Авто-списание из сменных отчётов ────────────────────────
   {id:"txn_auto_16001",su_id:"su1",txn_type:"OUT",qty:1212,date:"2026-01-01",doc_ref:"",note:"Авто-списание ДТ 2026-01-01",recorded_by:"Система"},
   {id:"txn_auto_16003",su_id:"su1",txn_type:"OUT",qty:754,date:"2026-01-02",doc_ref:"",note:"Авто-списание ДТ 2026-01-02",recorded_by:"Система"},
   {id:"txn_auto_16005",su_id:"su1",txn_type:"OUT",qty:994,date:"2026-01-03",doc_ref:"",note:"Авто-списание ДТ 2026-01-03",recorded_by:"Система"},
@@ -10571,7 +10570,6 @@ const INIT_INV_TXNS = [
   {id:"txn_auto_16233",su_id:"su1",txn_type:"OUT",qty:167,date:"2026-03-17",doc_ref:"",note:"Авто-списание ДТ 2026-03-17",recorded_by:"Система"},
   {id:"txn_auto_16235",su_id:"su1",txn_type:"OUT",qty:242,date:"2026-03-18",doc_ref:"",note:"Авто-списание ДТ 2026-03-18",recorded_by:"Система"},
   {id:"txn_auto_16237",su_id:"su1",txn_type:"OUT",qty:841,date:"2026-03-19",doc_ref:"",note:"Авто-списание ДТ 2026-03-19",recorded_by:"Система"},
-  // ── Авто-списание Коскудук 2026 ──────────────────────────
   {id:"txn_auto_14001",su_id:"su5",txn_type:"OUT",qty:3405,date:"2026-01-01",doc_ref:"",note:"Авто-списание ДТ 2026-01-01",recorded_by:"Система"},
   {id:"txn_auto_14003",su_id:"su5",txn_type:"OUT",qty:2064,date:"2026-01-02",doc_ref:"",note:"Авто-списание ДТ 2026-01-02",recorded_by:"Система"},
   {id:"txn_auto_14005",su_id:"su5",txn_type:"OUT",qty:2488,date:"2026-01-03",doc_ref:"",note:"Авто-списание ДТ 2026-01-03",recorded_by:"Система"},
@@ -10644,7 +10642,6 @@ const INIT_INV_TXNS = [
   {id:"txn_auto_14151",su_id:"su5",txn_type:"OUT",qty:1563,date:"2026-03-17",doc_ref:"",note:"Авто-списание ДТ 2026-03-17",recorded_by:"Система"},
   {id:"txn_auto_14153",su_id:"su5",txn_type:"OUT",qty:1452,date:"2026-03-18",doc_ref:"",note:"Авто-списание ДТ 2026-03-18",recorded_by:"Система"},
   {id:"txn_auto_14155",su_id:"su5",txn_type:"OUT",qty:1500,date:"2026-03-19",doc_ref:"",note:"Авто-списание ДТ 2026-03-19",recorded_by:"Система"},
-  // ── Авто-списание Бактай 2026 ──────────────────────────
   {id:"txn_auto_17000",su_id:"su8",txn_type:"OUT",qty:88,date:"2026-01-01",doc_ref:"",note:"Авто-списание ДТ 2026-01-01",recorded_by:"Система"},
   {id:"txn_auto_17001",su_id:"su8",txn_type:"OUT",qty:515,date:"2026-01-01",doc_ref:"",note:"Авто-списание ДТ 2026-01-01",recorded_by:"Система"},
   {id:"txn_auto_17003",su_id:"su8",txn_type:"OUT",qty:820,date:"2026-01-02",doc_ref:"",note:"Авто-списание ДТ 2026-01-02",recorded_by:"Система"},
@@ -10725,7 +10722,6 @@ const INIT_INV_TXNS = [
   {id:"txn_auto_17252",su_id:"su8",txn_type:"OUT",qty:393,date:"2026-02-27",doc_ref:"",note:"Авто-списание ДТ 2026-02-27",recorded_by:"Система"},
   {id:"txn_auto_17253",su_id:"su8",txn_type:"OUT",qty:150,date:"2026-02-27",doc_ref:"",note:"Авто-списание ДТ 2026-02-27",recorded_by:"Система"},
   {id:"txn_auto_17255",su_id:"su8",txn_type:"OUT",qty:560,date:"2026-02-28",doc_ref:"",note:"Авто-списание ДТ 2026-02-28",recorded_by:"Система"},
-  // ── Авто-списание Жолымбет (синтетика март) ──────────────────────────
   {id:"txn_auto_13000",su_id:"su11",txn_type:"OUT",qty:872,date:"2026-03-01",doc_ref:"",note:"Авто-списание ДТ 2026-03-01",recorded_by:"Система"},
   {id:"txn_auto_13001",su_id:"su11",txn_type:"OUT",qty:308,date:"2026-03-01",doc_ref:"",note:"Авто-списание ДТ 2026-03-01",recorded_by:"Система"},
   {id:"txn_auto_13002",su_id:"su11",txn_type:"OUT",qty:731,date:"2026-03-02",doc_ref:"",note:"Авто-списание ДТ 2026-03-02",recorded_by:"Система"},
@@ -10754,10 +10750,11 @@ const INIT_INV_TXNS = [
   {id:"txn_auto_13032",su_id:"su11",txn_type:"OUT",qty:929,date:"2026-03-17",doc_ref:"",note:"Авто-списание ДТ 2026-03-17",recorded_by:"Система"},
   {id:"txn_auto_13033",su_id:"su11",txn_type:"OUT",qty:804,date:"2026-03-17",doc_ref:"",note:"Авто-списание ДТ 2026-03-17",recorded_by:"Система"},
   {id:"txn_auto_13034",su_id:"su11",txn_type:"OUT",qty:1043,date:"2026-03-18",doc_ref:"",note:"Авто-списание ДТ 2026-03-18",recorded_by:"Система"},
-
-  // ── Авто-списание Шыганак 2026 ──────────────────────────
   {id:"txn_auto_18015",su_id:"su13",txn_type:"OUT",qty:350,date:"2026-01-08",doc_ref:"",note:"Авто-списание ДТ по отчёту 2026-01-08",recorded_by:"Система"},
 ];
+
+
+
 
 // ─── INVENTORY PAGE ───────────────────────────────────────────────────────────
 const INV_TYPE_CFG = {
