@@ -1120,44 +1120,34 @@ const INIT_PASSPORTS = {
 
 
 const INIT_METERS = {
-  // Жолымбет — наработка на 12.03.2026 (из сообщения ОМТС)
-  a19:   { type:"ENGINE_HOURS", current:798, history:[{date:"2026-03-01",value:609,note:"Начало месяца"},{date:"2026-03-12",value:798,note:"Снятие показаний ОМТС"}] },
-  a20:   { type:"ENGINE_HOURS", current:820, history:[{date:"2026-03-01",value:638,note:"Начало месяца"},{date:"2026-03-12",value:820,note:"Снятие показаний ОМТС"}] },
-  a21:   { type:"ENGINE_HOURS", current:800, history:[{date:"2026-03-01",value:597,note:"Начало месяца"},{date:"2026-03-12",value:800,note:"Снятие показаний ОМТС"}] },
-  comp17:{ type:"ENGINE_HOURS", current:466, history:[{date:"2026-03-01",value:400,note:"Начало месяца"},{date:"2026-03-04",value:466,note:"Снятие показаний ОМТС"}] },
-  comp18:{ type:"ENGINE_HOURS", current:450, history:[{date:"2026-03-01",value:387,note:"Начало месяца"},{date:"2026-03-04",value:450,note:"Снятие показаний ОМТС"}] },
-  comp19:{ type:"ENGINE_HOURS", current:452, history:[{date:"2026-03-01",value:398,note:"Начало месяца"},{date:"2026-03-03",value:452,note:"Снятие показаний ОМТС"}] },
-  // Бактай — наработка из сообщения ОМТС
-  a12:   { type:"ENGINE_HOURS", current:2834, history:[{date:"2026-03-04",value:2834,note:"Снятие показаний ОМТС"}] },
-  a13:   { type:"ENGINE_HOURS", current:3099, history:[{date:"2026-03-05",value:3099,note:"Снятие показаний ОМТС"}] },
-  a14:   { type:"ENGINE_HOURS", current:3017, history:[{date:"2026-03-04",value:3017,note:"Снятие показаний ОМТС"}] },
-  a17:   { type:"ENGINE_HOURS", current:1462, history:[{date:"2026-02-24",value:1462,note:"Снятие показаний ОМТС (не записан ранее)"}] },
-  comp10:{ type:"ENGINE_HOURS", current:4215, history:[{date:"2026-03-12",value:4215,note:"Снятие показаний ОМТС"}] },
-  comp11:{ type:"ENGINE_HOURS", current:3887, history:[{date:"2026-03-12",value:3887,note:"Снятие показаний ОМТС"}] },
-  comp14:{ type:"ENGINE_HOURS", current:2155, history:[{date:"2026-03-04",value:2155,note:"Снятие показаний ОМТС"}] },
-  // Остальные — не заданы
-  a1:    { type:"ENGINE_HOURS", current:0, history:[] },
-  a3:    { type:"ENGINE_HOURS", current:0, history:[] },
-  a5:    { type:"ENGINE_HOURS", current:0, history:[] },
-  a6:    { type:"ENGINE_HOURS", current:0, history:[] },
-  a7:    { type:"ENGINE_HOURS", current:0, history:[] },
-  a8:    { type:"ENGINE_HOURS", current:0, history:[] },
-  a9:    { type:"ENGINE_HOURS", current:0, history:[] },
-  a10:   { type:"ENGINE_HOURS", current:0, history:[] },
-  a11:   { type:"ENGINE_HOURS", current:0, history:[] },
-  a12:   { type:"ENGINE_HOURS", current:0, history:[] },
-  a13:   { type:"ENGINE_HOURS", current:0, history:[] },
-  a14:   { type:"ENGINE_HOURS", current:0, history:[] },
-  a16:   { type:"ENGINE_HOURS", current:0, history:[] },
-  a17:   { type:"ENGINE_HOURS", current:0, history:[] },
-  comp1: { type:"ENGINE_HOURS", current:0, history:[] },
-  comp3: { type:"ENGINE_HOURS", current:0, history:[] },
-  comp4: { type:"ENGINE_HOURS", current:0, history:[] },
-  comp5: { type:"ENGINE_HOURS", current:0, history:[] },
-  comp6: { type:"ENGINE_HOURS", current:0, history:[] },
-  comp7: { type:"ENGINE_HOURS", current:0, history:[] },
-  comp8: { type:"ENGINE_HOURS", current:0, history:[] },
+  a10: {type:"ENGINE_HOURS",current:7038,base:6840,base_date:"2026-03-04",history:[{date:"2026-03-04",value:6840,note:"Базовый замер ОМТС"},{date:"2026-03-05",value:6862,note:"из сменного отчёта"},{date:"2026-03-06",value:6879,note:"из сменного отчёта"},{date:"2026-03-07",value:6897,note:"из сменного отчёта"},{date:"2026-03-08",value:6915,note:"из сменного отчёта"},{date:"2026-03-09",value:6916,note:"из сменного отчёта"},{date:"2026-03-10",value:6920,note:"из сменного отчёта"},{date:"2026-03-11",value:6941,note:"из сменного отчёта"},{date:"2026-03-12",value:6955,note:"из сменного отчёта"},{date:"2026-03-13",value:6968,note:"из сменного отчёта"},{date:"2026-03-17",value:6986,note:"из сменного отчёта"},{date:"2026-03-18",value:7005,note:"из сменного отчёта"},{date:"2026-03-19",value:7027,note:"из сменного отчёта"},{date:"2026-03-20",value:7038,note:"из сменного отчёта"}]},
+  a11: {type:"ENGINE_HOURS",current:3153,base:3010,base_date:"2026-03-09",history:[{date:"2026-03-09",value:3010,note:"Базовый замер ОМТС"},{date:"2026-03-10",value:3016,note:"из сменного отчёта"},{date:"2026-03-11",value:3038,note:"из сменного отчёта"},{date:"2026-03-12",value:3060,note:"из сменного отчёта"},{date:"2026-03-13",value:3078,note:"из сменного отчёта"},{date:"2026-03-14",value:3082,note:"из сменного отчёта"},{date:"2026-03-17",value:3099,note:"из сменного отчёта"},{date:"2026-03-18",value:3121,note:"из сменного отчёта"},{date:"2026-03-19",value:3142,note:"из сменного отчёта"},{date:"2026-03-20",value:3153,note:"из сменного отчёта"}]},
+  a12: {type:"ENGINE_HOURS",current:3065,base:2834,base_date:"2026-03-04",history:[{date:"2026-03-04",value:2834,note:"Базовый замер ОМТС"},{date:"2026-03-05",value:2856,note:"из сменного отчёта"},{date:"2026-03-06",value:2867,note:"из сменного отчёта"},{date:"2026-03-07",value:2889,note:"из сменного отчёта"},{date:"2026-03-08",value:2900,note:"из сменного отчёта"},{date:"2026-03-09",value:2922,note:"из сменного отчёта"},{date:"2026-03-10",value:2944,note:"из сменного отчёта"},{date:"2026-03-11",value:2966,note:"из сменного отчёта"},{date:"2026-03-12",value:2977,note:"из сменного отчёта"},{date:"2026-03-14",value:2988,note:"из сменного отчёта"},{date:"2026-03-15",value:3010,note:"из сменного отчёта"},{date:"2026-03-18",value:3032,note:"из сменного отчёта"},{date:"2026-03-19",value:3043,note:"из сменного отчёта"},{date:"2026-03-20",value:3065,note:"из сменного отчёта"}]},
+  a13: {type:"ENGINE_HOURS",current:3308,base:3099,base_date:"2026-03-05",history:[{date:"2026-03-05",value:3099,note:"Базовый замер ОМТС"},{date:"2026-03-06",value:3110,note:"из сменного отчёта"},{date:"2026-03-08",value:3121,note:"из сменного отчёта"},{date:"2026-03-09",value:3143,note:"из сменного отчёта"},{date:"2026-03-10",value:3165,note:"из сменного отчёта"},{date:"2026-03-11",value:3187,note:"из сменного отчёта"},{date:"2026-03-12",value:3198,note:"из сменного отчёта"},{date:"2026-03-14",value:3209,note:"из сменного отчёта"},{date:"2026-03-15",value:3231,note:"из сменного отчёта"},{date:"2026-03-16",value:3242,note:"из сменного отчёта"},{date:"2026-03-18",value:3264,note:"из сменного отчёта"},{date:"2026-03-19",value:3286,note:"из сменного отчёта"},{date:"2026-03-20",value:3308,note:"из сменного отчёта"}]},
+  a14: {type:"ENGINE_HOURS",current:3237,base:3017,base_date:"2026-03-04",history:[{date:"2026-03-04",value:3017,note:"Базовый замер ОМТС"},{date:"2026-03-05",value:3039,note:"из сменного отчёта"},{date:"2026-03-06",value:3061,note:"из сменного отчёта"},{date:"2026-03-07",value:3083,note:"из сменного отчёта"},{date:"2026-03-08",value:3094,note:"из сменного отчёта"},{date:"2026-03-09",value:3116,note:"из сменного отчёта"},{date:"2026-03-10",value:3138,note:"из сменного отчёта"},{date:"2026-03-11",value:3160,note:"из сменного отчёта"},{date:"2026-03-12",value:3171,note:"из сменного отчёта"},{date:"2026-03-14",value:3182,note:"из сменного отчёта"},{date:"2026-03-15",value:3204,note:"из сменного отчёта"},{date:"2026-03-16",value:3215,note:"из сменного отчёта"},{date:"2026-03-19",value:3226,note:"из сменного отчёта"},{date:"2026-03-20",value:3237,note:"из сменного отчёта"}]},
+  a15: {type:"ENGINE_HOURS",current:2768,base:2530,base_date:"2026-02-24",history:[{date:"2026-02-24",value:2530,note:"Базовый замер ОМТС"},{date:"2026-03-04",value:2534,note:"из сменного отчёта"},{date:"2026-03-05",value:2555,note:"из сменного отчёта"},{date:"2026-03-06",value:2576,note:"из сменного отчёта"},{date:"2026-03-07",value:2592,note:"из сменного отчёта"},{date:"2026-03-08",value:2613,note:"из сменного отчёта"},{date:"2026-03-09",value:2626,note:"из сменного отчёта"},{date:"2026-03-10",value:2632,note:"из сменного отчёта"},{date:"2026-03-11",value:2651,note:"из сменного отчёта"},{date:"2026-03-12",value:2671,note:"из сменного отчёта"},{date:"2026-03-13",value:2687,note:"из сменного отчёта"},{date:"2026-03-14",value:2695,note:"из сменного отчёта"},{date:"2026-03-17",value:2715,note:"из сменного отчёта"},{date:"2026-03-18",value:2735,note:"из сменного отчёта"},{date:"2026-03-19",value:2757,note:"из сменного отчёта"},{date:"2026-03-20",value:2768,note:"из сменного отчёта"}]},
+  a16: {type:"ENGINE_HOURS",current:6952,base:6798,base_date:"2026-03-09",history:[{date:"2026-03-09",value:6798,note:"Базовый замер ОМТС"},{date:"2026-03-10",value:6820,note:"из сменного отчёта"},{date:"2026-03-11",value:6842,note:"из сменного отчёта"},{date:"2026-03-12",value:6853,note:"из сменного отчёта"},{date:"2026-03-14",value:6875,note:"из сменного отчёта"},{date:"2026-03-16",value:6886,note:"из сменного отчёта"},{date:"2026-03-18",value:6908,note:"из сменного отчёта"},{date:"2026-03-19",value:6930,note:"из сменного отчёта"},{date:"2026-03-20",value:6952,note:"из сменного отчёта"}]},
+  a18: {type:"ENGINE_HOURS",current:1984,base:1462,base_date:"2026-02-24",history:[{date:"2026-02-24",value:1462,note:"Базовый замер ОМТС"},{date:"2026-02-25",value:1473,note:"из сменного отчёта"},{date:"2026-02-26",value:1511,note:"из сменного отчёта"},{date:"2026-02-27",value:1533,note:"из сменного отчёта"},{date:"2026-02-28",value:1544,note:"из сменного отчёта"},{date:"2026-03-01",value:1566,note:"из сменного отчёта"},{date:"2026-03-02",value:1588,note:"из сменного отчёта"},{date:"2026-03-03",value:1610,note:"из сменного отчёта"},{date:"2026-03-04",value:1637,note:"из сменного отчёта"},{date:"2026-03-05",value:1678,note:"из сменного отчёта"},{date:"2026-03-06",value:1721,note:"из сменного отчёта"},{date:"2026-03-07",value:1762,note:"из сменного отчёта"},{date:"2026-03-08",value:1802,note:"из сменного отчёта"},{date:"2026-03-09",value:1838,note:"из сменного отчёта"},{date:"2026-03-10",value:1854,note:"из сменного отчёта"},{date:"2026-03-11",value:1874,note:"из сменного отчёта"},{date:"2026-03-12",value:1895,note:"из сменного отчёта"},{date:"2026-03-13",value:1913,note:"из сменного отчёта"},{date:"2026-03-14",value:1921,note:"из сменного отчёта"},{date:"2026-03-15",value:1929,note:"из сменного отчёта"},{date:"2026-03-17",value:1948,note:"из сменного отчёта"},{date:"2026-03-18",value:1962,note:"из сменного отчёта"},{date:"2026-03-19",value:1973,note:"из сменного отчёта"},{date:"2026-03-20",value:1984,note:"из сменного отчёта"}]},
+  a19: {type:"ENGINE_HOURS",current:886,base:798,base_date:"2026-03-12",history:[{date:"2026-03-12",value:798,note:"Базовый замер ОМТС"},{date:"2026-03-13",value:820,note:"из сменного отчёта"},{date:"2026-03-14",value:840,note:"из сменного отчёта"},{date:"2026-03-15",value:845,note:"из сменного отчёта"},{date:"2026-03-16",value:856,note:"из сменного отчёта"},{date:"2026-03-17",value:875,note:"из сменного отчёта"},{date:"2026-03-18",value:886,note:"из сменного отчёта"}]},
+  a20: {type:"ENGINE_HOURS",current:891,base:820,base_date:"2026-03-12",history:[{date:"2026-03-12",value:820,note:"Базовый замер ОМТС"},{date:"2026-03-13",value:830,note:"из сменного отчёта"},{date:"2026-03-14",value:846,note:"из сменного отчёта"},{date:"2026-03-15",value:855,note:"из сменного отчёта"},{date:"2026-03-16",value:863,note:"из сменного отчёта"},{date:"2026-03-17",value:883,note:"из сменного отчёта"},{date:"2026-03-18",value:891,note:"из сменного отчёта"}]},
+  a21: {type:"ENGINE_HOURS",current:885,base:800,base_date:"2026-03-12",history:[{date:"2026-03-12",value:800,note:"Базовый замер ОМТС"},{date:"2026-03-13",value:822,note:"из сменного отчёта"},{date:"2026-03-14",value:841,note:"из сменного отчёта"},{date:"2026-03-16",value:852,note:"из сменного отчёта"},{date:"2026-03-17",value:874,note:"из сменного отчёта"},{date:"2026-03-18",value:885,note:"из сменного отчёта"}]},
+  a6: {type:"ENGINE_HOURS",current:0,base:null,base_date:null,history:[]},
+  a7: {type:"ENGINE_HOURS",current:0,base:null,base_date:null,history:[]},
+  a8: {type:"ENGINE_HOURS",current:0,base:null,base_date:null,history:[]},
+  a9: {type:"ENGINE_HOURS",current:7331,base:7110,base_date:"2026-02-26",history:[{date:"2026-02-26",value:7110,note:"Базовый замер ОМТС"},{date:"2026-03-02",value:7117,note:"из сменного отчёта"},{date:"2026-03-03",value:7134,note:"из сменного отчёта"},{date:"2026-03-04",value:7138,note:"из сменного отчёта"},{date:"2026-03-05",value:7154,note:"из сменного отчёта"},{date:"2026-03-06",value:7172,note:"из сменного отчёта"},{date:"2026-03-07",value:7188,note:"из сменного отчёта"},{date:"2026-03-08",value:7193,note:"из сменного отчёта"},{date:"2026-03-09",value:7210,note:"из сменного отчёта"},{date:"2026-03-10",value:7216,note:"из сменного отчёта"},{date:"2026-03-11",value:7235,note:"из сменного отчёта"},{date:"2026-03-12",value:7252,note:"из сменного отчёта"},{date:"2026-03-13",value:7269,note:"из сменного отчёта"},{date:"2026-03-17",value:7287,note:"из сменного отчёта"},{date:"2026-03-18",value:7304,note:"из сменного отчёта"},{date:"2026-03-19",value:7323,note:"из сменного отчёта"},{date:"2026-03-20",value:7331,note:"из сменного отчёта"}]},
+  ax208: {type:"ENGINE_HOURS",current:6905,base:6905,base_date:"2026-03-03",history:[{date:"2026-03-03",value:6905,note:"Базовый замер ОМТС"}]},
+  ax209: {type:"ENGINE_HOURS",current:3760,base:3760,base_date:"2026-03-12",history:[{date:"2026-03-12",value:3760,note:"Базовый замер ОМТС"}]},
+  ax210: {type:"ENGINE_HOURS",current:4215,base:4215,base_date:"2026-03-12",history:[{date:"2026-03-12",value:4215,note:"Базовый замер ОМТС"}]},
+  ax211: {type:"ENGINE_HOURS",current:3887,base:3887,base_date:"2026-03-12",history:[{date:"2026-03-12",value:3887,note:"Базовый замер ОМТС"}]},
+  ax213: {type:"ENGINE_HOURS",current:2245,base:2245,base_date:"2026-02-26",history:[{date:"2026-02-26",value:2245,note:"Базовый замер ОМТС"}]},
+  ax214: {type:"ENGINE_HOURS",current:2155,base:2155,base_date:"2026-03-04",history:[{date:"2026-03-04",value:2155,note:"Базовый замер ОМТС"}]},
+  ax215: {type:"ENGINE_HOURS",current:990,base:990,base_date:"2026-02-26",history:[{date:"2026-02-26",value:990,note:"Базовый замер ОМТС"}]},
+  ax216: {type:"ENGINE_HOURS",current:1135,base:1135,base_date:"2026-03-09",history:[{date:"2026-03-09",value:1135,note:"Базовый замер ОМТС"}]},
+  ax217: {type:"ENGINE_HOURS",current:466,base:466,base_date:"2026-03-04",history:[{date:"2026-03-04",value:466,note:"Базовый замер ОМТС"}]},
+  ax218: {type:"ENGINE_HOURS",current:450,base:450,base_date:"2026-03-04",history:[{date:"2026-03-04",value:450,note:"Базовый замер ОМТС"}]},
+  ax219: {type:"ENGINE_HOURS",current:452,base:452,base_date:"2026-03-03",history:[{date:"2026-03-03",value:452,note:"Базовый замер ОМТС"}]},
 };
+
 // Measurement points: { [assetId]: [{ id, name, unit, dataType, isActive }] }
 const INIT_POINTS = {
   a1: [
@@ -8723,7 +8713,7 @@ function KTGPlanBadge({ status }) {
 }
 
 // ─── MECHANIC ASSETS PAGE ─────────────────────────────────────────────────────
-function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passports, setPassports, mechCats, setMechCats, maintRecords, setMaintRecords, user, T }) {
+function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passports, setPassports, meters, mechCats, setMechCats, maintRecords, setMaintRecords, user, T }) {
   const cats = mechCats || DEFAULT_MECH_CATS;
   const [selCat,       setSelCat]       = useState(null);
   const [detailNode,   setDetailNode]   = useState(null);
@@ -8747,7 +8737,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
 
   function getAssetToStatus(a) {
     const pp  = passports[a.id] || {};
-    const mh  = (pp.total_hours || 0) + (pp.moto_hours || 0);
+    const mh  = meters?.[a.id]?.current || (pp.total_hours || 0) + (pp.moto_hours || 0);
     const sched = pp.toSchedule?.length > 0 ? pp.toSchedule
       : [{name:"ТО-250",interval:250,duration_hrs:2}];
     const recs = (maintRecords?.[a.id] || []).sort((x,y)=>y.hours-x.hours);
@@ -8851,7 +8841,7 @@ function MechanicAssetsPage({ nodes, setNodes, objs, reps, assetClasses, passpor
     const pp  = passports[a.id] || {};
     const cat = cats.find(c => c.key === (pp.assetClass || a.category)) || {icon:"📦",color:T.txt2,label:"—"};
     const obj = objs.find(o => o.id === Number(a.assigned_object_id));
-    const mh  = (pp.total_hours || 0) + (pp.moto_hours || 0);
+    const mh  = meters?.[a.id]?.current || (pp.total_hours || 0) + (pp.moto_hours || 0);
     const yr  = pp.year ? new Date().getFullYear() - parseInt(pp.year) : null;
     const log = pp.moto_hours_log || [];
     const { statuses, nearest, hasOverdue } = getAssetToStatus(a);
@@ -11468,7 +11458,7 @@ function ForemanMaintenancePage({ user, objs, rigs, nodes=[], maintRecords, setM
   const rigPassport = rigNode
     ? (passports[rigNode.id] || {})
     : (selRig ? Object.values(passports).find(p => p?.model === selRig.n || p?.name === selRig.n) || {} : {});
-  const rigHours = (rigPassport.total_hours || 0) + (rigPassport.moto_hours || 0);
+  const rigHours = (rigNode && meters?.[rigNode.id]?.current) || (rigPassport.total_hours || 0) + (rigPassport.moto_hours || 0);
 
   return (
     <div>
@@ -11869,9 +11859,9 @@ export default function App() {
   } else if (subPage === "ktg" && user.role === "mechanic") {
     content = <MechanicKTGPage nodes={nodes} objs={objs} mechCats={mechCats} passports={passports} meters={meters} ktgPlans={ktgPlans} setKtgPlans={setKtgPlans} user={user} reps={reps} rigs={rigs} T={T} />;
   } else if (subPage === "assets" && user.role === "mechanic") {
-    content = <MechanicAssetsPage nodes={nodes} setNodes={setNodes} objs={objs} reps={reps} assetClasses={assetClasses} mechCats={mechCats} setMechCats={setMechCats} passports={passports} setPassports={setPassports} maintRecords={maintRecords} setMaintRecords={setMaintRecords} user={user} T={T} />;
+    content = <MechanicAssetsPage nodes={nodes} setNodes={setNodes} objs={objs} reps={reps} assetClasses={assetClasses} mechCats={mechCats} setMechCats={setMechCats} passports={passports} setPassports={setPassports} meters={meters} maintRecords={maintRecords} setMaintRecords={setMaintRecords} user={user} T={T} />;
   } else if (user.role === "mechanic") {
-    content = <MechanicAssetsPage nodes={nodes} setNodes={setNodes} objs={objs} reps={reps} assetClasses={assetClasses} mechCats={mechCats} setMechCats={setMechCats} passports={passports} setPassports={setPassports} maintRecords={maintRecords} setMaintRecords={setMaintRecords} user={user} T={T} />;
+    content = <MechanicAssetsPage nodes={nodes} setNodes={setNodes} objs={objs} reps={reps} assetClasses={assetClasses} mechCats={mechCats} setMechCats={setMechCats} passports={passports} setPassports={setPassports} meters={meters} maintRecords={maintRecords} setMaintRecords={setMaintRecords} user={user} T={T} />;
   }
 
   return (
