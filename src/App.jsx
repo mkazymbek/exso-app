@@ -41,7 +41,7 @@ const INIT_MAINT_RECORDS = {
     {id:"mra14_1",date:"2026-03-04",type:"ТО-250",hours:3017,note:"ТО-250",by:"Виталий ОМТС"}
   ],
   a16: [
-    {id:"mra16_1",date:"2026-03-05",type:"ТО-250",hours:null,note:"ТО-250",by:"Виталий ОМТС"}
+    {id:"mra16_1",date:"2026-03-09",type:"ТО-250",hours:6798,note:"ТО-250",by:"Виталий ОМТС"}
   ],
   a18: [
     {id:"mra18_1",date:"2026-02-24",type:"ТО-250",hours:1462,note:"ТО-250",by:"Виталий ОМТС"}
@@ -56,7 +56,7 @@ const INIT_MAINT_RECORDS = {
     {id:"mra21_1",date:"2026-03-12",type:"ТО-250",hours:800,note:"ТО-250",by:"Виталий ОМТС"}
   ],
   ax208: [
-    {id:"mrax208_1",date:"2026-03-09",type:"ТО-250",hours:6798,note:"ТО-250",by:"Виталий ОМТС"}
+    {id:"mrax208_1",date:"2026-03-03",type:"ТО-250",hours:6905,note:"ТО-250",by:"Виталий ОМТС"}
   ],
   ax210: [
     {id:"mrax210_1",date:"2026-03-12",type:"ТО-250",hours:4215,note:"ТО-250",by:"Виталий ОМТС"}
@@ -76,8 +76,51 @@ const INIT_MAINT_RECORDS = {
   ax219: [
     {id:"mrax219_1",date:"2026-03-03",type:"ТО-250",hours:452,note:"ТО-250",by:"Виталий ОМТС"}
   ],
+  a6: [
+    {id:"mra6_1",date:"2026-01-10",type:"ТО-250",hours:null,note:"ТО — из сменного отчёта",by:"ExSo"},
+    {id:"mra6_2",date:"2026-01-27",type:"ТО-250",hours:null,note:"ТО станка — из сменного отчёта",by:"ExSo"},
+    {id:"mra6_3",date:"2026-02-21",type:"ТО-250",hours:null,note:"ТО станка — из сменного отчёта",by:"ExSo"}
+  ],
+  a7: [
+    {id:"mra7_1",date:"2026-01-10",type:"ТО-250",hours:null,note:"ТО — из сменного отчёта",by:"ExSo"}
+  ],
+  a8: [
+    {id:"mra8_1",date:"2026-02-04",type:"ТО-250",hours:null,note:"ТО станка — из сменного отчёта",by:"ExSo"},
+    {id:"mra8_2",date:"2026-03-12",type:"ТО-250",hours:null,note:"ТО станка, компрессора — из сменного отчёта",by:"ExSo"}
+  ],
+  a9: [
+    {id:"mra9_1",date:"2026-01-02",type:"ТО-250",hours:null,note:"ТО — из сменного отчёта",by:"ExSo"},
+    {id:"mra9_2",date:"2026-02-12",type:"ТО-250",hours:null,note:"ТО станка — из сменного отчёта",by:"ExSo"},
+    {id:"mra9_3",date:"2026-03-12",type:"ТО-250",hours:7110,note:"ТО компрессора — из сменного отчёта",by:"ExSo"}
+  ],
+  a10: [
+    {id:"mra10_1",date:"2026-02-01",type:"ТО-250",hours:null,note:"Тех. уход — из сменного отчёта",by:"ExSo"},
+    {id:"mra10_2",date:"2026-02-11",type:"ТО-250",hours:null,note:"ТО станка, компрессора — из сменного отчёта",by:"ExSo"},
+    {id:"mra10_3",date:"2026-03-04",type:"ТО-250",hours:6840,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a11: [
+    {id:"mra11_1",date:"2026-02-06",type:"ТО-250",hours:null,note:"ТО станка — из сменного отчёта",by:"ExSo"},
+    {id:"mra11_2",date:"2026-02-21",type:"ТО-250",hours:null,note:"ТО станка, компрессора — из сменного отчёта",by:"ExSo"},
+    {id:"mra11_3",date:"2026-03-09",type:"ТО-250",hours:3010,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  a15: [
+    {id:"mra15_1",date:"2026-01-02",type:"ТО-250",hours:null,note:"ТО станка и компрессора — из сменного отчёта",by:"ExSo"},
+    {id:"mra15_2",date:"2026-02-07",type:"ТО-250",hours:null,note:"ТО станка — из сменного отчёта",by:"ExSo"},
+    {id:"mra15_3",date:"2026-02-24",type:"ТО-250",hours:2530,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax209: [
+    {id:"mrax209_1",date:"2026-03-12",type:"ТО-250",hours:3760,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax213: [
+    {id:"mrax213_1",date:"2026-02-26",type:"ТО-250",hours:2245,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax215: [
+    {id:"mrax215_1",date:"2026-02-26",type:"ТО-250",hours:990,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
+  ax216: [
+    {id:"mrax216_1",date:"2026-03-09",type:"ТО-250",hours:1135,note:"ТО-250",by:"Виталий ОМТС"}
+  ],
 };
-
 const INIT_OBJS = [
   { id: 4, name: "Жолымбет",   dp: 0, bp: 0, kp: 0 },  // Пилотный объект
   { id: 1, name: "Борлы",      dp: 0, bp: 0, kp: 0 },
@@ -1005,19 +1048,19 @@ const INIT_PASSPORTS = {
   a6: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590", serial:"AJ2300302", year:"2023", inventory:"№106", reg_plate:"", engine_vol:null, commissioned:"2024-04-04", total_hours:null, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   a7: { assetClass:"DRILL_RIG", manufacturer:"Sanrock", model:"R68", serial:"", year:null, inventory:"№107", reg_plate:"", engine_vol:null, commissioned:"2025-05-05", total_hours:null, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   a8: { assetClass:"DRILL_RIG", manufacturer:"Sanrock", model:"R68", serial:"", year:null, inventory:"№108", reg_plate:"", engine_vol:null, commissioned:"2025-05-05", total_hours:null, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a9: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590", serial:"", year:"2023", inventory:"№109", reg_plate:"", engine_vol:null, commissioned:"2024-08-01", total_hours:null, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a10: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590", serial:"JK2302253L", year:"2023", inventory:"№110", reg_plate:"", engine_vol:null, commissioned:"2024-08-01", total_hours:6245, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a11: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500301", year:"2025", inventory:"№111", reg_plate:"", engine_vol:null, commissioned:"2025-08-13", total_hours:2343, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a12: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"AJ2501004", year:"2025", inventory:"№112", reg_plate:"", engine_vol:null, commissioned:"2025-08-22", total_hours:2834, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a13: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500301", year:"2025", inventory:"№113", reg_plate:"", engine_vol:null, commissioned:"2025-08-22", total_hours:3099, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a14: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500301", year:"2025", inventory:"№114", reg_plate:"", engine_vol:null, commissioned:"2025-08-22", total_hours:3017, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a15: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500312", year:"2025", inventory:"№115", reg_plate:"", engine_vol:null, commissioned:"2025-09-10", total_hours:2062, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a16: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500311", year:"2025", inventory:"№116", reg_plate:"", engine_vol:null, commissioned:"2025-09-10", total_hours:null, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a18: { assetClass:"DRILL_RIG", manufacturer:"Zega", model:"D545H", serial:"", year:"2025", inventory:"№117", reg_plate:"", engine_vol:null, commissioned:null, total_hours:1462, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a9: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590", serial:"", year:"2023", inventory:"№109", reg_plate:"", engine_vol:null, commissioned:"2024-08-01", total_hours:7110, hours_date:"2026-02-26", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a10: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590", serial:"JK2302253L", year:"2023", inventory:"№110", reg_plate:"", engine_vol:null, commissioned:"2024-08-01", total_hours:6840, hours_date:"2026-03-04", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a11: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500301", year:"2025", inventory:"№111", reg_plate:"", engine_vol:null, commissioned:"2025-08-13", total_hours:3010, hours_date:"2026-03-09", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a12: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"AJ2501004", year:"2025", inventory:"№112", reg_plate:"", engine_vol:null, commissioned:"2025-08-22", total_hours:2834, hours_date:"2026-03-04", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a13: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500301", year:"2025", inventory:"№113", reg_plate:"", engine_vol:null, commissioned:"2025-08-22", total_hours:3099, hours_date:"2026-03-05", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a14: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500301", year:"2025", inventory:"№114", reg_plate:"", engine_vol:null, commissioned:"2025-08-22", total_hours:3017, hours_date:"2026-03-04", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a15: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500312", year:"2025", inventory:"№115", reg_plate:"", engine_vol:null, commissioned:"2025-09-10", total_hours:2530, hours_date:"2026-02-24", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a16: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500311", year:"2025", inventory:"№116", reg_plate:"", engine_vol:null, commissioned:"2025-09-10", total_hours:6798, hours_date:"2026-03-09", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a18: { assetClass:"DRILL_RIG", manufacturer:"Zega", model:"D545H", serial:"", year:"2025", inventory:"№117", reg_plate:"", engine_vol:null, commissioned:null, total_hours:1462, hours_date:"2026-02-24", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   a17: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:"JK590BC", serial:"SNA2500307", year:"2025", inventory:"№118", reg_plate:"", engine_vol:null, commissioned:"2025-12-18", total_hours:712, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a19: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:null, serial:"AY250403", year:"2026", inventory:"№119", reg_plate:"", engine_vol:null, commissioned:"2026-01-01", total_hours:798, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a20: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:null, serial:"AY250404", year:"2026", inventory:"№120", reg_plate:"", engine_vol:null, commissioned:"2026-01-01", total_hours:820, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  a21: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:null, serial:"AY250401", year:"2026", inventory:"№121", reg_plate:"", engine_vol:null, commissioned:"2026-01-01", total_hours:800, fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a19: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:null, serial:"AY250403", year:"2026", inventory:"№119", reg_plate:"", engine_vol:null, commissioned:"2026-01-01", total_hours:798, hours_date:"2026-03-12", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a20: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:null, serial:"AY250404", year:"2026", inventory:"№120", reg_plate:"", engine_vol:null, commissioned:"2026-01-01", total_hours:820, hours_date:"2026-03-12", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  a21: { assetClass:"DRILL_RIG", manufacturer:"JK Boart", model:null, serial:"AY250401", year:"2026", inventory:"№121", reg_plate:"", engine_vol:null, commissioned:"2026-01-01", total_hours:800, hours_date:"2026-03-12", fuel_rate:16.7, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   // ── Компрессоры ──
   ax201: { assetClass:"COMPRESSOR", manufacturer:null, model:null, serial:"", year:null, inventory:"№201", reg_plate:"", engine_vol:null, commissioned:null, total_hours:null, fuel_rate:30.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   ax202: { assetClass:"COMPRESSOR", manufacturer:"Sanrock", model:"SR550-17", serial:"", year:null, inventory:"№202", reg_plate:"", engine_vol:null, commissioned:"2022-05-06", total_hours:null, fuel_rate:30.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
@@ -1026,15 +1069,15 @@ const INIT_PASSPORTS = {
   ax205: { assetClass:"COMPRESSOR", manufacturer:null, model:null, serial:"", year:null, inventory:"№205", reg_plate:"", engine_vol:null, commissioned:null, total_hours:null, fuel_rate:30.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   ax206: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY-18/17", serial:"", year:null, inventory:"№206", reg_plate:"", engine_vol:null, commissioned:"2024-01-10", total_hours:null, fuel_rate:30.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Капитальный ремонт двигателья — 133 4725 тг" },
   ax207: { assetClass:"COMPRESSOR", manufacturer:"LiuGong", model:"LUY180-19", serial:"", year:null, inventory:"№207", reg_plate:"", engine_vol:null, commissioned:"2025-05-05", total_hours:null, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  ax208: { assetClass:"COMPRESSOR", manufacturer:"LiuGong", model:"LUY180-19", serial:"", year:null, inventory:"№208", reg_plate:"", engine_vol:null, commissioned:"2025-05-05", total_hours:6798, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Капитальный ремонт двигателья — 129 9800 тг" },
-  ax209: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№209", reg_plate:"", engine_vol:null, commissioned:"2025-04-10", total_hours:3149, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Капитальный ремонт двигателья — 113 7605 тг" },
-  ax210: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№210", reg_plate:"", engine_vol:null, commissioned:"2025-11-08", total_hours:4215, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  ax211: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№211", reg_plate:"", engine_vol:null, commissioned:"2025-11-08", total_hours:3887, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  ax208: { assetClass:"COMPRESSOR", manufacturer:"LiuGong", model:"LUY180-19", serial:"", year:null, inventory:"№208", reg_plate:"", engine_vol:null, commissioned:"2025-05-05", total_hours:6905, hours_date:"2026-03-03", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Капитальный ремонт двигателья — 129 9800 тг" },
+  ax209: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№209", reg_plate:"", engine_vol:null, commissioned:"2025-04-10", total_hours:3760, hours_date:"2026-03-12", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Капитальный ремонт двигателья — 113 7605 тг" },
+  ax210: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№210", reg_plate:"", engine_vol:null, commissioned:"2025-11-08", total_hours:4215, hours_date:"2026-03-12", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  ax211: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№211", reg_plate:"", engine_vol:null, commissioned:"2025-11-08", total_hours:3887, hours_date:"2026-03-12", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   ax212: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№212", reg_plate:"", engine_vol:null, commissioned:"2025-04-10", total_hours:null, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  ax213: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№213", reg_plate:"", engine_vol:null, commissioned:"2025-04-10", total_hours:1813, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  ax214: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№214", reg_plate:"", engine_vol:null, commissioned:"2025-11-25", total_hours:2155, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Капитальный ремонт двигателья — 108 7285 тг" },
-  ax215: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"17182508010", year:null, inventory:"№215", reg_plate:"", engine_vol:null, commissioned:"2025-12-31", total_hours:null, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
-  ax216: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"17182508002", year:null, inventory:"№216", reg_plate:"", engine_vol:null, commissioned:"2025-12-31", total_hours:null, fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  ax213: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№213", reg_plate:"", engine_vol:null, commissioned:"2025-04-10", total_hours:2245, hours_date:"2026-02-26", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  ax214: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"", year:null, inventory:"№214", reg_plate:"", engine_vol:null, commissioned:"2025-11-25", total_hours:2155, hours_date:"2026-03-04", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Капитальный ремонт двигателья — 108 7285 тг" },
+  ax215: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"17182508010", year:null, inventory:"№215", reg_plate:"", engine_vol:null, commissioned:"2025-12-31", total_hours:990, hours_date:"2026-02-26", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
+  ax216: { assetClass:"COMPRESSOR", manufacturer:"LGCY", model:"LGCY17/18-18/15T", serial:"17182508002", year:null, inventory:"№216", reg_plate:"", engine_vol:null, commissioned:"2025-12-31", total_hours:1135, hours_date:"2026-03-09", fuel_rate:29.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
   // ── СЗМ ──
   ax301: { assetClass:"SZM", manufacturer:null, model:null, serial:"MI00000664", year:"2006", inventory:"№301", reg_plate:"633 BG 09", engine_vol:11760, commissioned:"2021-01-13", total_hours:null, fuel_rate:33.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}], maintNote:"Замена автошины шт2 — 156000 тг за одну шт" },
   ax302: { assetClass:"SZM", manufacturer:null, model:null, serial:"MI99997820", year:"2017", inventory:"№302", reg_plate:"601 AQ 09", engine_vol:9726, commissioned:"2023-08-08", total_hours:null, fuel_rate:33.0, toSchedule:[{name:"ТО-250",interval:250,duration_hrs:2}] },
