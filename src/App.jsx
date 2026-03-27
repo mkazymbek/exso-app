@@ -11569,7 +11569,24 @@ export default function App() {
         if (dbStorageUnits?.length) setStorageUnits(dbStorageUnits);
         if (dbInvTxns?.length)      setInvTxns(dbInvTxns);
         if (dbRigs?.length)  setRigs(prev => { const localIds = new Set(prev.map(r => r.id)); const localNames = new Set(prev.map(r => r.n + "_" + r.o)); const dbOnly = dbRigs.filter(r => !localIds.has(r.id) && !localNames.has(r.n + "_" + r.o)); return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev; });
-        if (dbReps?.length)  setReps(prev => {
+          if (dbReps?.length) {
+            const _localKeys = new Set(prev.map(r => r.oid + '|' + r.date + '|' + r.sh));
+            const _lastDate = prev.reduce((max, r) => r.date > max ? r.date : max, '');
+            const _dbOnly = dbReps.filter(r => !_localKeys.has(r.oid + '|' + r.date + '|' + r.sh) && r.date > _lastDate);
+            // Диагностика
+            const _koskJan = dbReps.filter(r => r.oid === 2 && r.date?.startsWith('2026-01'));
+            const _initKosk = prev.filter(r => r.oid === 2 && r.date?.startsWith('2026-01'));
+            console.log('[MERGE] INIT:', prev.length, 'DB:', dbReps.length, 'dbOnly:', _dbOnly.length);
+            console.log('[MERGE] lastDate:', _lastDate);
+            console.log('[MERGE] Supabase Коскудук янв:', _koskJan.length, 'примерный df:', _koskJan[0]?.df);
+            console.log('[MERGE] INIT Коскудук янв:', _initKosk.length, 'примерный df:', _initKosk[0]?.df);
+            setReps(prev2 => {
+              const lk = new Set(prev2.map(r => r.oid + '|' + r.date + '|' + r.sh));
+              const ld = prev2.reduce((max, r) => r.date > max ? r.date : max, '');
+              const only = dbReps.filter(r => !lk.has(r.oid + '|' + r.date + '|' + r.sh) && r.date > ld);
+              return only.length > 0 ? [...prev2, ...only] : prev2;
+            });
+          }
           const localKeys = new Set(prev.map(r => r.oid + '|' + r.date + '|' + r.sh));
           const lastLocalDate = prev.reduce((max, r) => r.date > max ? r.date : max, '');
           const dbOnly = dbReps.filter(r => !localKeys.has(r.oid + '|' + r.date + '|' + r.sh) && r.date > lastLocalDate);
