@@ -1,4 +1,6 @@
+// ExSo v2.1 FIXED 2026-03-27 df_corrected
 import React, { useState, useMemo, useEffect } from "react";
+console.log('ExSo версия: v2.1 FIXED 2026-03-27');
 import supabase, { getObjects, getRigs, getReports, getPlans, getKtgPlans, submitReport as apiSubmitReport, approveReport as apiApproveReport, deleteReport as apiDeleteReport, updateReport as apiUpdateReport, login as supabaseLogin, savePlanToDB, saveKtgPlanToDB, updateKtgPlanStatus, adminCreateUser, adminUpdatePassword, adminDeleteUser, adminListUsers, getAssets, upsertAsset, getPassports, upsertPassport, getMaintRecords, addMaintRecord, deleteMaintRecord, getStorageUnits, upsertStorageUnit, deleteStorageUnit, getInvTxns, addInvTxn } from "./api.js";
 
 // ─── THEMES ───────────────────────────────────────────────────────────────────
@@ -2616,7 +2618,7 @@ function ObjDetail({ objId, objs, rigs, reps, onDrillRig, onBack, initialAnchor,
   const [y, m] = ym.split("-");
   const monthLabel = MONTHS_RU[parseInt(m,10)-1] + " " + y;
   const monthStart = ym + "-01";
-  const monthEnd   = new Date(parseInt(y), parseInt(m), 0).toISOString().slice(0,10);
+  const monthEnd   = new Date(parseInt(y), parseInt(m), 0).toLocaleDateString('en-CA');
 
   const approved = reps.filter((r) => r.status !== "draft" && r.oid === objId
     && r.date >= monthStart && r.date <= monthEnd);
@@ -2807,7 +2809,7 @@ function RigDetail({ rigId, objId, objs, rigs, reps, onBack, onBackToObj, initia
   const [y, m] = ym.split("-");
   const monthLabel = MONTHS_RU[parseInt(m,10)-1] + " " + y;
   const monthStart = ym + "-01";
-  const monthEnd   = new Date(parseInt(y), parseInt(m), 0).toISOString().slice(0,10);
+  const monthEnd   = new Date(parseInt(y), parseInt(m), 0).toLocaleDateString('en-CA');
 
   const colors  = OBJ_COLORS(T);
   const ac      = colors[objs.findIndex((o) => o.id === objId) % colors.length];
@@ -11542,7 +11544,7 @@ export default function App() {
         const [dbObjs, dbRigs, dbReps, dbPlans, dbKtg, dbAssets, dbPassports, dbMaintRecs, dbStorageUnits, dbInvTxns] = await Promise.all([
           getObjects(),
           getRigs(),
-          getReports(),
+          getReports({ dateFrom: '2026-04-01' }), // исторические данные в INIT_REPS
           getPlans(),
           getKtgPlans(),
           getAssets().catch(() => null),
