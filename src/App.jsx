@@ -2059,7 +2059,7 @@ function Dashboard({ objs, rigs, reps, plans, ktgPlans, nodes, storageUnits=[], 
   function getMonthStart(iso) { return iso.slice(0, 7) + "-01"; }
   function getMonthEnd(iso) {
     const [y, m] = iso.split("-").map(Number);
-    return new Date(y, m, 0).toISOString().slice(0, 10);
+    return new Date(y, m, 0).toLocaleDateString('en-CA');
   }
 
   const { rangeStart, rangeEnd, label } = useMemo(() => {
