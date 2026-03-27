@@ -11577,7 +11577,6 @@ export default function App() {
               return dbOnly.length > 0 ? [...prev, ...dbOnly] : prev;
             });
           }
-          }
         if (dbPlans?.length) setPlans(dbPlans);
         if (dbKtg?.length)   setKtgPlans(dbKtg);
       } catch (e) {
