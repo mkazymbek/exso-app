@@ -921,8 +921,8 @@ const INIT_REPS = [
   // ── Борлы Март 2026 (из отчёта) ───────────────────────────
 
   {id:18260,oid:5,date:"2026-03-15",sh:"night",shiftDurationHours:11,status:"approved",by:"ExSo",submittedAt:"2026-03-15T08:00:00",approvedAt:"2026-03-15T09:00:00",comment:"",fuel:0,fuel_kg:0,df:0,bf:68193,blast_vol:68193,blast_holes:0,blast_block:"",blast_rock:"",fuel_kg_bvr:0,wh:0,dh:0.0,overDrill:0.0,rigs:[],downtime_events:[],rigEntries:[]},
-  {id:18261,oid:6,date:"2026-03-15",sh:"night",shiftDurationHours:11,status:"approved",by:"ExSo",submittedAt:"2026-03-15T08:00:00",approvedAt:"2026-03-15T09:00:00",comment:"",fuel:0,fuel_kg:0,df
-  {id:18262,oid:6,date:"2026-02-13",sh:"night",shiftDurationHours:11,status:"approved",by:"ExSo",submittedAt:"2026-02-13T08:00:00",approvedAt:"2026-02-13T09:00:00",comment:"",fuel:0,fuel_kg:0,df:0,bf:36960,blast_vol:36960,blast_holes:0,blast_block:"",blast_rock:"",fuel_kg_bvr:0,wh:0,dh:0.0,overDrill:0.0,rigs:[],downtime_events:[],rigEntries:[]},:0,bf:16773,blast_vol:16773,blast_holes:0,blast_block:"",blast_rock:"",fuel_kg_bvr:0,wh:0,dh:0.0,overDrill:0.0,rigs:[],downtime_events:[],rigEntries:[]},
+  {id:18261,oid:6,date:"2026-03-15",sh:"night",shiftDurationHours:11,status:"approved",by:"ExSo",submittedAt:"2026-03-15T08:00:00",approvedAt:"2026-03-15T09:00:00",comment:"",fuel:0,fuel_kg:0,df:0,bf:16773,blast_vol:16773,blast_holes:0,blast_block:"",blast_rock:"",fuel_kg_bvr:0,wh:0,dh:0.0,overDrill:0.0,rigs:[],downtime_events:[],rigEntries:[]},
+  {id:18262,oid:6,date:"2026-02-13",sh:"night",shiftDurationHours:11,status:"approved",by:"ExSo",submittedAt:"2026-02-13T08:00:00",approvedAt:"2026-02-13T09:00:00",comment:"",fuel:0,fuel_kg:0,df:0,bf:36960,blast_vol:36960,blast_holes:0,blast_block:"",blast_rock:"",fuel_kg_bvr:0,wh:0,dh:0.0,overDrill:0.0,rigs:[],downtime_events:[],rigEntries:[]},
 ];
 const INIT_EXPLOSIVES_STOCK = [
   { id:"es1", site_id:1, type:"АНФО",     qty:2400, updated:"2025-01-15" },
